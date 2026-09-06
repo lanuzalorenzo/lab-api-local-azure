@@ -1,31 +1,16 @@
-# 🚀 Plantilla de Repositorio
+# 🧩 Laboratorio: API Local (Módulo 1)
 
-Plantilla base para proyectos: estructura inicial, estilo unificado y configuración estándar de protección de ramas.
+Este repositorio contiene la API local utilizada en el Módulo 1 del portfolio de ciberseguridad.
 
-## 📁 Estructura inicial
-- `/src` — Código fuente del proyecto  
-- `/docs` — Documentación adicional  
-- `/tests` — Pruebas y validaciones  
-- `README.md` — Documentación principal del proyecto  
+## 📁 Estructura
+- **EcommerceApi/** → Código fuente de la API (.NET)
+- **docs/** → Documentación técnica del laboratorio
 
-## 🔒 Protección de ramas
-Este repositorio plantilla está configurado para:
-- Requerir Pull Requests antes de hacer merge  
-- Requerir aprobaciones  
-- Requerir resolución de conversaciones  
-- Mantener un historial lineal  
+## 📚 Documentación
+La documentación completa se encuentra en la carpeta **/docs**.
 
-## 🧩 Cómo usar esta plantilla
-1. Crear un nuevo repositorio usando **Use this template**  
-2. Ajustar el nombre y la descripción  
-3. Añadir contenido al proyecto  
-4. Mantener las reglas de protección de `main`  
+## 🎯 Objetivo del laboratorio
+- Crear una API local funcional
+- Integrar autenticación básica
+- Preparar el entorno para prácticas de seguridad en Azure
 
-## 🛠 Tecnologías (personaliza según el proyecto)
-- GitHub  
-- Git  
-- VS Code  
-- (Añade aquí las tecnologías del proyecto final)
-
-## 📜 Licencia
-Este repositorio se distribuye bajo la licencia que el proyecto final requiera.
