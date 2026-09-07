@@ -1,88 +1,75 @@
-# Tests - EcommerceApi
+# 🧪 Pruebas de la API Local — EcommerceApi
 
-Este archivo contiene ejemplos de pruebas usando `curl` para validar los endpoints de la API.
-
-**Prerequisitos:**
-- La API debe estar ejecutándose: `dotnet run`
-- Tener `curl` instalado en el sistema
+## 🧾 Descripción
+Guía técnica con ejemplos de pruebas para validar los endpoints de la API local del laboratorio utilizando curl, PowerShell y Postman.  
+Incluye respuestas esperadas y códigos HTTP estándar.
 
 ---
 
-## Productos
+# 📦 Prerrequisitos
+- API ejecutándose:
+  ```bash
+  dotnet run
+  ```
+- curl instalado  
+- URL base:
+  ```
+  http://localhost
+  ```
 
-### 1. Obtener todos los productos
+---
 
+# 🛒 Productos
+
+## 1. Obtener todos los productos
 ```bash
-curl http://localhost:5000/api/products
+curl http://localhost/api/products
 ```
 
-**Respuesta esperada:**
+Respuesta esperada:
 ```json
 [
-  {
-    "id": 1,
-    "name": "Laptop",
-    "price": 999.99,
-    "stock": 5
-  },
-  {
-    "id": 2,
-    "name": "Mouse",
-    "price": 19.99,
-    "stock": 50
-  }
+  { "id": 1, "name": "Laptop", "price": 999.99, "stock": 5 },
+  { "id": 2, "name": "Mouse", "price": 19.99, "stock": 50 }
 ]
 ```
 
 ---
 
-### 2. Obtener un producto específico
-
+## 2. Obtener un producto específico
 ```bash
-curl http://localhost:5000/api/products/1
+curl http://localhost/api/products/1
 ```
 
-**Respuesta esperada:**
+Respuesta esperada:
 ```json
-{
-  "id": 1,
-  "name": "Laptop",
-  "price": 999.99,
-  "stock": 5
-}
+{ "id": 1, "name": "Laptop", "price": 999.99, "stock": 5 }
 ```
 
 ---
 
-### 3. Crear un nuevo producto
-
+## 3. Crear un nuevo producto
 ```bash
-curl -X POST http://localhost:5000/api/products \
+curl -X POST http://localhost/api/products \
   -H "Content-Type: application/json" \
   -d '{"name":"Keyboard","price":29.99,"stock":20}'
 ```
 
-**Respuesta esperada:**
+Respuesta esperada:
 ```json
-{
-  "id": 3,
-  "name": "Keyboard",
-  "price": 29.99,
-  "stock": 20
-}
+{ "id": 3, "name": "Keyboard", "price": 29.99, "stock": 20 }
 ```
 
 ---
 
-## Pedidos
+# 📦 Pedidos
 
-### 1. Obtener todos los pedidos
-
+## 1. Obtener todos los pedidos
 ```bash
-curl http://localhost:5000/api/orders
+curl http://localhost/api/orders
 ```
 
-**Respuesta esperada:**
+Respuesta esperada:
 ```json
 [
   {
@@ -96,13 +83,12 @@ curl http://localhost:5000/api/orders
 
 ---
 
-### 2. Obtener un pedido específico
-
+## 2. Obtener un pedido específico
 ```bash
-curl http://localhost:5000/api/orders/1
+curl http://localhost/api/orders/1
 ```
 
-**Respuesta esperada:**
+Respuesta esperada:
 ```json
 {
   "id": 1,
@@ -114,15 +100,14 @@ curl http://localhost:5000/api/orders/1
 
 ---
 
-### 3. Crear un nuevo pedido
-
+## 3. Crear un nuevo pedido
 ```bash
-curl -X POST http://localhost:5000/api/orders \
+curl -X POST http://localhost/api/orders \
   -H "Content-Type: application/json" \
   -d '{"productIds":[1,2]}'
 ```
 
-**Respuesta esperada:**
+Respuesta esperada:
 ```json
 {
   "id": 2,
@@ -134,24 +119,18 @@ curl -X POST http://localhost:5000/api/orders \
 
 ---
 
-## Pruebas con Powershell (Windows)
+# 💻 Pruebas en PowerShell (Windows)
 
-Si usas Windows con PowerShell, puedes adaptar los comandos:
-
-### Obtener productos
+## Obtener productos
 ```powershell
-Invoke-WebRequest -Uri "http://localhost:5000/api/products" -Method GET
+Invoke-WebRequest -Uri "http://localhost/api/products" -Method GET
 ```
 
-### Crear producto
+## Crear producto
 ```powershell
-$body = @{
-    name = "Keyboard"
-    price = 29.99
-    stock = 20
-} | ConvertTo-Json
+$body = @{ name = "Keyboard"; price = 29.99; stock = 20 } | ConvertTo-Json
 
-Invoke-WebRequest -Uri "http://localhost:5000/api/products" `
+Invoke-WebRequest -Uri "http://localhost/api/products" `
   -Method POST `
   -ContentType "application/json" `
   -Body $body
@@ -159,47 +138,50 @@ Invoke-WebRequest -Uri "http://localhost:5000/api/products" `
 
 ---
 
-## Pruebas con Postman
+# 🧪 Pruebas en Postman
 
-1. Importa estos endpoints en Postman
-2. Configura la URL base: `http://localhost:5000`
-3. Realiza las pruebas según los ejemplos anteriores
+### Endpoints
+```
+GET {{base_url}}/api/products
+GET {{base_url}}/api/products/1
+POST {{base_url}}/api/products
 
-**Endpoints Postman:**
-- GET `{{base_url}}/api/products`
-- GET `{{base_url}}/api/products/1`
-- POST `{{base_url}}/api/products`
-- GET `{{base_url}}/api/orders`
-- GET `{{base_url}}/api/orders/1`
-- POST `{{base_url}}/api/orders`
+GET {{base_url}}/api/orders
+GET {{base_url}}/api/orders/1
+POST {{base_url}}/api/orders
+```
 
----
-
-## Códigos HTTP Esperados
-
-| Método | Endpoint | Código | Descripción |
-|--------|----------|--------|-------------|
-| GET | /api/products | 200 | Éxito |
-| GET | /api/products/{id} | 200 | Éxito |
-| GET | /api/products/999 | 404 | No encontrado |
-| POST | /api/products | 201 | Creado |
-| POST | /api/products | 400 | Solicitud inválida |
-| GET | /api/orders | 200 | Éxito |
-| GET | /api/orders/{id} | 200 | Éxito |
-| POST | /api/orders | 201 | Creado |
-
----
-
-## Próximas Pruebas (Post Azure AD)
-
-Una vez integrado Azure AD, las pruebas incluirán:
-
-```bash
-# Con JWT Token
-curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  http://localhost:5000/api/products
+### URL base
+```
+http://localhost
 ```
 
 ---
 
-**Nota**: Estos ejemplos asumen que la API corre en `http://localhost:5000`. Ajusta el puerto si es necesario.
+# 📊 Códigos HTTP esperados
+
+| Método | Endpoint               | Código | Descripción        |
+|--------|-------------------------|--------|---------------------|
+| GET    | /api/products           | 200    | Éxito               |
+| GET    | /api/products/{id}      | 200    | Éxito               |
+| GET    | /api/products/999       | 404    | No encontrado       |
+| POST   | /api/products           | 201    | Creado              |
+| POST   | /api/products           | 400    | Solicitud inválida  |
+| GET    | /api/orders             | 200    | Éxito               |
+| GET    | /api/orders/{id}        | 200    | Éxito               |
+| POST   | /api/orders             | 201    | Creado              |
+
+---
+
+# 🔐 Próximas pruebas (post Azure AD)
+Una vez integrada la autenticación:
+
+```bash
+curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  http://localhost/api/products
+```
+
+---
+
+# ✔️ Conclusión
+Este documento proporciona pruebas completas para validar la API local antes y después de integrar Azure AD, utilizando curl, PowerShell y Postman.
