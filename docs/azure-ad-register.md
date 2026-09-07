@@ -1,192 +1,191 @@
-# Registro de la API en Azure AD
+# 🔐 Registro de la API en Azure AD
 
-## ¿Qué es Azure AD y App Registration?
+## 🧾 Descripción
+Guía técnica para registrar la API del laboratorio en Azure Active Directory (Azure AD).  
+Incluye la creación del App Registration, configuración del Application ID URI, definición de scopes y asignación de permisos a aplicaciones cliente.
 
-**Azure Active Directory (Azure AD)** es el servicio de identidad en la nube de Microsoft que proporciona:
-- Autenticación centralizada
-- Gestión de identidades
-- Control de acceso basado en roles (RBAC)
+---
 
-**App Registration** es el proceso de registrar tu aplicación en Azure AD para que pueda:
-- Autenticar usuarios
-- Autorizar aplicaciones cliente
-- Emitir y validar tokens JWT
+## 🏛️ 1. ¿Qué es Azure AD y App Registration?
 
-## Pasos para Registrar la API en Azure AD
+### Azure AD
+Servicio de identidad de Microsoft que proporciona:
+- Autenticación centralizada  
+- Gestión de identidades  
+- Control de acceso basado en roles (RBAC)  
+- Emisión y validación de tokens JWT  
 
-### 1. Acceder al Portal de Azure
-1. Ir a [portal.azure.com](https://portal.azure.com)
-2. Iniciar sesión con tu cuenta de Azure
-3. En el menú de búsqueda superior, escribir "Azure Active Directory" o "App registrations"
+### App Registration
+Proceso mediante el cual una API o aplicación:
+- Se identifica en Azure AD  
+- Puede autenticar usuarios  
+- Puede autorizar aplicaciones cliente  
+- Expone permisos (scopes) para acceso seguro  
 
-### 2. Crear un Nuevo Registro
-1. Hacer clic en **"App registrations"** en el menú lateral
-2. Hacer clic en **"New registration"**
-3. Completar el formulario:
-   - **Name**: `EcommerceApi` (nombre descriptivo de tu API)
-   - **Supported account types**: Seleccionar según tu caso:
-     - "Accounts in this organizational directory only" (recomendado para producción)
-     - "Accounts in any organizational directory" (multi-tenant)
-   - **Redirect URI**: Dejar vacío por ahora (las APIs no necesitan redirección)
-4. Hacer clic en **"Register"**
+---
 
-### 3. Obtener Tenant ID, Client ID y Application ID URI
+## 🧩 2. Crear el registro de la API
 
-Después del registro, verás la página de **Overview** con:
+### Acceder al portal
+1. Ir a: https://portal.azure.com  
+2. Iniciar sesión  
+3. Buscar: **Azure Active Directory**  
+4. Abrir: **App registrations**
 
-#### **Tenant ID (Directory ID)**
-- Se encuentra en el campo "Directory (tenant) ID"
-- Ejemplo: `00000000-0000-0000-0000-000000000000`
-- Uso: En la URL de autoridad de Azure AD
+### Crear nuevo registro
+- **Name:** EcommerceApi  
+- **Supported account types:**  
+  - *Accounts in this organizational directory only* (recomendado)  
+- **Redirect URI:** vacío (las APIs no lo necesitan)
 
-#### **Client ID (Application ID)**
-- Se encuentra en el campo "Application (client) ID"
-- Ejemplo: `11111111-1111-1111-1111-111111111111`
-- Uso: Identificador único de tu aplicación
+Hacer clic en **Register**.
 
-#### **Application ID URI**
-1. En la página de registro, hacer clic en **"Expose an API"** en el menú lateral
-2. En la sección "Application ID URI", hacer clic en **"Set"**
-3. Azure sugiere un URI predeterminado: `api://[CLIENT-ID]`
-4. Puedes personalizarlo a algo como: `api://ecommerce-api`
-5. Hacer clic en **"Save"**
+---
 
-## Crear un Scope (API Permission)
+## 🧩 3. Obtener Tenant ID, Client ID y Application ID URI
 
-### ¿Qué es un Scope?
+Tras registrar la API, en **Overview** aparecen:
 
-Un **scope** define permisos específicos que las aplicaciones cliente pueden solicitar. Ejemplo:
-- `api://ecommerce-api/order.read` - Leer órdenes
-- `api://ecommerce-api/order.write` - Crear órdenes
-- `api://ecommerce-api/admin` - Acceso administrativo
+### Tenant ID (Directory ID)
+Ejemplo:
+```
+00000000-0000-0000-0000-000000000000
+```
 
-### Crear Scopes
+### Client ID (Application ID)
+Ejemplo:
+```
+11111111-1111-1111-1111-111111111111
+```
 
-1. En la página de registro, ir a **"Expose an API"**
-2. En la sección "Scopes defined by this API", hacer clic en **"Add a scope"**
-3. Completar el formulario:
+### Application ID URI
+1. Ir a **Expose an API**  
+2. En *Application ID URI*, hacer clic en **Set**  
+3. Azure sugiere:
+```
+api://[CLIENT-ID]
+```
+4. Se puede personalizar:
+```
+api://ecommerce-api
+```
 
-**Para lectura de órdenes:**
-- **Scope name**: `order.read`
-- **Admin consent display name**: `Read orders`
-- **Admin consent description**: `Allows reading orders from the API`
-- **User consent display name**: `Read orders`
-- **User consent description**: `Allows you to read orders`
-- **State**: `Enabled`
+Guardar cambios.
 
-**Para escritura de órdenes:**
-- **Scope name**: `order.write`
-- **Admin consent display name**: `Manage orders`
-- **Admin consent description**: `Allows creating and updating orders`
-- **User consent display name**: `Manage orders`
-- **User consent description**: `Allows you to create and update orders`
-- **State**: `Enabled`
+---
 
-4. Hacer clic en **"Add scope"**
+## 🔧 4. Crear scopes (API permissions)
 
-Los scopes quedarán disponibles como:
-- `api://ecommerce-api/order.read`
-- `api://ecommerce-api/order.write`
+### ¿Qué es un scope?
+Un permiso granular que una aplicación cliente puede solicitar.
 
-## Asignar Roles o Permisos a Aplicaciones Cliente
+Ejemplos:
+- `api://ecommerce-api/order.read`  
+- `api://ecommerce-api/order.write`  
+- `api://ecommerce-api/admin`  
 
-### Para Aplicaciones Cliente (Confidential Clients)
+### Crear scopes
+1. Ir a **Expose an API**  
+2. En *Scopes defined by this API*, clic en **Add a scope**  
+3. Crear:
 
-Si tienes una aplicación cliente que necesita acceder a la API:
+#### Scope: order.read
+- **Scope name:** order.read  
+- **Admin consent display name:** Read orders  
+- **Admin consent description:** Allows reading orders  
+- **User consent display name:** Read orders  
+- **User consent description:** Allows you to read orders  
+- **State:** Enabled  
 
-#### 1. Registrar la Aplicación Cliente
-- Ir a **App registrations** > **New registration**
-- Nombrarla: `EcommerceClient` (o similar)
-- Registrar
+#### Scope: order.write
+- **Scope name:** order.write  
+- **Admin consent display name:** Manage orders  
+- **Admin consent description:** Allows creating and updating orders  
+- **User consent display name:** Manage orders  
+- **User consent description:** Allows you to create and update orders  
+- **State:** Enabled  
 
-#### 2. Asignar Permisos desde la Cliente
-1. En el registro de la aplicación **cliente**, ir a **API permissions**
-2. Hacer clic en **"Add a permission"**
-3. En **"My APIs"**, seleccionar **"EcommerceApi"**
-4. Seleccionar los scopes que necesita (ej: `order.read`, `order.write`)
-5. Hacer clic en **"Add permissions"**
+Scopes resultantes:
+```
+api://ecommerce-api/order.read
+api://ecommerce-api/order.write
+```
 
-#### 3. Conceder Consentimiento (Admin Consent)
-1. Si es necesario, hacer clic en **"Grant admin consent for [Tenant]"**
-2. Confirmar la acción
+---
 
-#### 4. Crear un Client Secret
-1. En el registro cliente, ir a **Certificates & secrets**
-2. En **Client secrets**, hacer clic en **"New client secret"**
-3. Agregar descripción y expiration (recomendado: 6 meses o 1 año)
-4. Hacer clic en **"Add"**
-5. **IMPORTANTE**: Copiar el valor del secret inmediatamente (solo se muestra una vez)
-6. Guardar de forma segura (nunca en código, usar Key Vault o variables de entorno)
+## 🧩 5. Asignar permisos a aplicaciones cliente
 
-### Para Aplicaciones Frontend (Public Clients)
+### Aplicaciones cliente (Confidential Clients)
+1. Registrar la aplicación cliente  
+2. Ir a **API permissions**  
+3. Clic en **Add a permission**  
+4. Seleccionar **My APIs**  
+5. Elegir **EcommerceApi**  
+6. Añadir scopes necesarios  
+7. Conceder **Admin consent** si aplica  
+8. Crear un **Client Secret** en *Certificates & secrets*
 
-Si tienes una aplicación web o desktop:
+⚠️ Importante:  
+El valor del secret solo se muestra una vez.  
+Debe almacenarse en Key Vault o variables de entorno.
 
-1. En el registro del cliente, ir a **API permissions**
-2. Agregar el permiso a la API de tu proyecto como se describió arriba
-3. Asegurarse de que la aplicación cliente tenga **Redirect URIs** configuradas correctamente
+---
 
-## Notas de Seguridad
+## 🧩 6. Aplicaciones frontend (Public Clients)
+- Registrar la aplicación  
+- Añadir permisos en **API permissions**  
+- Configurar correctamente los **Redirect URIs**
 
-### ✅ Mejores Prácticas
+---
 
-1. **Rotación de Secrets**
-   - Cambiar regularmente los client secrets (cada 6-12 meses)
-   - No usar secrets con expiración "Never"
+## 🔒 7. Mejores prácticas de seguridad
 
-2. **Usar Managed Identity en Azure**
-   - Si ejecutas en Azure (App Service, Container, VM), usar Managed Identity en lugar de secrets
-   - Elimina la necesidad de almacenar credenciales
+### Rotación de secrets
+- Cambiar cada 6–12 meses  
+- Evitar expiración “Never”
 
-3. **Almacenar Credenciales Seguramente**
-   - Nunca guardar Client ID o Secrets en código
-   - Usar Azure Key Vault para producción
-   - Usar variables de entorno para desarrollo
+### Managed Identity
+- Usar en Azure App Service, Containers o VMs  
+- Evita almacenar secrets
 
-4. **Limitar Permisos**
-   - Asignar solo los scopes necesarios a cada cliente
-   - Seguir el principio de menor privilegio
+### Almacenamiento seguro
+- Nunca guardar secrets en código  
+- Usar Key Vault o variables de entorno
 
-5. **Monitoreo y Auditoría**
-   - Revisar los logs de Azure AD regularmente
-   - Monitorear intentos fallidos de autenticación
-   - Habilitar alertas para cambios en permisos
+### Principio de mínimo privilegio
+- Asignar solo los scopes necesarios
 
-6. **Validación de Tokens**
-   - Validar la firma del token (clave pública de Azure AD)
-   - Validar el issuer (debe ser Azure AD de tu tenant)
-   - Validar la audiencia (debe ser tu Application ID URI)
-   - Validar la expiración
+### Validación de tokens
+- Validar firma  
+- Validar issuer  
+- Validar audiencia  
+- Validar expiración  
 
-7. **HTTPS Obligatorio**
-   - La API siempre debe usar HTTPS en producción
-   - Los tokens se transmiten en el header Authorization
+### HTTPS obligatorio
+- Todos los endpoints deben usar HTTPS
 
-8. **Tokens de Acceso vs Refresh**
-   - Los tokens de acceso son de corta duración (1 hora típicamente)
-   - Los refresh tokens permiten obtener nuevos tokens sin re-autenticar
-   - Almacenar refresh tokens de forma segura
+---
 
-### ⚠️ Errores Comunes
+## ⚠️ 8. Errores comunes
 
 | Error | Causa | Solución |
-|-------|-------|----------|
-| `invalid_client` | Client ID incorrecto | Verificar Application ID en Azure Portal |
-| `invalid_scope` | Scope no registrado | Asegurar que el scope existe en "Expose an API" |
-| `unauthorized_client` | Client no tiene permiso | Agregar API permission desde cliente a API |
-| `AADSTS50001` | Tenant no encontrado | Verificar el Tenant ID es correcto |
-| `AADSTS70001` | Application no encontrada | Verificar Application ID URI está configurado |
+|-------|--------|----------|
+| invalid_client | Client ID incorrecto | Verificar Application ID |
+| invalid_scope | Scope no registrado | Revisar *Expose an API* |
+| unauthorized_client | Cliente sin permisos | Añadir API permissions |
+| AADSTS50001 | Tenant no encontrado | Revisar Tenant ID |
+| AADSTS70001 | Application no encontrada | Revisar Application ID URI |
 
-### 🔒 Checklist de Seguridad
+---
 
-- [ ] Application ID URI configurado
-- [ ] Scopes creados según necesidades
-- [ ] Aplicación cliente registrada (si aplica)
-- [ ] Permisos asignados a cliente
-- [ ] Admin consent concedido (si aplica)
-- [ ] Client Secret almacenado en lugar seguro
-- [ ] HTTPS habilitado en todos los endpoints
-- [ ] Tokens JWT validados completamente en la API
-- [ ] Logs de autenticación monitoreados
-- [ ] Plan de rotación de secrets establecido
-
+## 🔐 9. Checklist final
+- Application ID URI configurado  
+- Scopes creados  
+- Aplicación cliente registrada  
+- Permisos asignados  
+- Admin consent concedido  
+- Client secret almacenado correctamente  
+- HTTPS habilitado  
+- Validación completa de tokens JWT  
+- Logs de autenticación monitorizados  
+- Plan de rotación de secrets activo  
