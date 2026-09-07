@@ -1,62 +1,79 @@
-# EcommerceApi (.NET 10)
+# 🧩 EcommerceApi — API Local con Azure AD
 
-## Descripción del proyecto
+## 🧾 Descripción
+API REST desarrollada en .NET 10 para demostrar integración real de autenticación empresarial mediante Microsoft Entra ID / Azure AD.  
+La API gestiona productos y pedidos en memoria y está protegida con JWT Bearer para validar tokens emitidos por Azure AD.
 
-**EcommerceApi** es una API REST desarrollada en **.NET 10** para demostrar un caso real de integración de autenticación empresarial con **Microsoft Entra ID / Azure AD**. La API gestiona productos y pedidos en memoria y está protegida con **JWT Bearer** para validar tokens emitidos por Azure AD.
+---
 
-El objetivo del proyecto dentro del portfolio es evidenciar una implementación práctica de:
-- autenticación con Azure AD,
-- validación de tokens JWT,
-- protección de endpoints con `Authorize`,
-- seguridad aplicada en APIs modernas.
+## 🎯 Objetivos del proyecto
+- Implementar autenticación empresarial con Azure AD.  
+- Validar tokens JWT en una API moderna.  
+- Proteger endpoints mediante `[Authorize]`.  
+- Proporcionar un laboratorio técnico reproducible para prácticas de seguridad.
 
-## Requisitos
+---
 
-- **.NET 10 SDK** instalado
-  - Descarga desde: https://dotnet.microsoft.com/download
-- acceso a un tenant Azure AD / Microsoft Entra ID configurado para pruebas
+## 📦 Requisitos
+- .NET 10 SDK  
+- Acceso a un tenant de Azure AD configurado  
+- Git  
+- Opcional: Azure CLI
 
-## Cómo ejecutar la API
+---
 
-1. Navega a la carpeta del proyecto:
-   ```bash
-   cd 01-seguridad-azure/api-local/EcommerceApi
-   ```
+## 🚀 Ejecución de la API
 
-2. Restaura dependencias:
-   ```bash
-   dotnet restore
-   ```
+### 1. Navegar al proyecto
+```bash
+cd EcommerceApi
+```
 
-3. Ejecuta la API:
-   ```bash
-   dotnet run
-   ```
+### 2. Restaurar dependencias
+```bash
+dotnet restore
+```
 
-4. La API estará disponible en:
-   - **Swagger UI**: `http://localhost:5177/swagger`
-   - **URL base**: `http://localhost:5177`
+### 3. Ejecutar la API
+```bash
+dotnet run
+```
 
-## Endpoints disponibles
+### 4. Acceso
+- Swagger UI:  
+  ```
+  http://localhost/swagger
+  ```
+- URL base:  
+  ```
+  http://localhost
+  ```
+
+---
+
+## 🛒 Endpoints disponibles
 
 ### Productos
-
-- **GET** `/api/products` - Obtener todos los productos
-- **GET** `/api/products/{id}` - Obtener un producto por ID
-- **POST** `/api/products` - Crear un nuevo producto
-  - Body: `{ "name": "string", "price": number, "stock": number }`
+- `GET /api/products` — Obtener todos los productos  
+- `GET /api/products/{id}` — Obtener producto por ID  
+- `POST /api/products` — Crear producto  
+  ```json
+  { "name": "string", "price": number, "stock": number }
+  ```
 
 ### Pedidos
+- `GET /api/orders` — Obtener todos los pedidos  
+- `GET /api/orders/{id}` — Obtener pedido por ID  
+- `POST /api/orders` — Crear pedido  
+  ```json
+  { "productIds": [number, ...] }
+  ```
 
-- **GET** `/api/orders` - Obtener todos los pedidos
-- **GET** `/api/orders/{id}` - Obtener un pedido por ID
-- **POST** `/api/orders` - Crear un nuevo pedido
-  - Body: `{ "productIds": [number, ...] }`
+⚠️ Todos los endpoints están protegidos y requieren un token JWT válido emitido por Azure AD.
 
-> Los endpoints están protegidos con autenticación y requieren un token JWT válido emitido por Azure AD.
+---
 
-## Estructura del proyecto
-
+## 🏛️ Estructura del proyecto
 ```
 EcommerceApi/
 ├── Models/
@@ -78,35 +95,45 @@ EcommerceApi/
 └── .gitignore
 ```
 
-## Estado actual de seguridad
+---
 
-✅ **La API ya está protegida con Azure AD mediante JWT Bearer**.
+## 🔐 Seguridad actual
+La API ya está protegida mediante:
+- `AddAuthentication("Bearer")`  
+- Validación de issuer y audience  
+- `UseAuthentication()` y `UseAuthorization()`  
+- Controladores protegidos con `[Authorize]`
 
-Esto incluye:
-- autenticación con `AddAuthentication("Bearer")`,
-- validación del issuer y del audience,
-- uso de `UseAuthentication()` y `UseAuthorization()`,
-- protección de controladores con `[Authorize]`.
-
-## Documentación asociada
-
-- [azure-ad-register.md](./azure-ad-register.md) - registro de la aplicación en Azure AD
-- [azure-ad-config.md](./azure-ad-config.md) - configuración del tenant y audiencia
-- [AZURE-AD-TESTS.md](./AZURE-AD-TESTS.md) - pruebas con tokens y llamadas a la API
-- [azure-ad-notes.md](./azure-ad-notes.md) - notas técnicas del flujo de autenticación
-- [tests.md](./tests.md) - ejemplos de pruebas con curl
-
-## Siguientes pasos
-
-1. **Autorización granular**: scopes y roles por endpoint
-2. **Persistencia**: sustituir almacenamiento en memoria por base de datos
-3. **Observabilidad**: logging centralizado y trazabilidad
-4. **Seguridad adicional**: validación más estricta y hardening del entorno
-
-## Para desarrolladores y reclutadores
-
-El proyecto demuestra una API moderna con identidad empresarial integrada, un diseño orientado a seguridad y documentación técnica clara, útil tanto para revisión técnica como para presentación profesional en un portfolio público.
+Documentación asociada:
+- `azure-ad-register.md` — registro de la aplicación  
+- `azure-ad-config.md` — configuración del tenant y audiencia  
+- `azure-ad-tests.md` — pruebas con tokens  
+- `AZURE-AD-TESTS.md` — pruebas avanzadas  
+- `tests.md` — pruebas funcionales de la API
 
 ---
 
-**Última actualización**: 2026-09-02
+## 📘 Alcance
+Este laboratorio cubre:
+- Autenticación con Azure AD  
+- Validación de tokens JWT  
+- Protección de endpoints  
+- Pruebas funcionales y de seguridad
+
+No cubre:
+- Persistencia en base de datos  
+- Roles avanzados  
+- Observabilidad  
+- Hardening completo del entorno
+
+---
+
+## ⚖️ Aviso Legal
+Este laboratorio se utiliza con fines educativos y técnicos.  
+No contiene información sensible ni perteneciente a ninguna organización real.  
+Los ejemplos y configuraciones son demostraciones reproducibles en entornos personales.
+
+---
+
+## 📜 Licencia
+MIT
