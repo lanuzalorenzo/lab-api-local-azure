@@ -1,0 +1,41 @@
+# Binaries and object files
+**/bin/
+**/obj/
+
+# Visual Studio files
+.vs/
+*.user
+*.suo
+*.sln.docstates
+
+# Visual Studio cache/options
+.vscode/
+.vscode-test/
+.idea/
+
+# Build outputs
+*.dll
+*.exe
+*.pdb
+*.nupkg
+*.snupkg
+
+# NuGet
+packages/
+
+# Application settings - Local/Development secrets
+appsettings.Development.json
+appsettings.Local.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE & Editor
+*.swp
+*.swo
+*~
+
+# Local environment files
+.env
+.env.local

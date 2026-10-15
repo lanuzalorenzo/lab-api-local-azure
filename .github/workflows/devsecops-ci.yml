@@ -1,0 +1,80 @@
+name: DevSecOps CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  build-and-lint:
+    name: Compilación y Calidad (.NET 10)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          include-prerelease: true
+
+      - name: Restaurar dependencias NuGet
+        run: dotnet restore EcommerceApi/EcommerceApi.csproj
+
+      - name: Compilar solución en Release
+        run: dotnet build EcommerceApi/EcommerceApi.csproj --no-restore -c Release
+
+  secret-scanning:
+    name: Detección de Secretos y Credenciales
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Escaneo de secretos con Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  sca-dependency-scan:
+    name: Análisis de Dependencias (SCA)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Escaneo de vulnerabilidades en paquetes con Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: 'EcommerceApi'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
+  container-security:
+    name: Hardening y Escaneo de Contenedor
+    runs-on: ubuntu-latest
+    needs: [build-and-lint]
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Construir imagen de contenedor
+        run: docker build -t ecommerce-api:${{ github.sha }} -f Dockerfile .
+
+      - name: Escaneo de vulnerabilidades en imagen con Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'ecommerce-api:${{ github.sha }}'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
