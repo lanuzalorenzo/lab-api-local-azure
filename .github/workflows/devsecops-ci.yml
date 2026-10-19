@@ -128,6 +128,7 @@ jobs:
       - name: Escanear dependencias con Trivy
         uses: aquasecurity/trivy-action@v0.36.0
         with:
+          version: 'v0.76.0'
           scan-type: 'fs'
           scan-ref: '.'
           skip-dirs: '**/.git'
@@ -136,6 +137,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
           exit-code: '1'
           ignore-unfixed: true
+          limit-severities-for-sarif: 'true'
 
       - name: Publicar hallazgos SCA
         if: always() && hashFiles('trivy-fs.sarif') != ''
@@ -167,12 +169,14 @@ jobs:
       - name: Escanear imagen con Trivy
         uses: aquasecurity/trivy-action@v0.36.0
         with:
+          version: 'v0.76.0'
           image-ref: 'ecommerce-api:${{ github.sha }}'
           format: 'sarif'
           output: 'trivy-image.sarif'
           severity: 'CRITICAL,HIGH'
           exit-code: '1'
           ignore-unfixed: true
+          limit-severities-for-sarif: 'true'
 
       - name: Publicar hallazgos de la imagen
         if: always() && hashFiles('trivy-image.sarif') != ''
@@ -205,6 +209,7 @@ jobs:
       - name: Escanear infraestructura con Trivy
         uses: aquasecurity/trivy-action@v0.36.0
         with:
+          version: 'v0.76.0'
           scan-type: 'config'
           scan-ref: 'infra'
           format: 'sarif'
@@ -212,6 +217,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
           exit-code: '1'
           trivyignores: '.trivyignore'
+          limit-severities-for-sarif: 'true'
 
       - name: Publicar hallazgos de IaC
         if: always() && hashFiles('trivy-config.sarif') != ''

@@ -7,3 +7,21 @@
 # correctly for this template, so the finding is suppressed with this
 # justification. Revisit when the template is deployed and validated.
 AZU-0013
+
+# AZU-0002 reports that the Web App has no identity. The Bicep template sets
+# identity.type=SystemAssigned and assigns Key Vault Secrets User to that
+# principal. Trivy's ARM parser does not resolve the compiled identity block
+# for this template, so the finding is suppressed as a parser false positive.
+AZU-0002
+
+# AZU-0003 reports that App Service authentication (Easy Auth) is not enabled.
+# This is intentional: the API validates Entra ID JWTs in ASP.NET Core and
+# enforces object-level authorization. Enabling Easy Auth would duplicate token
+# validation and change the OAuth 2.0 flow. Revisit if the architecture moves
+# authentication to the platform.
+AZU-0003
+
+# AZU-0001 reports that client certificates are not enabled. mTLS is not part of
+# the reference architecture; clients authenticate with OAuth 2.0. Accepted
+# risk for the lab, not a production decision.
+AZU-0001
