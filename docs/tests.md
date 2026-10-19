@@ -152,3 +152,5 @@ Las pruebas usan `X-Test-User` para simular identidades y cubren:
 | GET | `/api/orders/{id}` | 200 / 404 | Propio / ajeno o inexistente |
 | POST | `/api/orders` | 201 / 400 | Creado / validación |
 | Cualquiera | Cualquiera | 429 | Rate limit excedido |
+
+<!-- Temporary CI verification: dependency review. Remove before merge. -->
