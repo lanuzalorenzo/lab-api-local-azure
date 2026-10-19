@@ -20,13 +20,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout del repositorio
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Configurar .NET 10 SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
-          include-prerelease: true
 
       - name: Restaurar dependencias
         run: |
@@ -49,7 +48,7 @@ jobs:
 
       - name: Publicar resultados de pruebas
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results
           path: tests/EcommerceApi.Tests/TestResults/test-results.trx
@@ -60,14 +59,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout del repositorio
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Instalar Gitleaks
         run: |
+          mkdir -p "$HOME/.local/bin"
           curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz \
-            | tar -xz -C /usr/local/bin gitleaks
+            | tar -xz -C "$HOME/.local/bin" gitleaks
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Escanear secretos con Gitleaks
         run: gitleaks detect --source . --redact --verbose --exit-code 2
@@ -81,25 +82,24 @@ jobs:
       security-events: write
     steps:
       - name: Checkout del repositorio
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Configurar .NET 10 SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
-          include-prerelease: true
 
       - name: Inicializar CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: csharp
           queries: security-extended
 
       - name: Compilar para CodeQL
-        uses: github/codeql-action/autobuild@v3
+        uses: github/codeql-action/autobuild@v4
 
       - name: Analizar con CodeQL
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: '/language:csharp'
 
@@ -111,13 +111,12 @@ jobs:
       security-events: write
     steps:
       - name: Checkout del repositorio
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Configurar .NET 10 SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
-          include-prerelease: true
 
       - name: Restaurar y compilar para generar los manifiestos de dependencias
         run: |
@@ -140,7 +139,7 @@ jobs:
 
       - name: Publicar hallazgos SCA
         if: always() && hashFiles('trivy-fs.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: 'trivy-fs.sarif'
           category: 'trivy-fs'
@@ -154,7 +153,7 @@ jobs:
       security-events: write
     steps:
       - name: Checkout del repositorio
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Construir imagen de contenedor
         run: docker build -t ecommerce-api:${GITHUB_SHA} -f Dockerfile .
@@ -177,7 +176,7 @@ jobs:
 
       - name: Publicar hallazgos de la imagen
         if: always() && hashFiles('trivy-image.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: 'trivy-image.sarif'
           category: 'trivy-image'
@@ -190,13 +189,15 @@ jobs:
       security-events: write
     steps:
       - name: Checkout del repositorio
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Instalar Bicep
         run: |
-          curl -sSL -o /usr/local/bin/bicep https://github.com/Azure/bicep/releases/download/v0.48.1/bicep-linux-x64
-          chmod +x /usr/local/bin/bicep
-          bicep --version
+          mkdir -p "$HOME/.local/bin"
+          curl -sSL -o "$HOME/.local/bin/bicep" https://github.com/Azure/bicep/releases/download/v0.48.1/bicep-linux-x64
+          chmod +x "$HOME/.local/bin/bicep"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/bicep" --version
 
       - name: Compilar plantilla Bicep
         run: bicep build infra/main.bicep --outfile infra/main.json
@@ -214,7 +215,7 @@ jobs:
 
       - name: Publicar hallazgos de IaC
         if: always() && hashFiles('trivy-config.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: 'trivy-config.sarif'
           category: 'trivy-config'
@@ -225,9 +226,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout del repositorio
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Revisar cambios de dependencias
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@v5
         with:
           fail-on-severity: high
