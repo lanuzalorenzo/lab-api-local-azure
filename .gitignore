@@ -39,3 +39,7 @@ Thumbs.db
 # Local environment files
 .env
 .env.local
+
+# Generated IaC output and security reports
+infra/main.json
+trivy-*.sarif

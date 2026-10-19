@@ -1,0 +1,27 @@
+# Gitleaks configuration for the lab.
+#
+# The repository documentation contains command examples that use shell
+# variables ($TOKEN) and deliberately truncated JWT placeholders. Those are not
+# credentials. The allowlist is narrowly scoped to documentation paths and to
+# the exact placeholder values; it does not hide arbitrary secrets.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Placeholders used in documentation examples"
+paths = [
+  '''docs/.*\.md''',
+  '''EcommerceApi/.*\.md''',
+  '''EcommerceApi/.*\.http'''
+]
+regexes = [
+  '''(?i)^\$[A-Z_]+$''',
+  '''(?i)^Bearer \$[A-Z_]+$''',
+  '''(?i)^invalid-token$''',
+  '''(?i)^expired-token$''',
+  '''(?i)^token-with-order-read-only$''',
+  '''(?i)^your-client-secret.*$''',
+  '''(?i)^tu-client-secret.*$''',
+  '''^eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9\.\.\.$''',
+  '''(?i)^PEGA_AQUI_TU_TOKEN$'''
+]

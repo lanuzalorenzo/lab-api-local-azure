@@ -1,0 +1,9 @@
+# Trivy false positive on compiled ARM templates.
+#
+# AZU-0013 reports that the Key Vault network ACL does not block access by
+# default. The Bicep template sets defaultAction=Deny, bypass=None and
+# publicNetworkAccess=Disabled, and exposes the vault only through a Private
+# Endpoint. Trivy's ARM parser does not evaluate the nested networkAcls block
+# correctly for this template, so the finding is suppressed with this
+# justification. Revisit when the template is deployed and validated.
+AZU-0013
