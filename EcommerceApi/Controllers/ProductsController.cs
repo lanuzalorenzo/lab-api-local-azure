@@ -1,6 +1,7 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using EcommerceApi.Models;
+using EcommerceApi.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace EcommerceApi.Controllers;
 
@@ -9,33 +10,33 @@ namespace EcommerceApi.Controllers;
 [Authorize]
 public class ProductsController : ControllerBase
 {
-    // In-memory storage for products
-    private static readonly List<Product> Products = new()
-    {
-        new Product { Id = 1, Name = "Laptop", Price = 999.99m, Stock = 10 },
-        new Product { Id = 2, Name = "Mouse", Price = 29.99m, Stock = 50 },
-        new Product { Id = 3, Name = "Keyboard", Price = 79.99m, Stock = 30 },
-        new Product { Id = 4, Name = "Monitor", Price = 299.99m, Stock = 15 },
-        new Product { Id = 5, Name = "USB Cable", Price = 9.99m, Stock = 100 }
-    };
+    private readonly InMemoryStore _store;
 
-    /// <summary>
-    /// Get all products
-    /// </summary>
-    [HttpGet]
-    public ActionResult<IEnumerable<Product>> GetAllProducts()
+    public ProductsController(InMemoryStore store)
     {
-        return Ok(Products);
+        _store = store;
     }
 
     /// <summary>
-    /// Get a product by ID
+    /// Get all products.
     /// </summary>
-    [HttpGet("{id}")]
+    [HttpGet]
+    [ProducesResponseType(typeof(IEnumerable<Product>), StatusCodes.Status200OK)]
+    public ActionResult<IEnumerable<Product>> GetAllProducts()
+    {
+        return Ok(_store.GetProducts());
+    }
+
+    /// <summary>
+    /// Get a product by ID.
+    /// </summary>
+    [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(Product), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult<Product> GetProductById(int id)
     {
-        var product = Products.FirstOrDefault(p => p.Id == id);
-        if (product == null)
+        var product = _store.GetProduct(id);
+        if (product is null)
         {
             return NotFound(new { message = $"Product with ID {id} not found" });
         }
@@ -44,28 +45,22 @@ public class ProductsController : ControllerBase
     }
 
     /// <summary>
-    /// Create a new product
+    /// Create a new product.
     /// </summary>
     [HttpPost]
-    public ActionResult<Product> CreateProduct([FromBody] Product product)
+    [RequestSizeLimit(16 * 1024)]
+    [ProducesResponseType(typeof(Product), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult<Product> CreateProduct([FromBody] CreateProductRequest request)
     {
-        if (string.IsNullOrWhiteSpace(product.Name))
+        var product = new Product
         {
-            return BadRequest(new { message = "Product name is required" });
-        }
+            Name = request.Name.Trim(),
+            Price = request.Price,
+            Stock = request.Stock
+        };
 
-        if (product.Price < 0)
-        {
-            return BadRequest(new { message = "Price must be positive" });
-        }
-
-        if (product.Stock < 0)
-        {
-            return BadRequest(new { message = "Stock must be positive" });
-        }
-
-        product.Id = Products.Any() ? Products.Max(p => p.Id) + 1 : 1;
-        Products.Add(product);
+        _store.AddProduct(product);
 
         return CreatedAtAction(nameof(GetProductById), new { id = product.Id }, product);
     }
