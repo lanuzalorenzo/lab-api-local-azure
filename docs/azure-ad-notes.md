@@ -1,210 +1,55 @@
-# 🔐 Azure AD — Notas de Preparación
+# Notas de preparación — Microsoft Entra ID
 
-## 🧾 Descripción
-Documento técnico que resume los conceptos fundamentales de Azure Active Directory (Microsoft Entra ID) y cómo se integran en la API `EcommerceApi`.  
-Incluye definiciones clave, flujo de autenticación, cambios necesarios en la API y fases de implementación.
+Documento de apoyo para entender el flujo de autenticación de la API. La
+configuración vigente está en [`azure-ad-config.md`](azure-ad-config.md).
 
----
+## Conceptos clave
 
-# 🧩 1. Conceptos Fundamentales
+- **Tenant ID**: identificador del directorio de Entra ID.
+- **Client ID**: identificador público del App Registration de la API.
+- **Audience**: Application ID URI, por ejemplo `api://<client-id>`.
+- **Authority**: `https://login.microsoftonline.com/<tenant-id>/v2.0`.
+- **Scope**: permiso granular que expone la API. La API actual no aplica
+  autorización por scopes; solo valida el token.
+- **JWT**: token firmado con claims `iss`, `aud`, `exp`, `oid`/`sub`, `scp` y
+  `roles`.
 
-## Azure Active Directory (Microsoft Entra ID)
-Servicio de identidad empresarial que proporciona:
-- Autenticación centralizada  
-- Autorización basada en roles  
-- Federated Identity  
-- Multi-factor Authentication (MFA)
+## Flujo
 
----
+1. El cliente se autentica en Entra ID.
+2. Entra ID emite un JWT.
+3. El cliente envía `Authorization: Bearer <token>`.
+4. La API valida firma, issuer, audience y expiración.
+5. La API resuelve la identidad (`NameIdentifier`/`oid`/`sub`) y autoriza el
+   recurso.
+6. Si el token no es válido, responde `401`.
 
-## App Registration
-Objeto que representa la API dentro de Azure AD.
+## Implementación actual
 
-Propósito:
-- Registrar la aplicación  
-- Generar credenciales (Client ID, Client Secret)  
-- Exponer permisos (scopes)
+- `JwtBearer` con `Authority` y `Audience` configurables.
+- `[Authorize]` en los controladores.
+- Pedidos filtrados por `UserId`.
+- Swagger solo en `Development`.
+- CORS deny-by-default.
+- Rate limiting y límite de cuerpo.
 
-Pasos:
-- Azure Portal → App registrations → New registration  
-- Nombre: `EcommerceApi`  
-- Redirect URI: no necesario para APIs
+No se usa `Microsoft.Identity.Web`; la integración se hace con
+`Microsoft.AspNetCore.Authentication.JwtBearer`.
 
----
+## Trabajo pendiente
 
-## Client ID
-Identificador público de la aplicación.
+- Políticas por scopes (`scp`) y roles (`roles`).
+- Auditoría persistente de accesos y operaciones.
+- Rotación de secretos y uso de identidades gestionadas.
+- Validación de un despliegue real con Private Endpoints.
 
-Características:
-- Formato GUID  
-- No es secreto  
-- Se envía en solicitudes de autenticación
+## Checklist
 
-Ejemplo:
-```
-550e8400-e29b-41d4-a716-446655440000
-```
-
----
-
-## Scopes
-Permisos granulares que la API expone.
-
-Ejemplos:
-```
-api://CLIENT-ID/.default
-api://CLIENT-ID/access_as_user
-```
-
-Propósito:
-- Controlar acceso  
-- Implementar mínimo privilegio  
-- Definir permisos específicos
-
----
-
-## JWT (JSON Web Token)
-Token firmado que contiene:
-- Identidad del usuario  
-- Roles y permisos  
-- Fecha de expiración  
-- Audiencia (aud)  
-- Emisor (iss)
-
-Estructura:
-```
-header.payload.signature
-```
-
----
-
-# 🔐 2. Flujo de Autenticación (OAuth 2.0)
-
-1. Cliente solicita acceso  
-2. Azure AD valida credenciales  
-3. Azure AD emite un JWT  
-4. Cliente envía el JWT en `Authorization: Bearer`  
-5. API valida firma, expiración, audiencia y roles  
-6. Si es válido → procesa la solicitud  
-7. Si no → `401 Unauthorized`
-
----
-
-# 🧩 3. Cambios en Program.cs
-
-## Configuración actual (sin Azure AD)
-```csharp
-app.UseHttpsRedirection();
-app.UseAuthorization();
-app.MapControllers();
-app.Run();
-```
-
----
-
-## Configuración futura (con Azure AD)
-```csharp
-builder.Services.AddMicrosoftIdentityWebApiAuthentication(
-    builder.Configuration.GetSection("AzureAd")
-);
-
-app.UseHttpsRedirection();
-app.UseAuthentication();   // Validación de tokens
-app.UseAuthorization();    // Autorización por roles
-app.MapControllers();
-app.Run();
-```
-
-Cambios principales:
-- Añadir `AddMicrosoftIdentityWebApiAuthentication()`  
-- Añadir `UseAuthentication()`  
-- Leer configuración desde `appsettings.json`  
-
----
-
-# 🧩 4. Middleware de Validación de Tokens
-
-El middleware de Microsoft.Identity.Web:
-- Extrae el JWT del header  
-- Valida firma digital  
-- Verifica expiración  
-- Comprueba audiencia  
-- Extrae claims (roles, groups, oid)
-
----
-
-# 🧩 5. Decoradores en Controladores
-
-```csharp
-[Authorize]
-public class ProductsController : ControllerBase
-{
-    [HttpGet]
-    [Authorize(Roles = "Admin,User")]
-    public IActionResult GetAllProducts() { ... }
-
-    [HttpPost]
-    [Authorize(Roles = "Admin")]
-    public IActionResult CreateProduct(Product product) { ... }
-}
-```
-
----
-
-# 🧩 6. Configuración en appsettings.json
-
-```json
-{
-  "AzureAd": {
-    "Instance": "https://login.microsoftonline.com",
-    "TenantId": "YOUR_TENANT_ID",
-    "ClientId": "YOUR_CLIENT_ID",
-    "Audience": "api://YOUR_CLIENT_ID"
-  }
-}
-```
-
----
-
-# 🧩 7. Fases de Implementación
-
-### Fase 1 — Preparación
-- Estructura base  
-- Modelos y controladores  
-- Documentación
-
-### Fase 2 — Configuración Azure AD
-- Crear App Registration  
-- Obtener Client ID y Tenant ID  
-- Configurar `appsettings.json`  
-- Instalar `Microsoft.Identity.Web`
-
-### Fase 3 — Autenticación
-- Modificar `Program.cs`  
-- Añadir middleware  
-- Decorar controladores
-
-### Fase 4 — Testing
-- Obtener token  
-- Probar endpoints protegidos  
-- Validar roles y permisos
-
-### Fase 5 — Seguridad Avanzada
-- Rate limiting  
-- Logging de seguridad  
-- CORS  
-- Refresh tokens  
-- Key Vault
-
----
-
-# 🔐 8. Checklist de Seguridad
-
-- HTTPS habilitado  
-- Tokens validados en cada solicitud  
-- MFA en Azure AD  
-- Roles configurados  
-- Intentos fallidos registrados  
-- Rate limiting  
-- Secrets en Key Vault  
-- Rotación periódica de tokens  
+- [ ] App Registration creada.
+- [ ] Application ID URI configurado.
+- [ ] Scopes definidos.
+- [ ] Cliente de laboratorio autorizado.
+- [ ] `AzureAd` configurado fuera del repositorio.
+- [ ] Token válido aceptado y token inválido rechazado.
+- [ ] Pedido ajeno devuelve `404`.
+- [ ] Logs sin tokens ni secretos.

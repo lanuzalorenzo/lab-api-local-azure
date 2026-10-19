@@ -1,187 +1,154 @@
-# 🧪 Pruebas de la API Local — EcommerceApi
+# Pruebas funcionales de la API
 
-## 🧾 Descripción
-Guía técnica con ejemplos de pruebas para validar los endpoints de la API local del laboratorio utilizando curl, PowerShell y Postman.  
-Incluye respuestas esperadas y códigos HTTP estándar.
+Todas las rutas de negocio requieren un token JWT válido. El endpoint `/health`
+es anónimo. La URL base de ejemplo es `http://localhost:5080`.
 
----
+## Prerrequisitos
 
-# 📦 Prerrequisitos
-- API ejecutándose:
-  ```bash
-  dotnet run
-  ```
-- curl instalado  
-- URL base:
-  ```
-  http://localhost
-  ```
-
----
-
-# 🛒 Productos
-
-## 1. Obtener todos los productos
 ```bash
-curl http://localhost/api/products
+dotnet run --project EcommerceApi --urls http://localhost:5080
+export API_URL="http://localhost:5080"
+export TOKEN="<token-de-laboratorio>"
 ```
 
-Respuesta esperada:
-```json
-[
-  { "id": 1, "name": "Laptop", "price": 999.99, "stock": 5 },
-  { "id": 2, "name": "Mouse", "price": 19.99, "stock": 50 }
-]
-```
+## Productos
 
----
+### Listar productos
 
-## 2. Obtener un producto específico
 ```bash
-curl http://localhost/api/products/1
+curl -i -H "Authorization: Bearer ${TOKEN}" "${API_URL}/api/products"
 ```
 
-Respuesta esperada:
-```json
-{ "id": 1, "name": "Laptop", "price": 999.99, "stock": 5 }
-```
+Esperado: `200 OK` con un array de productos.
 
----
+### Obtener un producto
 
-## 3. Crear un nuevo producto
 ```bash
-curl -X POST http://localhost/api/products \
+curl -i -H "Authorization: Bearer ${TOKEN}" "${API_URL}/api/products/1"
+```
+
+Esperado: `200 OK`.
+
+### Producto inexistente
+
+```bash
+curl -i -H "Authorization: Bearer ${TOKEN}" "${API_URL}/api/products/999999"
+```
+
+Esperado: `404 Not Found`.
+
+### Crear un producto
+
+```bash
+curl -i -X POST "${API_URL}/api/products" \
+  -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
-  -d '{"name":"Keyboard","price":29.99,"stock":20}'
+  -d '{"name":"Keyboard","price":49.99,"stock":20}'
 ```
 
-Respuesta esperada:
-```json
-{ "id": 3, "name": "Keyboard", "price": 29.99, "stock": 20 }
-```
+Esperado: `201 Created`.
 
----
+### Validación de entrada
 
-# 📦 Pedidos
-
-## 1. Obtener todos los pedidos
 ```bash
-curl http://localhost/api/orders
+curl -i -X POST "${API_URL}/api/products" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"","price":-1,"stock":-1}'
 ```
 
-Respuesta esperada:
-```json
-[
-  {
-    "id": 1,
-    "productIds": [1, 2],
-    "totalAmount": 1019.98,
-    "orderDate": "2024-01-15T10:30:00"
-  }
-]
-```
+Esperado: `400 Bad Request`.
 
----
+### Intento de mass assignment
 
-## 2. Obtener un pedido específico
 ```bash
-curl http://localhost/api/orders/1
+curl -i -X POST "${API_URL}/api/products" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"id":999999,"name":"Intento","price":10,"stock":1}'
 ```
 
-Respuesta esperada:
-```json
-{
-  "id": 1,
-  "productIds": [1, 2],
-  "totalAmount": 1019.98,
-  "orderDate": "2024-01-15T10:30:00"
-}
-```
+Esperado: `201 Created` con un `id` asignado por el servidor, distinto de
+`999999`. El DTO de entrada no acepta `id`.
 
----
+## Pedidos
 
-## 3. Crear un nuevo pedido
+### Crear un pedido
+
 ```bash
-curl -X POST http://localhost/api/orders \
+curl -i -X POST "${API_URL}/api/orders" \
+  -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{"productIds":[1,2]}'
 ```
 
-Respuesta esperada:
-```json
-{
-  "id": 2,
-  "productIds": [1, 2],
-  "totalAmount": 1019.98,
-  "orderDate": "2024-01-15T14:45:00"
-}
-```
+Esperado: `201 Created` con `id`, `productIds`, `total` y `createdAt`.
 
----
-
-# 💻 Pruebas en PowerShell (Windows)
-
-## Obtener productos
-```powershell
-Invoke-WebRequest -Uri "http://localhost/api/products" -Method GET
-```
-
-## Crear producto
-```powershell
-$body = @{ name = "Keyboard"; price = 29.99; stock = 20 } | ConvertTo-Json
-
-Invoke-WebRequest -Uri "http://localhost/api/products" `
-  -Method POST `
-  -ContentType "application/json" `
-  -Body $body
-```
-
----
-
-# 🧪 Pruebas en Postman
-
-### Endpoints
-```
-GET {{base_url}}/api/products
-GET {{base_url}}/api/products/1
-POST {{base_url}}/api/products
-
-GET {{base_url}}/api/orders
-GET {{base_url}}/api/orders/1
-POST {{base_url}}/api/orders
-```
-
-### URL base
-```
-http://localhost
-```
-
----
-
-# 📊 Códigos HTTP esperados
-
-| Método | Endpoint               | Código | Descripción        |
-|--------|-------------------------|--------|---------------------|
-| GET    | /api/products           | 200    | Éxito               |
-| GET    | /api/products/{id}      | 200    | Éxito               |
-| GET    | /api/products/999       | 404    | No encontrado       |
-| POST   | /api/products           | 201    | Creado              |
-| POST   | /api/products           | 400    | Solicitud inválida  |
-| GET    | /api/orders             | 200    | Éxito               |
-| GET    | /api/orders/{id}        | 200    | Éxito               |
-| POST   | /api/orders             | 201    | Creado              |
-
----
-
-# 🔐 Próximas pruebas (post Azure AD)
-Una vez integrada la autenticación:
+### Listar los pedidos propios
 
 ```bash
-curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  http://localhost/api/products
+curl -i -H "Authorization: Bearer ${TOKEN}" "${API_URL}/api/orders"
 ```
 
----
+Esperado: `200 OK` con solo los pedidos del usuario autenticado.
 
-# ✔️ Conclusión
-Este documento proporciona pruebas completas para validar la API local antes y después de integrar Azure AD, utilizando curl, PowerShell y Postman.
+### Pedido vacío o producto inexistente
+
+```bash
+curl -i -X POST "${API_URL}/api/orders" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"productIds":[]}'
+
+curl -i -X POST "${API_URL}/api/orders" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"productIds":[999999]}'
+```
+
+Esperado: `400 Bad Request` en ambos casos.
+
+### BOLA: otro usuario no puede leer el pedido
+
+Con dos tokens de usuarios distintos:
+
+```bash
+# Usuario A crea un pedido
+ORDER_ID=$(curl -s -X POST "${API_URL}/api/orders" \
+  -H "Authorization: Bearer ${TOKEN_A}" \
+  -H "Content-Type: application/json" \
+  -d '{"productIds":[1]}' | jq -r '.id')
+
+# Usuario A: 200
+curl -i -H "Authorization: Bearer ${TOKEN_A}" "${API_URL}/api/orders/${ORDER_ID}"
+
+# Usuario B: 404
+curl -i -H "Authorization: Bearer ${TOKEN_B}" "${API_URL}/api/orders/${ORDER_ID}"
+```
+
+## Pruebas automatizadas
+
+```bash
+dotnet test tests/EcommerceApi.Tests/EcommerceApi.Tests.csproj
+```
+
+Las pruebas usan `X-Test-User` para simular identidades y cubren:
+
+- `401` sin token.
+- `400` por validación.
+- *Mass assignment* ignorado.
+- Aislamiento de pedidos entre usuarios (BOLA).
+- `health` anónimo.
+
+## Códigos HTTP esperados
+
+| Método | Endpoint | Código | Descripción |
+|---|---|---|---|
+| GET | `/health` | 200 | Servicio sano, sin token |
+| GET | `/api/products` | 200 / 401 | Lista / sin token |
+| GET | `/api/products/{id}` | 200 / 404 | Producto / inexistente |
+| POST | `/api/products` | 201 / 400 | Creado / validación |
+| GET | `/api/orders` | 200 / 401 | Pedidos propios / sin token |
+| GET | `/api/orders/{id}` | 200 / 404 | Propio / ajeno o inexistente |
+| POST | `/api/orders` | 201 / 400 | Creado / validación |
+| Cualquiera | Cualquiera | 429 | Rate limit excedido |

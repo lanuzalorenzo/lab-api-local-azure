@@ -1,6 +1,46 @@
-@EcommerceApi_HostAddress = http://localhost:5177
+@EcommerceApi_HostAddress = http://localhost:5080
+@Token = PEGA_AQUI_TU_TOKEN
 
-GET {{EcommerceApi_HostAddress}}/weatherforecast/
+### Health check (anónimo)
+GET {{EcommerceApi_HostAddress}}/health
 Accept: application/json
 
-###
+### Listar productos
+GET {{EcommerceApi_HostAddress}}/api/products
+Accept: application/json
+Authorization: Bearer {{Token}}
+
+### Obtener producto
+GET {{EcommerceApi_HostAddress}}/api/products/1
+Accept: application/json
+Authorization: Bearer {{Token}}
+
+### Crear producto
+POST {{EcommerceApi_HostAddress}}/api/products
+Content-Type: application/json
+Authorization: Bearer {{Token}}
+
+{
+  "name": "Keyboard",
+  "price": 49.99,
+  "stock": 20
+}
+
+### Listar pedidos propios
+GET {{EcommerceApi_HostAddress}}/api/orders
+Accept: application/json
+Authorization: Bearer {{Token}}
+
+### Crear pedido
+POST {{EcommerceApi_HostAddress}}/api/orders
+Content-Type: application/json
+Authorization: Bearer {{Token}}
+
+{
+  "productIds": [1, 2]
+}
+
+### Pedido inexistente
+GET {{EcommerceApi_HostAddress}}/api/orders/999999
+Accept: application/json
+Authorization: Bearer {{Token}}

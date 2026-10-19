@@ -1,68 +1,105 @@
-# 🛡️ Modelado de Amenazas y Seguridad en Aplicaciones (AppSec)
+# Modelado de amenazas y AppSec — EcommerceApi
 
-Este documento detalla el análisis de seguridad y el modelado de amenazas realizado sobre **EcommerceApi**, aplicando el marco **STRIDE** y contrastando la arquitectura contra el **OWASP API Security Top 10 (2023)**.
+Análisis STRIDE y contraste con OWASP API Security Top 10 (2023) sobre el código
+actual. Cada control incluye su estado real: **implementado**, **parcial** o
+**pendiente**. No se presentan controles documentados como si estuvieran
+desplegados en producción.
 
----
+## 1. Alcance
 
-## 1. Alcance y Arquitectura de la API
+`EcommerceApi` expone:
 
-`EcommerceApi` expone endpoints REST para la consulta de catálogo (`ProductsController`) y la gestión de compras (`OrdersController`), integrando autenticación mediante tokens JWT emitidos por **Microsoft Entra ID**.
+- `GET/POST /api/products`
+- `GET/POST /api/orders`
+- `GET /health` (anónimo)
 
-### Diagrama de Flujo de Datos (DFD)
+Autenticación con JWT de Microsoft Entra ID. Almacenamiento en memoria
+(`InMemoryStore`), sin base de datos ni alta disponibilidad.
+
+### Diagrama de flujo
 
 ```mermaid
 graph TD
-    Client[Cliente / Aplicación SPA / Swagger] -->|HTTPS + Authorization Bearer JWT| API[EcommerceApi - ASP.NET Core]
-    API -->|1. Valida Firma y Claims JWKS| EntraID[Microsoft Entra ID v2.0]
-    API -->|2. Deserializa y Valida DTOs| Controllers[Controladores REST]
-    Controllers -->|3. Operaciones de Negocio| MemoryStore[(Almacén en Memoria / DB)]
+    Client[Cliente / Swagger] -->|HTTPS + Bearer JWT| API[EcommerceApi ASP.NET Core]
+    API -->|Valida issuer, audience, firma y expiración| EntraID[Microsoft Entra ID]
+    API -->|DTOs + validación| Controllers[Products / Orders]
+    Controllers -->|UserId del token| Store[(InMemoryStore)]
 ```
 
----
+## 2. STRIDE
 
-## 2. Análisis de Amenazas STRIDE
-
-| Categoría STRIDE | Amenaza identificada | Vector de ataque | Control de mitigación implementado |
+| Categoría | Amenaza | Control actual | Estado |
 |---|---|---|---|
-| **Spoofing (Suplantación)** | Cliente ilegítimo haciéndose pasar por un usuario autenticado. | Envío de tokens JWT falsificados o reutilización de tokens expirados. | Middleware `JwtBearer` con validación estricta de firma criptográfica mediante JWKS de Microsoft, `ValidateIssuer`, `ValidateAudience` y `ValidateLifetime`. |
-| **Tampering (Manipulación)** | Modificación de datos durante el tránsito o en payloads JSON. | Interceptación de tráfico HTTP o inyección de propiedades no autorizadas. | Exigencia de HTTPS (`UseHttpsRedirection`), validación estricta de esquemas y uso de DTOs específicos (`CreateOrderRequest`) para evitar sobreasignación (Mass Assignment). |
-| **Repudiation (Repudio)** | Un usuario niega haber creado un pedido o modificado stock. | Falta de trazabilidad en operaciones de escritura. | Registro de eventos estructurados con correlación de identificadores de usuario (`oid`/`sub` del JWT) en logs de auditoría. |
-| **Information Disclosure (Fuga de información)** | Exposición de identificadores de tenant, secretos o stack traces en respuestas HTTP. | Errores no controlados de la API o cabeceras informativas del servidor. | Entorno de producción sin Swagger activo (`app.Environment.IsDevelopment()`), manejo centralizado de excepciones y deshabilitación de cabeceras redundantes (`X-Powered-By`). |
-| **Denial of Service (Denegación de servicio)** | Saturación de memoria por peticiones masivas sin límite. | Petición repetida de pedidos con arrays masivos de productos o consultas exhaustivas. | Validación de cardinalidad mínima y máxima en `ProductIds`, y límite de asignación de recursos en contenedor Docker. |
-| **Elevation of Privilege (Elevación de privilegios)** | Usuario estándar ejecutando acciones administrativas. | Llamada a endpoints de modificación sin control de roles. | Implementación de atributos `[Authorize]` y segregación futura por roles/scopes (`[Authorize(Roles = "Admin")]`). |
+| **Spoofing** | Token falsificado o expirado | `JwtBearer` valida firma (JWKS), `iss`, `aud`, `exp` y `nbf` | Implementado |
+| **Tampering** | Modificación de payloads o mass assignment | DTOs de entrada, validación con DataAnnotations, HTTPS | Implementado |
+| **Repudiation** | Usuario niega una operación | No hay auditoría persistente; solo logs de aplicación | Parcial |
+| **Information Disclosure** | Fuga de IDs, stack traces o tokens | `UserId` no se serializa, `ProblemDetails`, Swagger solo en Development | Parcial |
+| **Denial of Service** | Peticiones masivas o cuerpos enormes | Rate limit 120/min por IP, límite de 16 KB, límites del contenedor | Parcial |
+| **Elevation of Privilege** | Usuario accede a pedidos ajenos | Filtrado por identidad y `404` para recursos ajenos | Implementado (BOLA) |
+| **Elevation of Privilege** | Acceso a funciones administrativas | No hay roles/scopes aplicados; no existen endpoints admin | Pendiente / fuera de alcance |
 
----
+## 3. OWASP API Security Top 10 (2023)
 
-## 3. Mapeo contra OWASP API Security Top 10 (2023)
+| Riesgo | Estado | Evidencia / limitación |
+|---|---|---|
+| **API1 BOLA** | Mitigado | `OrdersController` filtra por `UserId`; prueba `UserCannotReadAnotherUsersOrder` |
+| **API2 Broken Authentication** | Mitigado | Entra ID + validación JWT; no se gestionan contraseñas |
+| **API3 Broken Object Property Level Authorization** | Mitigado | `CreateProductRequest` y `CreateOrderRequest`; `Id`, `Total` y `UserId` no se aceptan del cliente |
+| **API4 Unrestricted Resource Consumption** | Parcial | Rate limit y límite de cuerpo; sin cuotas por usuario ni WAF |
+| **API5 Broken Function Level Authorization** | Pendiente | No hay políticas por scopes/roles; todos los endpoints requieren solo autenticación |
+| **API6 Unrestricted Access to Sensitive Business Flows** | Pendiente | No hay antifraude, captcha ni límites de negocio |
+| **API7 Server Side Request Forgery** | No aplica | La API no realiza peticiones salientes a URLs del usuario |
+| **API8 Security Misconfiguration** | Parcial | CORS deny-by-default, headers, HTTPS/HSTS, contenedor no-root; faltan WAF y despliegue verificado |
+| **API9 Improper Inventory Management** | Parcial | Swagger solo en Development; no hay inventario formal de versiones |
+| **API10 Unsafe Consumption of APIs** | No aplica | No consume APIs de terceros |
 
-### API1:2023 — Broken Object Level Authorization (BOLA / IDOR)
-- **Riesgo:** Un usuario autenticado consulta el pedido de otro usuario cambiando el `{id}` en `GET /api/orders/{id}`.
-- **Estado en la API:** El controlador `OrdersController` verifica la existencia del pedido.
-- **Medida recomendada en código:** Correlacionar el ID del pedido con el claim de identidad (`User.FindFirst(ClaimTypes.NameIdentifier)`) antes de retornar el recurso.
+## 4. Controles implementados en código
 
-### API2:2023 — Broken Authentication
-- **Mitigación:** Se delega la autenticación a Microsoft Entra ID mediante el estándar **OAuth 2.0 con PKCE**. La API no gestiona credenciales ni contraseñas de usuarios finales; únicamente valida tokens firmados asimétricamente (RSA/ECDSA).
+- Autenticación JWT con validación de firma, issuer, audience y lifetime.
+- Autorización por identidad y aislamiento de pedidos (BOLA).
+- DTOs para evitar mass assignment.
+- Validación de entrada con DataAnnotations.
+- CORS con allowlist y denegación por defecto.
+- Rate limiting global por IP.
+- Límite de tamaño de petición en escrituras.
+- `ProblemDetails` y cabeceras `X-Content-Type-Options`, `X-Frame-Options`,
+  `Referrer-Policy` y `Permissions-Policy`.
+- Swagger confinado a `Development`.
+- Contenedor multi-stage con usuario no-root.
+- Pruebas de integración de autenticación, validación y BOLA.
 
-### API3:2023 — Broken Object Property Level Authorization (Mass Assignment)
-- **Mitigación:** En lugar de enlazar directamente el modelo de dominio `Order` en `POST /api/orders`, se utiliza el DTO `CreateOrderRequest` que solo expone `ProductIds`, impidiendo que un atacante manipule campos como `TotalAmount`, `CreatedAt` o `Status`.
+## 5. Riesgos residuales
 
-### API4:2023 — Unrestricted Resource Consumption
-- **Mitigación:** A nivel de aplicación, validación de listas vacías o saturadas. A nivel de infraestructura (Docker/Azure), límites de CPU y memoria (`resources.limits`) para contener cualquier impacto de DoS.
+1. **Sin persistencia**: los datos se pierden al reiniciar; no hay integridad
+   transaccional ni backups.
+2. **Sin autorización granular**: no se validan scopes/roles por endpoint.
+3. **Sin auditoría inmutable**: los logs no están centralizados ni firmados.
+4. **Sin WAF/API Management**: el rate limit es local y por IP.
+5. **Sin despliegue real**: la plantilla Bicep y los Private Endpoints no se han
+   probado contra Azure.
+6. **Sin pruebas de carga**: el límite de 120/min no se ha calibrado.
+7. **Client credentials**: el claim `sub` identifica a la aplicación, no a una
+   persona; las pruebas de usuario final requieren flujos delegados.
 
-### API5:2023 — Broken Function Level Authorization (BFLA)
-- **Mitigación:** Políticas de autorización basadas en scopes (`scp`) y roles de aplicación (`roles`) asignados en el registro de Entra ID.
+## 6. Verificación en CI
 
-### API8:2023 — Security Misconfiguration
-- **Mitigación:**
-  - Contenedor Docker configurado para ejecutar con usuario no privilegiado (`USER $APP_UID`).
-  - CORS configurado explícitamente.
-  - Swagger UI confinado exclusivamente al entorno `Development`.
+El pipeline `.github/workflows/devsecops-ci.yml` ejecuta:
 
----
+1. **Secret scanning** con Gitleaks sobre historial completo.
+2. **SAST** con CodeQL (`security-extended`).
+3. **SCA** con Trivy, bloqueante para CRITICAL/HIGH.
+4. **Container scan** con Trivy y verificación de usuario no-root.
+5. **IaC scan** con Trivy config sobre `infra/`.
+6. **Dependency Review** en pull requests.
 
-## 4. Prácticas DevSecOps de Verificación Automática
+Los resultados se publican como SARIF en GitHub Security.
 
-La postura de seguridad de esta API se valida de forma continua en cada commit mediante el pipeline [`.github/workflows/devsecops-ci.yml`](../.github/workflows/devsecops-ci.yml):
-1. **Secret Scanning:** Bloqueo de commits con credenciales o claves expuestas mediante **Gitleaks**.
-2. **SCA (Software Composition Analysis):** Detección de vulnerabilidades en paquetes NuGet con **Trivy**.
-3. **Container Image Hardening:** Escaneo de la imagen Docker para asegurar la ausencia de paquetes vulnerables a nivel de sistema operativo base.
+## 7. Líneas de trabajo
+
+- Implementar políticas de autorización por scopes/roles.
+- Añadir auditoría persistente y correlación de `oid`/`sub`.
+- Añadir pruebas de carga y calibración del rate limit.
+- Desplegar la plantilla Bicep en una suscripción de laboratorio y validar
+  Private Endpoints, DNS y diagnóstico.
+- Añadir API Management/WAF delante de la API.
+- Incorporar pruebas de seguridad de API (BOLA/BFLA) contra un entorno desplegado.

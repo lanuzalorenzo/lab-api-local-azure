@@ -1,139 +1,64 @@
-# 🧩 EcommerceApi — API Local con Azure AD
+# EcommerceApi — proyecto .NET 10
 
-## 🧾 Descripción
-API REST desarrollada en .NET 10 para demostrar integración real de autenticación empresarial mediante Microsoft Entra ID / Azure AD.  
-La API gestiona productos y pedidos en memoria y está protegida con JWT Bearer para validar tokens emitidos por Azure AD.
+API REST de laboratorio con autenticación Microsoft Entra ID, autorización por
+usuario, DTOs de entrada y pruebas de integración.
 
----
+La documentación principal está en el [README raíz](../README.md). Este archivo
+resume el proyecto y evita duplicar guías desactualizadas.
 
-## 🎯 Objetivos del proyecto
-- Implementar autenticación empresarial con Azure AD.  
-- Validar tokens JWT en una API moderna.  
-- Proteger endpoints mediante `[Authorize]`.  
-- Proporcionar un laboratorio técnico reproducible para prácticas de seguridad.
+## Estructura
 
----
-
-## 📦 Requisitos
-- .NET 10 SDK  
-- Acceso a un tenant de Azure AD configurado  
-- Git  
-- Opcional: Azure CLI
-
----
-
-## 🚀 Ejecución de la API
-
-### 1. Navegar al proyecto
-```bash
-cd EcommerceApi
-```
-
-### 2. Restaurar dependencias
-```bash
-dotnet restore
-```
-
-### 3. Ejecutar la API
-```bash
-dotnet run
-```
-
-### 4. Acceso
-- Swagger UI:  
-  ```
-  http://localhost/swagger
-  ```
-- URL base:  
-  ```
-  http://localhost
-  ```
-
----
-
-## 🛒 Endpoints disponibles
-
-### Productos
-- `GET /api/products` — Obtener todos los productos  
-- `GET /api/products/{id}` — Obtener producto por ID  
-- `POST /api/products` — Crear producto  
-  ```json
-  { "name": "string", "price": number, "stock": number }
-  ```
-
-### Pedidos
-- `GET /api/orders` — Obtener todos los pedidos  
-- `GET /api/orders/{id}` — Obtener pedido por ID  
-- `POST /api/orders` — Crear pedido  
-  ```json
-  { "productIds": [number, ...] }
-  ```
-
-⚠️ Todos los endpoints están protegidos y requieren un token JWT válido emitido por Azure AD.
-
----
-
-## 🏛️ Estructura del proyecto
-```
+```text
 EcommerceApi/
-├── Models/
-│   ├── Product.cs
-│   └── Order.cs
+├── Configuration/
+│   └── AzureAdOptions.cs
 ├── Controllers/
 │   ├── ProductsController.cs
 │   └── OrdersController.cs
+├── Models/
+│   ├── CreateProductRequest.cs
+│   ├── Order.cs
+│   └── Product.cs
+├── Services/
+│   └── InMemoryStore.cs
 ├── Program.cs
 ├── appsettings.json
+├── appsettings.Development.example.json
 ├── EcommerceApi.csproj
-├── README.md
-├── azure-ad-config.md
-├── azure-ad-register.md
-├── azure-ad-tests.md
-├── AZURE-AD-TESTS.md
-├── azure-ad-notes.md
-├── tests.md
-└── .gitignore
+└── EcommerceApi.http
 ```
 
----
+## Ejecución
 
-## 🔐 Seguridad actual
-La API ya está protegida mediante:
-- `AddAuthentication("Bearer")`  
-- Validación de issuer y audience  
-- `UseAuthentication()` y `UseAuthorization()`  
-- Controladores protegidos con `[Authorize]`
+```bash
+cp appsettings.Development.example.json appsettings.Development.json
+# Edita appsettings.Development.json con tu tenant y client ID
+dotnet run --urls http://localhost:5080
+```
 
-Documentación asociada:
-- `azure-ad-register.md` — registro de la aplicación  
-- `azure-ad-config.md` — configuración del tenant y audiencia  
-- `azure-ad-tests.md` — pruebas con tokens  
-- `AZURE-AD-TESTS.md` — pruebas avanzadas  
-- `tests.md` — pruebas funcionales de la API
+- Swagger: <http://localhost:5080/swagger>
+- Health: <http://localhost:5080/health>
 
----
+## Pruebas
 
-## 📘 Alcance
-Este laboratorio cubre:
-- Autenticación con Azure AD  
-- Validación de tokens JWT  
-- Protección de endpoints  
-- Pruebas funcionales y de seguridad
+```bash
+dotnet test ../tests/EcommerceApi.Tests/EcommerceApi.Tests.csproj
+```
 
-No cubre:
-- Persistencia en base de datos  
-- Roles avanzados  
-- Observabilidad  
-- Hardening completo del entorno
+## Documentación
 
----
+- [Configuración de Entra ID](../docs/azure-ad-config.md)
+- [Registro de la aplicación](../docs/azure-ad-register.md)
+- [Pruebas con tokens](../docs/azure-ad-tests.md)
+- [Pruebas funcionales](../docs/tests.md)
+- [Threat model](../docs/threat-model-appsec.md)
 
-## ⚖️ Aviso Legal
-Este laboratorio se utiliza con fines educativos y técnicos.  
-No contiene información sensible ni perteneciente a ninguna organización real.  
-Los ejemplos y configuraciones son demostraciones reproducibles en entornos personales.
+## Alcance
 
----
+Incluye autenticación, autorización por usuario, validación de entrada, CORS,
+rate limiting y pruebas. No incluye base de datos, roles/scopes granulares,
+observabilidad persistente ni despliegue real en Azure.
 
-## 📜 Licencia
-MIT
+## Licencia
+
+MIT. Consulta [LICENSE](../LICENSE).

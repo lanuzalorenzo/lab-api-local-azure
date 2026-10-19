@@ -1,115 +1,260 @@
-# 🧩 EcommerceApi | API Empresarial de Referencia (.NET & Azure)
+# EcommerceApi — API de referencia para AppSec y DevSecOps
 
-**Carga de trabajo central y laboratorio de desarrollo seguro, DevSecOps y Cloud Security.**
+**API REST en .NET 10 protegida con Microsoft Entra ID, usada como activo de laboratorio para validar controles de seguridad, pruebas de autorización y un pipeline DevSecOps.**
 
-[![.NET](https://img.shields.io/badge/.NET-8.0%20%7C%2010.0-512BD4?style=flat&logo=dotnet)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat&logo=dotnet)](https://dotnet.microsoft.com/)
 [![Microsoft Entra ID](https://img.shields.io/badge/Auth-Microsoft%20Entra%20ID-0078D4?style=flat&logo=microsoftazure)](https://learn.microsoft.com/entra/)
-[![Portfolio](https://img.shields.io/badge/Portfolio-Ciberseguridad%20Cloud-238636?style=flat)](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo)
+[![DevSecOps CI](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/workflows/devsecops-ci.yml/badge.svg)](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/workflows/devsecops-ci.yml)
 [![Licencia](https://img.shields.io/badge/Licencia-MIT-green.svg)](LICENSE)
 
 ---
 
-## 🧾 Descripción del proyecto
+## Qué es y qué no es
 
-`EcommerceApi` es una Web API empresarial desarrollada sobre el ecosistema **.NET (C#)** diseñada bajo principios de arquitectura desacoplada, extensibilidad y **Security by Design**.
+**Es** un laboratorio reproducible para demostrar:
 
-Este repositorio cumple un rol estratégico dual:
-1. **En Desarrollo de Software:** Muestra patrones de diseño limpios, controladores REST (`ProductsController`, `OrdersController`), tipado estricto, gestión de ciclo de vida e inyección de dependencias.
-2. **En Ciberseguridad & DevSecOps:** Actúa como el **activo digital de referencia (Workload Core)** sobre el que se despliega y valida la estrategia de **Defensa en Profundidad (*Defense-in-Depth*)** documentada en el [**Portfolio de Ciberseguridad**](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo).
+- Validación de tokens JWT emitidos por Microsoft Entra ID.
+- Autorización a nivel de objeto (BOLA/IDOR) y separación por usuario.
+- Mitigación de *mass assignment* mediante DTOs.
+- CORS restrictivo, *rate limiting*, límites de tamaño y *Problem Details*.
+- Pruebas de integración automatizadas.
+- Pipeline con SAST, SCA, escaneo de secretos, escaneo de contenedor y escaneo de IaC.
 
----
-
-## 🏛️ Arquitectura y Seguridad en el Diseño (AppSec)
-
-```
-  [ Cliente / Swagger ] ──( 1. Petición HTTPS + Bearer JWT )──► [ EcommerceApi ]
-                                                                      │
-                                                ( 2. Valida JWKS )   │
-                                                                      ▼
-                                                       [ Microsoft Entra ID ]
-                                                       Authority: /v2.0
-```
-
-### Controles de seguridad implementados a nivel de aplicación:
-- **Autenticación moderna federada:** Integración con **Microsoft Entra ID** mediante middleware `JwtBearer`.
-- **Validación criptográfica estricta de tokens:**
-  - Validación de emisor (`ValidateIssuer = true`) contra la autoridad del tenant Entra ID.
-  - Validación de audiencia (`ValidateAudience = true`) exigiendo el identificador de la API (`api://<client-id>`).
-  - Validación de ciclo de vida (`ValidateLifetime = true`) para evitar el uso de tokens expirados o revocados.
-  - Obtención y verificación automática de firmas mediante el conjunto de claves públicas JWKS (`/.well-known/openid-configuration`).
-- **Control de acceso granular:** Decoración de endpoints críticos mediante atributos de autorización (`[Authorize]`).
-- **CORS restrictivo y saneamiento:** Configuración de políticas de orígenes permitidos y preparación para mitigación de riesgos del **OWASP API Security Top 10** (BOLA, inyecciones, autenticación rota).
+**No es** un sistema listo para producción. El almacenamiento es en memoria, no hay
+base de datos, no hay alta disponibilidad y no se han validado scopes/roles
+granulares ni un despliegue real en Azure. El estado de cada control se indica en
+la tabla siguiente.
 
 ---
 
-## 📁 Estructura del repositorio
+## Arquitectura
 
+```mermaid
+flowchart LR
+    C[Cliente / Swagger] -->|HTTPS + Bearer JWT| API[EcommerceApi .NET 10]
+    API -->|Valida firma, issuer, audience y expiración| ENTRA[Microsoft Entra ID]
+    API -->|Autoriza por usuario| STORE[(InMemoryStore)]
+    API -->|Logs y métricas| OBS[Application Insights / Log Analytics]
+    CI[GitHub Actions] -->|SAST · SCA · Secretos · Contenedor · IaC| API
 ```
-lab-api-local-azure/
-├── EcommerceApi/                    # Código fuente del proyecto .NET
-│   ├── Controllers/                 # Controladores REST (Products, Orders)
-│   ├── Models/                      # Modelos de dominio y DTOs de petición
-│   ├── Program.cs                   # Configuración de pipeline HTTP, DI y JWT
-│   ├── EcommerceApi.csproj          # Dependencias y configuración de compilación
-│   └── appsettings.json             # Configuración base (sin credenciales)
-├── docs/                            # Documentación técnica de integración
-│   ├── azure-ad-register.md         # Registro de la aplicación en Entra ID
-│   ├── azure-ad-config.md           # Configuración del middleware de autenticación
-│   ├── azure-ad-tests.md            # Guía de pruebas de validación de tokens
-│   └── tests.md                     # Casos de prueba de endpoints
-└── README.md                        # Documento principal del proyecto
-```
+
+La API expone dos controladores:
+
+- `ProductsController`: catálogo de productos.
+- `OrdersController`: pedidos ligados al usuario autenticado (`oid`/`sub`).
+
+### Flujo de autorización
+
+1. El cliente obtiene un token de Entra ID.
+2. `JwtBearer` valida firma, emisor, audiencia, expiración y *clock skew*.
+3. `OrdersController` resuelve la identidad del usuario y solo devuelve sus pedidos.
+4. Un pedido de otro usuario responde `404` para evitar enumeración de objetos.
 
 ---
 
-## 🚀 Requisitos e Instalación local
+## Estado de seguridad
 
-### Requisitos previos
-- [.NET SDK 8.0 o superior](https://dotnet.microsoft.com/download)
-- Git
-- cURL, Postman o extensión REST Client para validación de endpoints
-
-### Pasos para ejecución
-1. **Clonar el repositorio:**
-   ```bash
-   git clone https://github.com/lanuzalorenzo/lab-api-local-azure.git
-   cd lab-api-local-azure/EcommerceApi
-   ```
-
-2. **Restaurar dependencias del proyecto:**
-   ```bash
-   dotnet restore
-   ```
-
-3. **Compilar y ejecutar la API:**
-   ```bash
-   dotnet run
-   ```
-
-4. **Acceso interactivo:**
-   La API iniciará en local (por defecto `http://localhost:5000` o `https://localhost:5001`). En modo desarrollo, la documentación OpenAPI y UI de Swagger se encuentra disponible en:
-   ```
-   https://localhost:5001/swagger
-   ```
-
----
-
-## 🛡️ Conexión con el Portfolio de Ciberseguridad
-
-Las validaciones de seguridad de esta API se integran de forma transversal con los módulos del portfolio principal:
-
-| Capa del Portfolio | Módulo asociado | Relación técnica con la API |
+| Control | Estado | Evidencia |
 |---|---|---|
-| **AppSec & IAM** | [01 \| Seguridad Azure](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/tree/main/01-seguridad-azure) | Validación del flujo OAuth 2.0 / PKCE y verificación de tokens en `Program.cs`. |
-| **DevSecOps** | [07 \| DevSecOps](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/tree/main/07-devsecops) | Escaneo de vulnerabilidades en dependencias NuGet (SCA), SAST y escaneo de secretos. |
-| **Red & Aislamiento** | [08 \| Redes Azure](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/tree/main/08-seguridad-red-azure) | Arquitectura de despliegue aislada con NSG, subredes privadas y Private Link. |
-| **Detección & SOC** | [09 \| Sentinel](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/tree/main/09-microsoft-sentinel) & [10 \| ELK](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/tree/main/10-elk-stack-security) | Ingesta y analítica KQL sobre intentos de acceso no autorizados (401/403). |
+| Validación JWT (firma, issuer, audience, lifetime) | Implementado | `EcommerceApi/Program.cs` |
+| Autorización de endpoints | Implementado | `[Authorize]` en controladores |
+| BOLA/IDOR en pedidos | Implementado | Filtrado por `UserId` + pruebas |
+| Mass assignment en productos y pedidos | Implementado | DTOs `CreateProductRequest` / `CreateOrderRequest` |
+| CORS restrictivo | Implementado | Lista vacía = denegar; allowlist por configuración |
+| Rate limiting | Implementado (laboratorio) | 120 req/min por IP |
+| Límite de tamaño de petición | Implementado | 16 KB en endpoints de escritura |
+| `Problem Details` y cabeceras de seguridad | Implementado | `AddProblemDetails`, middleware |
+| Pruebas de integración | Implementado | `tests/EcommerceApi.Tests` (10 pruebas) |
+| Escaneo de secretos | Implementado | Gitleaks sobre historial completo |
+| SAST | Implementado | CodeQL C# (`security-extended`) |
+| SCA | Implementado | Trivy filesystem, bloqueante para CRITICAL/HIGH |
+| Escaneo de contenedor | Implementado | Trivy image + verificación de usuario no-root |
+| IaC seguro | Implementado (plantilla) | `infra/main.bicep` + Trivy config |
+| Despliegue real en Azure | Pendiente | Sin suscripción/credenciales en este repositorio |
+| Scopes/roles granulares | Pendiente | Documentado en `docs/azure-ad-config.md` |
+| Persistencia y alta disponibilidad | Fuera de alcance | Almacén en memoria |
+| OIDC de GitHub Actions a Azure | Documentado, no activo | `infra/README.md` |
+
+> **Criterio de rigor:** “Implementado” significa que el código o la configuración
+> existe y se ha ejecutado localmente o en CI. “Pendiente” significa que no se ha
+> validado y no se presenta como terminado.
 
 ---
 
-## ⚖️ Responsabilidad y Licencia
+## Estructura
 
-Este repositorio tiene propósitos exclusivamente técnicos, didácticos y de demostración de arquitectura. Los identificadores de tenant y client IDs utilizados corresponden a laboratorios de prueba redactados y no contienen secretos ni accesos a datos reales de producción.
+```text
+lab-api-local-azure/
+├── EcommerceApi/
+│   ├── Configuration/          # Opciones de Entra ID
+│   ├── Controllers/            # ProductsController, OrdersController
+│   ├── Models/                 # Entidades y DTOs de entrada
+│   ├── Services/               # InMemoryStore thread-safe
+│   ├── Program.cs              # Pipeline HTTP, auth, CORS, rate limiting
+│   └── appsettings.json        # Placeholders, sin credenciales
+├── tests/EcommerceApi.Tests/   # Pruebas de integración xUnit
+├── infra/                      # Bicep: VNet, NSG, Key Vault, App Service, PE
+├── docs/                       # Autenticación, pruebas y threat model
+├── .github/workflows/          # Pipeline DevSecOps
+├── Dockerfile                  # Multi-stage, usuario no-root
+└── README.md
+```
+
+---
+
+## Puesta en marcha
+
+### Requisitos
+
+- .NET SDK 10.0
+- Opcional: Docker
+- Un tenant de Microsoft Entra ID para validar tokens reales
+
+### Configuración local
+
+```bash
+cd lab-api-local-azure
+cp EcommerceApi/appsettings.Development.example.json EcommerceApi/appsettings.Development.json
+```
+
+Edita `appsettings.Development.json` con tus valores:
+
+```json
+{
+  "AzureAd": {
+    "TenantId": "<tenant-id>",
+    "ClientId": "<api-client-id>",
+    "Audience": "api://<api-client-id>",
+    "Authority": "https://login.microsoftonline.com/<tenant-id>/v2.0"
+  },
+  "Cors": {
+    "AllowedOrigins": [ "http://localhost:5173" ]
+  }
+}
+```
+
+`appsettings.Development.json` está ignorado por Git. No guardes secretos en
+`appsettings.json` ni en el repositorio.
+
+### Ejecutar
+
+```bash
+dotnet restore EcommerceApi/EcommerceApi.csproj
+dotnet run --project EcommerceApi --urls http://localhost:5080
+```
+
+- Swagger (solo Development): <http://localhost:5080/swagger>
+- Health check: <http://localhost:5080/health>
+- API: <http://localhost:5080/api/products>
+
+### Pruebas
+
+```bash
+dotnet test tests/EcommerceApi.Tests/EcommerceApi.Tests.csproj
+```
+
+Las pruebas usan un esquema de autenticación de test y no necesitan un tenant
+real. Cubren 401, validación de entrada, mass assignment y BOLA entre dos usuarios.
+
+### Docker
+
+```bash
+docker build -t ecommerce-api .
+docker run --rm -p 8080:8080 ecommerce-api
+```
+
+El contenedor se ejecuta con `USER $APP_UID` (no root) y escucha en `8080`.
+
+---
+
+## Autenticación con Entra ID
+
+El registro de la aplicación, los scopes y las pruebas con tokens reales se
+describen en:
+
+- [`docs/azure-ad-register.md`](docs/azure-ad-register.md)
+- [`docs/azure-ad-config.md`](docs/azure-ad-config.md)
+- [`docs/azure-ad-tests.md`](docs/azure-ad-tests.md)
+
+La API valida `issuer`, `audience`, `lifetime` y firma. La autorización granular
+por scopes/roles está documentada como trabajo pendiente; hoy todos los endpoints
+requieren un usuario autenticado y los pedidos se filtran por identidad.
+
+### CORS
+
+- `Cors:AllowedOrigins` vacío → se deniega cualquier origen cruzado.
+- Para un frontend local, añade su origen exacto en `AllowedOrigins`.
+- No se usa `AllowAnyOrigin`.
+
+### Rate limiting
+
+Límite global de 120 peticiones por minuto y por IP. Es un control de laboratorio;
+en producción se complementaría con API Management/WAF y límites por usuario.
+
+---
+
+## Pipeline DevSecOps
+
+`.github/workflows/devsecops-ci.yml` ejecuta:
+
+| Job | Herramienta | Bloqueante |
+|---|---|---|
+| Compilación, formato y pruebas | .NET 10, xUnit | Sí |
+| Detección de secretos | Gitleaks (historial completo) | Sí |
+| SAST | CodeQL C# | Sí |
+| SCA | Trivy filesystem | CRITICAL/HIGH |
+| Contenedor | Docker + Trivy + verificación no-root | Sí |
+| IaC | Trivy config sobre Bicep | CRITICAL/HIGH |
+| Dependencias en PR | Dependency Review | High |
+
+Los resultados SARIF se publican en la pestaña **Security → Code scanning** del
+repositorio.
+
+---
+
+## Infraestructura como código
+
+`infra/main.bicep` define una arquitectura de referencia con:
+
+- VNet segmentada (`snet-app`, `snet-pe`).
+- NSG con denegación por defecto.
+- Key Vault con RBAC, purge protection y acceso público deshabilitado.
+- Private Endpoints y Private DNS para Key Vault y App Service.
+- App Service Linux .NET 10 con HTTPS only, TLS 1.2 y FTPS deshabilitado.
+- Identidad gestionada y rol *Key Vault Secrets User*.
+- Diagnóstico a Log Analytics.
+
+Consulta [`infra/README.md`](infra/README.md). **La plantilla no se ha desplegado**
+en una suscripción real; se valida con `bicep build` y Trivy config en CI.
+
+---
+
+## Relación con el portfolio
+
+| Módulo | Relación |
+|---|---|
+| [07 — DevSecOps](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/tree/main/07-devsecops) | Pipeline, SAST, SCA, secretos e IaC |
+| [08 — Redes Azure](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/tree/main/08-seguridad-red-azure) | VNet, NSG, Private Endpoints |
+| [09 — Sentinel](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/tree/main/09-microsoft-sentinel) | Diagnóstico y analítica KQL |
+| [11 — Hacking ético de APIs](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/tree/main/11-hacking-etico-api) | BOLA/BFLA, JWT y validación ofensiva |
+| [12 — Forense cloud](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/tree/main/12-forense-cloud-respuesta) | Evidencia y respuesta en Azure |
+
+---
+
+## Limitaciones conocidas
+
+- Almacenamiento en memoria: los datos se pierden al reiniciar.
+- Sin base de datos, migraciones ni transacciones.
+- Sin scopes/roles aplicados endpoint a endpoint.
+- Sin WAF/API Management desplegado.
+- Sin pruebas de carga ni caos.
+- La plantilla Bicep no se ha desplegado; su validación es estática.
+
+Estas limitaciones son deliberadas y se declaran para no confundir un laboratorio
+con un sistema productivo.
+
+---
+
+## Licencia
 
 Distribuido bajo licencia [MIT](LICENSE).
-

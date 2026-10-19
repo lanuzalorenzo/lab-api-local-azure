@@ -1,215 +1,177 @@
-# 🧪 Pruebas de Azure AD — Guía Técnica
+# Pruebas de autenticación con Microsoft Entra ID
 
-## 🧾 Descripción
-Guía completa para realizar pruebas de autenticación y autorización con Azure Active Directory (Azure AD) utilizando tokens JWT y la API local del laboratorio.  
-Incluye obtención de tokens, validación, pruebas con curl, pruebas en Swagger, errores comunes y un script automatizado.
+Guía para validar la API con tokens reales de Entra ID. Usa un tenant de
+laboratorio y tokens desechables. No pegues tokens de producción en sitios
+externos como jwt.io.
 
----
+## 1. Variables de entorno
 
-# 🔐 1. Obtener un Token JWT desde Azure AD
-
-## Opción 1 — Usando curl
-
-### Paso 1: Variables necesarias
 ```bash
-TENANT_ID="00000000-0000-0000-0000-000000000000"
-CLIENT_ID="11111111-1111-1111-1111-111111111111"
-CLIENT_SECRET="your-client-secret-here"
-RESOURCE="api://ecommerce-api"
+export TENANT_ID="00000000-0000-0000-0000-000000000000"
+export CLIENT_ID="11111111-1111-1111-1111-111111111111"
+export CLIENT_SECRET="<client-secret-de-laboratorio>"
+export AUDIENCE="api://11111111-1111-1111-1111-111111111111"
+export API_URL="http://localhost:5080"
 ```
 
-### Paso 2: Solicitar token
-```bash
-curl -X POST \
-"https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token" \
--H "Content-Type: application/x-www-form-urlencoded" \
--d "client_id=${CLIENT_ID}" \
--d "scope=${RESOURCE}/.default" \
--d "client_secret=${CLIENT_SECRET}" \
--d "grant_type=client_credentials"
-```
+El `CLIENT_SECRET` debe obtenerse de un almacén seguro (Key Vault, user-secrets
+o variable de entorno). Nunca se commitea.
 
-### Paso 3: Guardar token en variable (bash)
+## 2. Obtener un token (client credentials)
+
 ```bash
 TOKEN=$(curl -s -X POST \
-"https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token" \
--H "Content-Type: application/x-www-form-urlencoded" \
--d "client_id=${CLIENT_ID}" \
--d "scope=${RESOURCE}/.default" \
--d "client_secret=${CLIENT_SECRET}" \
--d "grant_type=client_credentials" \
-| jq -r '.access_token')
+  "https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "client_id=${CLIENT_ID}" \
+  -d "scope=${AUDIENCE}/.default" \
+  -d "client_secret=${CLIENT_SECRET}" \
+  -d "grant_type=client_credentials" \
+  | jq -r '.access_token')
 
-echo "Token obtenido: $TOKEN"
-```
-
----
-
-## Opción 2 — Usando jwt.io
-1. Ir a [https://jwt.io](https://jwt.io)  
-2. Pegar el token en “Encoded”  
-3. Ver claims como `iss`, `aud`, `scp`, `exp`
-
-Ejemplo de payload:
-```json
-{
-  "iss": "https://login.microsoftonline.com/tenant/v2.0",
-  "aud": "api://ecommerce-api",
-  "scp": "order.read order.write"
+test -n "${TOKEN}" && test "${TOKEN}" != "null" || {
+  echo "No se obtuvo token. Revisa tenant, client ID, secret y permisos."
+  exit 1
 }
 ```
 
----
+## 3. Pruebas con curl
 
-# 🧪 2. Pruebas con curl
+### Health check (anónimo)
 
-## Prueba 1 — Endpoint público
 ```bash
-curl http://localhost/api/products/public/info
+curl -i "${API_URL}/health"
 ```
 
-Respuesta esperada:
-```json
-{ "message": "This is public" }
-```
+Esperado: `200 OK`.
 
----
+### Sin token (debe fallar)
 
-## Prueba 2 — Endpoint protegido con token
 ```bash
-curl -H "Authorization: Bearer $TOKEN" \
-http://localhost/api/orders
+curl -i "${API_URL}/api/products"
 ```
 
----
+Esperado: `401 Unauthorized`.
 
-## Prueba 3 — Endpoint protegido sin token
+### Token inválido (debe fallar)
+
 ```bash
-curl http://localhost/api/orders
+curl -i -H "Authorization: Bearer invalid-token" \
+  "${API_URL}/api/products"
 ```
 
-Esperado: `401 Unauthorized`
+Esperado: `401 Unauthorized`.
 
----
+### Token válido
 
-## Prueba 4 — Token inválido
 ```bash
-curl -H "Authorization: Bearer invalid-token" \
-http://localhost/api/orders
+curl -i -H "Authorization: Bearer ${TOKEN}" \
+  "${API_URL}/api/products"
 ```
 
----
+Esperado: `200 OK`.
 
-## Prueba 5 — Verificar claims
+### Crear un producto
+
 ```bash
-curl -H "Authorization: Bearer $TOKEN" \
-http://localhost/api/orders/current-user
+curl -i -X POST "${API_URL}/api/products" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Keyboard","price":49.99,"stock":20}'
 ```
 
----
+Esperado: `201 Created`.
 
-## Prueba 6 — Token expirado
+### Crear un pedido
+
 ```bash
-curl -H "Authorization: Bearer expired-token" \
-http://localhost/api/orders
+curl -i -X POST "${API_URL}/api/orders" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"productIds":[1,2]}'
 ```
 
----
+Esperado: `201 Created` con `productIds`, `total` y `createdAt`. El campo
+`userId` no se serializa.
 
-## Prueba 7 — Scope insuficiente
+### Pedido inexistente
+
 ```bash
-curl -H "Authorization: Bearer token-with-order-read-only" \
--X POST \
--H "Content-Type: application/json" \
--d '{"name": "New Product"}' \
-http://localhost/api/products
+curl -i -H "Authorization: Bearer ${TOKEN}" \
+  "${API_URL}/api/orders/999999"
 ```
 
-Esperado: `403 Forbidden`
+Esperado: `404 Not Found`.
 
----
+## 4. Prueba de BOLA con dos identidades
 
-# 🧪 3. Pruebas en Swagger
+Para demostrar la separación por usuario necesitas dos clientes o dos usuarios
+con tokens distintos. Con dos client credentials:
 
-## Paso 1 — Abrir Swagger
+```bash
+# Token del usuario A
+TOKEN_A=$(curl -s -X POST \
+  "https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "client_id=${CLIENT_A_ID}" \
+  -d "scope=${AUDIENCE}/.default" \
+  -d "client_secret=${CLIENT_A_SECRET}" \
+  -d "grant_type=client_credentials" | jq -r '.access_token')
+
+# Token del usuario B
+TOKEN_B=$(curl -s -X POST \
+  "https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "client_id=${CLIENT_B_ID}" \
+  -d "scope=${AUDIENCE}/.default" \
+  -d "client_secret=${CLIENT_B_SECRET}" \
+  -d "grant_type=client_credentials" | jq -r '.access_token')
+
+# A crea un pedido
+ORDER_ID=$(curl -s -X POST "${API_URL}/api/orders" \
+  -H "Authorization: Bearer ${TOKEN_A}" \
+  -H "Content-Type: application/json" \
+  -d '{"productIds":[1]}' | jq -r '.id')
+
+# A puede leerlo
+curl -i -H "Authorization: Bearer ${TOKEN_A}" "${API_URL}/api/orders/${ORDER_ID}"
+
+# B recibe 404 (no 403) para evitar enumeración
+curl -i -H "Authorization: Bearer ${TOKEN_B}" "${API_URL}/api/orders/${ORDER_ID}"
 ```
-http://localhost/swagger
+
+Resultado esperado: `200` para A y `404` para B.
+
+> Con client credentials, el claim `sub` identifica a la aplicación cliente, no
+> a una persona. Para pruebas de usuario final usa flujos delegados (authorization
+> code + PKCE) y dos usuarios de laboratorio.
+
+## 5. Swagger
+
+```bash
+dotnet run --project EcommerceApi --urls http://localhost:5080
 ```
 
-## Paso 2 — Obtener token  
-Usar método anterior.
+Abre <http://localhost:5080/swagger>, pulsa **Authorize** y pega el token sin el
+prefijo `Bearer`. Swagger solo está activo en `Development`.
 
-## Paso 3 — Autorizar
-- Clic en **Authorize**
-- Pegar token (sin “Bearer”)
-- Clic en **Authorize**
-
-## Paso 4 — Ejecutar pruebas
-- Expandir endpoint  
-- “Try it out”  
-- “Execute”
-
----
-
-# ⚠️ 4. Errores comunes
+## 6. Errores comunes
 
 | Error | Causa | Solución |
-|------|--------|----------|
-| AADSTS50058 | Tenant incorrecto | Verificar `TENANT_ID` |
-| AADSTS700016 | Client ID incorrecto | Revisar Application ID |
-| AADSTS7000215 | Secret inválido | Crear uno nuevo |
-| 401 Unauthorized | Audience incorrecto | Revisar `Audience` en `appsettings.json` |
-| 403 Forbidden | Scope insuficiente | Añadir permisos en Azure AD |
-| Token inválido | Formato incorrecto | Verificar estructura `header.payload.signature` |
+|---|---|---|
+| `AADSTS50058` | Tenant incorrecto | Revisa `TENANT_ID` |
+| `AADSTS700016` | Client ID incorrecto | Revisa el App Registration |
+| `AADSTS7000215` | Secret inválido | Genera uno nuevo y guárdalo de forma segura |
+| `401` con token válido | Audience/issuer incorrectos | Revisa `AzureAd` y `aud`/`iss` |
+| `429` | Rate limit | Espera un minuto |
+| CORS bloqueado | Origen no allowlisted | Añade el origen exacto |
 
----
+## 7. Checklist
 
-# 🧪 5. Script automatizado de pruebas
-
-Guardar como `test-api.sh`:
-
-```bash
-#!/bin/bash
-set -e
-
-TENANT_ID="00000000-0000-0000-0000-000000000000"
-CLIENT_ID="11111111-1111-1111-1111-111111111111"
-CLIENT_SECRET="your-client-secret"
-RESOURCE="api://ecommerce-api"
-API_URL="http://localhost"
-
-echo "Iniciando pruebas..."
-
-# Obtener token
-RESPONSE=$(curl -s -X POST \
-"https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token" \
--H "Content-Type: application/x-www-form-urlencoded" \
--d "client_id=${CLIENT_ID}" \
--d "scope=${RESOURCE}/.default" \
--d "client_secret=${CLIENT_SECRET}" \
--d "grant_type=client_credentials")
-
-TOKEN=$(echo "$RESPONSE" | jq -r '.access_token')
-
-# Pruebas
-curl -s "$API_URL/api/products/public/info" | jq '.'
-curl -s -H "Authorization: Bearer $TOKEN" "$API_URL/api/orders" | jq '.'
-curl -s "$API_URL/api/orders" || echo "Error esperado"
-curl -s -H "Authorization: Bearer $TOKEN" "$API_URL/api/orders/current-user" | jq '.'
-
-echo "Pruebas completadas"
-```
-
----
-
-# 📋 6. Checklist antes de producción
-
-- Token se obtiene correctamente  
-- Endpoint público funciona  
-- Endpoint protegido rechaza sin token  
-- Endpoint protegido acepta token válido  
-- Scopes se validan correctamente  
-- Swagger configurado  
-- Logs correctos  
-- HTTPS habilitado  
-- Token expira correctamente  
+- [ ] Health check responde `200` sin token.
+- [ ] Endpoint protegido responde `401` sin token.
+- [ ] Token inválido responde `401`.
+- [ ] Token válido responde `200`.
+- [ ] `POST` inválido responde `400`.
+- [ ] Usuario B no puede leer el pedido de A (`404`).
+- [ ] Los logs no incluyen tokens ni secretos.

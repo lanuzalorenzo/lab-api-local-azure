@@ -1,239 +1,124 @@
-# 🔐 Configuración de Azure AD en la API Local
+# Configuración de Microsoft Entra ID en la API
 
-## 🧾 Descripción
-Guía técnica para integrar autenticación y autorización de Azure Active Directory (Azure AD) en la API local del laboratorio.  
-Incluye configuración en `Program.cs`, `appsettings.json`, políticas de autorización, uso de claims y orden correcto de middlewares.
+Esta guía describe la configuración **real** del código actual. Los valores
+sensibles no se guardan en el repositorio: usa `appsettings.Development.json`
+(ignorado por Git), user-secrets o variables de entorno.
 
----
+## 1. Opciones de configuración
 
-## ⚙️ 1. Configuración en Program.cs
+`EcommerceApi/Configuration/AzureAdOptions.cs` enlaza la sección `AzureAd`:
 
-### Obtener configuración desde appsettings.json
-```csharp
-var azureAdConfig = builder.Configuration.GetSection("AzureAd");
-var tenantId = azureAdConfig["TenantId"];
-var clientId = azureAdConfig["ClientId"];
-var audience = azureAdConfig["Audience"];
+```json
+{
+  "AzureAd": {
+    "TenantId": "<tenant-id>",
+    "ClientId": "<api-client-id>",
+    "Audience": "api://<api-client-id>",
+    "Authority": "https://login.microsoftonline.com/<tenant-id>/v2.0"
+  }
+}
 ```
 
----
+`appsettings.json` solo contiene placeholders (`YOUR_TENANT_ID`,
+`YOUR_API_CLIENT_ID`). La API arranca con ellos, pero registra una advertencia y
+no podrá validar tokens reales hasta que se configure un tenant.
 
-## 🔐 2. Autenticación JWT Bearer
+## 2. Validación JWT en `Program.cs`
+
 ```csharp
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.Authority = $"https://login.microsoftonline.com/{tenantId}/v2.0";
-        options.Audience = audience;
-
+        options.Authority = azureAdOptions.Authority;
+        options.Audience = azureAdOptions.Audience;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidIssuer = $"https://login.microsoftonline.com/{tenantId}/v2.0",
+            ValidIssuer = azureAdOptions.Authority,
             ValidateAudience = true,
-            ValidAudience = audience,
+            ValidAudience = azureAdOptions.Audience,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ClockSkew = TimeSpan.FromSeconds(5)
-        };
-
-        options.Events = new JwtBearerEvents
-        {
-            OnAuthenticationFailed = context =>
-            {
-                Console.WriteLine($"Authentication failed: {context.Exception.Message}");
-                return Task.CompletedTask;
-            },
-            OnTokenValidated = context =>
-            {
-                Console.WriteLine("Token validated successfully");
-                return Task.CompletedTask;
-            }
+            ClockSkew = TimeSpan.FromMinutes(2)
         };
     });
 ```
 
----
+La firma se valida con las claves públicas (JWKS) que publica Entra ID en el
+documento de metadatos de la autoridad configurada.
 
-## 🔒 3. Autorización con políticas
+## 3. Orden del pipeline
+
 ```csharp
-builder.Services.AddAuthorization(options =>
-{
-    options.DefaultPolicy = new AuthorizationPolicyBuilder()
-        .RequireAuthenticatedUser()
-        .Build();
-
-    options.AddPolicy("OrderRead", policy => policy.RequireClaim("scp", "order.read"));
-    options.AddPolicy("OrderWrite", policy => policy.RequireClaim("scp", "order.write"));
-    options.AddPolicy("Admin", policy => policy.RequireClaim("roles", "Admin"));
-});
-```
-
----
-
-## 📘 4. Swagger con soporte JWT
-```csharp
-builder.Services.AddSwaggerGen(options =>
-{
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Type = SecuritySchemeType.Http,
-        Scheme = "Bearer",
-        BearerFormat = "JWT",
-        Description = "JWT Authorization header using the Bearer scheme",
-        Name = "Authorization"
-    });
-
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[] {}
-        }
-    });
-});
-```
-
----
-
-## 🔄 5. Orden correcto de middlewares
-```csharp
+app.UseExceptionHandler();
 app.UseHttpsRedirection();
-
-// Autenticación SIEMPRE antes de autorización
+app.UseHsts();               // solo en Production
+app.Use(async (context, next) => { /* cabeceras de seguridad */ });
+app.UseCors("ApiCors");
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
-app.Run();
+app.MapHealthChecks("/health").AllowAnonymous();
 ```
 
----
+`UseAuthentication()` debe ejecutarse antes de `UseAuthorization()`. `UseCors()`
+se ejecuta antes de autenticación para que las respuestas de preflight no
+requieran token.
 
-# 🧩 6. Configuración en appsettings.json
+## 4. CORS
+
+La política `ApiCors` es denegatoria por defecto:
+
+- `Cors:AllowedOrigins` vacío → `SetIsOriginAllowed(_ => false)`.
+- Con orígenes configurados → allowlist exacta, cabeceras y métodos permitidos.
+
+No se usa `AllowAnyOrigin()`. Para un frontend local:
+
 ```json
 {
-  "AzureAd": {
-    "TenantId": "00000000-0000-0000-0000-000000000000",
-    "ClientId": "11111111-1111-1111-1111-111111111111",
-    "Audience": "api://ecommerce-api"
+  "Cors": {
+    "AllowedOrigins": [ "http://localhost:5173" ]
   }
 }
 ```
 
-### Sustituir:
-- **TenantId** → Directory (tenant) ID  
-- **ClientId** → Application (client) ID  
-- **Audience** → Application ID URI  
+## 5. Rate limiting y límites
 
----
+- Límite global: 120 peticiones/minuto por IP.
+- Endpoints de escritura: 16 KB de cuerpo máximo.
+- Respuesta de límite excedido: `429 Too Many Requests`.
 
-# 🌐 7. Configuración por entorno
-```json
-{
-  "AzureAd": {
-    "TenantId": "dev-tenant-id",
-    "ClientId": "dev-client-id",
-    "Audience": "api://ecommerce-api-dev"
-  }
-}
-```
+Es un control de laboratorio. En producción se complementa con API Management,
+WAF y cuotas por usuario.
 
----
+## 6. Autorización por usuario
 
-# 🔧 8. Variables de entorno (alternativa)
-```bash
-export AzureAd__TenantId="00000000-0000-0000-0000-000000000000"
-export AzureAd__ClientId="11111111-1111-1111-1111-111111111111"
-export AzureAd__Audience="api://ecommerce-api"
-```
+`OrdersController` obtiene la identidad de `ClaimTypes.NameIdentifier`, `oid` o
+`sub`, y filtra los pedidos por `UserId`. Un pedido de otro usuario devuelve
+`404` para no revelar su existencia.
 
----
+La autorización granular por scopes (`scp`) y roles (`roles`) **no está
+implementada** todavía. Está documentada como línea de trabajo para no
+sobreafirmar controles.
 
-# 📡 9. Autorización en controladores
+## 7. Registro de la aplicación
 
-### Ejemplo con políticas
-```csharp
-[Authorize(Policy = "OrderRead")]
-public IActionResult GetOrder(int id) => Ok($"Order {id}");
-```
+Los pasos para crear el App Registration, exponer `api://<client-id>` y asignar
+permisos están en [`azure-ad-register.md`](azure-ad-register.md).
 
-### Endpoint público
-```csharp
-[AllowAnonymous]
-public IActionResult PublicInfo() => Ok("This is public");
-```
+## 8. Pruebas
 
----
+Las pruebas con tokens reales y con el esquema de test están en
+[`azure-ad-tests.md`](azure-ad-tests.md) y
+[`tests.md`](tests.md).
 
-# 👤 10. Obtener usuario autenticado
-```csharp
-[Authorize]
-[HttpGet("current-user")]
-public IActionResult GetCurrentUser()
-{
-    var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    var email = User.FindFirst(ClaimTypes.Email)?.Value;
-    var scopes = User.FindFirst("scp")?.Value;
+## 9. Errores comunes
 
-    return Ok(new { userId, email, scopes });
-}
-```
-
----
-
-# 🧱 11. Autorización global
-```csharp
-builder.Services.AddControllers(options =>
-{
-    var policy = new AuthorizationPolicyBuilder()
-        .RequireAuthenticatedUser()
-        .Build();
-
-    options.Filters.Add(new AuthorizeFilter(policy));
-});
-```
-
----
-
-# 🔍 12. Validación de tokens JWT
-Azure AD valida automáticamente:
-
-- Firma  
-- Issuer  
-- Audience  
-- Expiración  
-- Claims  
-
-Ejemplo de payload:
-```json
-{
-  "iss": "https://login.microsoftonline.com/tenant/v2.0",
-  "aud": "api://ecommerce-api",
-  "scp": "order.read order.write",
-  "email": "user@example.com"
-}
-```
-
----
-
-# 🛠️ 13. Troubleshooting común
-
-| Problema | Causa | Solución |
-|---------|--------|----------|
-| 401 en todos los endpoints | Orden incorrecto | `UseAuthentication()` antes de `UseAuthorization()` |
-| Token válido pero rechazado | Audience incorrecto | Revisar `Audience` en `appsettings.json` |
-| Swagger sin token | Falta configuración | Añadir `AddSecurityDefinition` |
-| Claims vacíos | Scopes no asignados | Añadir API Permissions en Azure |
-
----
-
-# ✔️ Conclusión
-Este documento proporciona la configuración completa y estandarizada para integrar Azure AD en la API local del laboratorio, incluyendo autenticación, autorización, políticas, claims y orden correcto de middlewares.
+| Síntoma | Causa probable | Comprobación |
+|---|---|---|
+| `401` en todos los endpoints | Authority/audience incorrectos | Revisa `AzureAd` y el claim `aud` |
+| `401` con token válido | Token de otro tenant o API | Verifica `tid`, `iss` y `aud` |
+| `403` | Falta de autorización (no implementada por scopes) | Revisa roles/scopes del token |
+| `CORS` bloqueado | Origen no allowlisted | Añade el origen exacto en `Cors:AllowedOrigins` |
+| `429` | Rate limit | Espera la ventana de un minuto |
