@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "namePrefix": {
+      "value": "ecomlab"
+    },
+    "location": {
+      "value": "westeurope"
+    },
+    "tenantId": {
+      "value": "YOUR_TENANT_ID"
+    },
+    "apiClientId": {
+      "value": "YOUR_API_CLIENT_ID"
+    },
+    "apiAudience": {
+      "value": "api://YOUR_API_CLIENT_ID"
+    },
+    "allowedOrigin": {
+      "value": "https://YOUR-FRONTEND"
+    },
+    "logRetentionDays": {
+      "value": 30
+    }
+  }
+}
