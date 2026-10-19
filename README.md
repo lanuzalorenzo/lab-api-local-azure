@@ -208,7 +208,9 @@ en producción se complementaría con API Management/WAF y límites por usuario.
 | Dependencias en PR | Dependency Review | High |
 
 Los resultados SARIF se publican en la pestaña **Security → Code scanning** del
-repositorio.
+repositorio. La pipeline completa finalizó en verde el **2026-10-19** (run
+`39243360276`): build, formato, 10 pruebas, Gitleaks, CodeQL, Trivy SCA,
+contenedor no-root, Trivy image y Trivy config sobre Bicep.
 
 ---
 
