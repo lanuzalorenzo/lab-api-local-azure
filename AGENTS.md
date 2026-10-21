@@ -15,6 +15,7 @@ Este repositorio contiene la API empresarial desarrollada en .NET 10 y utilizada
 - Mantener CORS en modo denegación por defecto; los orígenes permitidos se configuran explícitamente.
 - Añadir o actualizar pruebas de integración en `tests/EcommerceApi.Tests` para cambios de comportamiento.
 - La infraestructura se define en `infra/main.bicep`; no introducir recursos públicos por defecto.
+- Los diseños de plataforma viven en `docs/app-service.md`, `docs/functions.md` y `docs/ai-integration.md`. Si un cambio contradice uno de ellos, actualiza el documento en el mismo lote.
 
 ## Comandos de verificación
 ```bash

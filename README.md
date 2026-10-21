@@ -231,6 +231,14 @@ en una suscripción real; se valida con `bicep build` y Trivy config en CI.
 
 ---
 
+## Documentación de diseño
+
+Estos documentos fijan las decisiones antes de escribir código o desplegar. **Ninguno está ejecutado**; su estado es *Diseño*.
+
+- [App Service](docs/app-service.md) — plataforma de ejecución, entrada/salida de red, identidad, slots y coste.
+- [Azure Functions](docs/functions.md) — cómputo asíncrono, idempotencia, dead-letter y hosting.
+- [Integración de IA](docs/ai-integration.md) — gateway, controles de seguridad y evaluación.
+
 ## Relación con el portfolio
 
 | Módulo | Relación |
