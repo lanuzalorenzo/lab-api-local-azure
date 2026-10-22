@@ -17,13 +17,17 @@
 - Autorización a nivel de objeto (BOLA/IDOR) y separación por usuario.
 - Mitigación de *mass assignment* mediante DTOs.
 - CORS restrictivo, *rate limiting*, límites de tamaño y *Problem Details*.
-- Pruebas de integración automatizadas.
+- Arquitectura por capas con la regla de dependencias **verificada por pruebas**.
+- DDD táctico: agregados, *value objects*, invariantes y eventos de dominio.
+- CQRS ligero en pedidos (modelo de escritura y proyección de lectura separados).
+- Pruebas unitarias, de arquitectura y de integración.
 - Pipeline con SAST, SCA, escaneo de secretos, escaneo de contenedor y escaneo de IaC.
 
 **No es** un sistema listo para producción. El almacenamiento es en memoria, no hay
 base de datos, no hay alta disponibilidad y no se han validado scopes/roles
-granulares ni un despliegue real en Azure. El estado de cada control se indica en
-la tabla siguiente.
+granulares ni un despliegue real en Azure. Tampoco es una implementación de
+microservicios: es un monolito modular (ver [ADR-0001](docs/adr/0001-monolito-modular-vs-microservicios.md)).
+El estado de cada control se indica en la tabla siguiente.
 
 ---
 
@@ -33,7 +37,9 @@ la tabla siguiente.
 flowchart LR
     C[Cliente / Swagger] -->|HTTPS + Bearer JWT| API[EcommerceApi .NET 10]
     API -->|Valida firma, issuer, audience y expiración| ENTRA[Microsoft Entra ID]
-    API -->|Autoriza por usuario| STORE[(InMemoryStore)]
+    API --> APP[Application: handlers]
+    APP --> DOM[Domain: agregados y eventos]
+    APP --> REPO[(Repositorios en memoria)]
     API -->|Logs y métricas| OBS[Application Insights / Log Analytics]
     CI[GitHub Actions] -->|SAST · SCA · Secretos · Contenedor · IaC| API
 ```
@@ -42,6 +48,20 @@ La API expone dos controladores:
 
 - `ProductsController`: catálogo de productos.
 - `OrdersController`: pedidos ligados al usuario autenticado (`oid`/`sub`).
+
+El código se organiza en cuatro proyectos con una única dirección de dependencias:
+`Domain` ← `Application` ← `Infrastructure` ← host `EcommerceApi`. Los controladores
+solo conocen handlers de `Application`; los adaptadores viven en `Infrastructure`.
+
+### Capas, patrones y decisiones
+
+| Decisión | Documento | Evidencia en código |
+|---|---|---|
+| Monolito modular con extracción asíncrona | [ADR-0001](docs/adr/0001-monolito-modular-vs-microservicios.md) | Un despliegue HTTP; Function prevista en [docs/functions.md](docs/functions.md) |
+| Regla de dependencias entre capas | [ADR-0002](docs/adr/0002-capas-y-regla-de-dependencias.md) | `tests/EcommerceApi.Architecture.Tests` |
+| CQRS ligero solo en pedidos | [ADR-0003](docs/adr/0003-cqrs-ligero-en-pedidos.md) | `EcommerceApi.Application/Orders` |
+| Agregado `Order` con invariantes y evento `OrderPlaced` | [ADR-0002](docs/adr/0002-capas-y-regla-de-dependencias.md) | `EcommerceApi.Domain/Orders` |
+| Puertos y adaptadores (DIP) | [ADR-0002](docs/adr/0002-capas-y-regla-de-dependencias.md) | `IOrderRepository` + `InMemoryOrderRepository` |
 
 ### Flujo de autorización
 
@@ -64,6 +84,8 @@ La API expone dos controladores:
 | Rate limiting | Implementado (laboratorio) | 120 req/min por IP |
 | Límite de tamaño de petición | Implementado | 16 KB en endpoints de escritura |
 | `Problem Details` y cabeceras de seguridad | Implementado | `AddProblemDetails`, middleware |
+| Regla de dependencias entre capas | Implementado | `tests/EcommerceApi.Architecture.Tests` (7 pruebas) |
+| Pruebas unitarias de dominio y aplicación | Implementado | `tests/EcommerceApi.UnitTests` (33 pruebas) |
 | Pruebas de integración | Implementado | `tests/EcommerceApi.Tests` (10 pruebas) |
 | Escaneo de secretos | Implementado | Gitleaks sobre historial completo |
 | SAST | Implementado | CodeQL C# (`security-extended`) |
@@ -85,15 +107,22 @@ La API expone dos controladores:
 
 ```text
 lab-api-local-azure/
-├── EcommerceApi/
+├── EcommerceApi.Domain/        # Agregados, value objects, eventos, invariantes
+├── EcommerceApi.Application/   # Comandos, queries, handlers y puertos
+├── EcommerceApi.Infrastructure/# Adaptadores: repositorios en memoria
+├── EcommerceApi/               # Host HTTP: controladores, auth, composición
 │   ├── Configuration/          # Opciones de Entra ID
 │   ├── Controllers/            # ProductsController, OrdersController
-│   ├── Models/                 # Entidades y DTOs de entrada
-│   ├── Services/               # InMemoryStore thread-safe
+│   ├── ErrorHandling/          # DomainException -> 400
+│   ├── Models/                 # DTOs de entrada
 │   ├── Program.cs              # Pipeline HTTP, auth, CORS, rate limiting
 │   └── appsettings.json        # Placeholders, sin credenciales
-├── tests/EcommerceApi.Tests/   # Pruebas de integración xUnit
+├── tests/EcommerceApi.Tests/   # Pruebas de integración xUnit (10)
+├── tests/EcommerceApi.UnitTests/           # Dominio y handlers (33)
+├── tests/EcommerceApi.Architecture.Tests/  # Regla de dependencias (7)
+├── EcommerceApi.sln            # Solución única para build, formato y pruebas
 ├── infra/                      # Bicep: VNet, NSG, Key Vault, App Service, PE
+├── docs/adr/                   # Decisiones de arquitectura
 ├── docs/                       # Autenticación, pruebas y threat model
 ├── .github/workflows/          # Pipeline DevSecOps
 ├── Dockerfile                  # Multi-stage, usuario no-root
@@ -139,7 +168,7 @@ Edita `appsettings.Development.json` con tus valores:
 ### Ejecutar
 
 ```bash
-dotnet restore EcommerceApi/EcommerceApi.csproj
+dotnet restore EcommerceApi.sln
 dotnet run --project EcommerceApi --urls http://localhost:5080
 ```
 
@@ -150,11 +179,19 @@ dotnet run --project EcommerceApi --urls http://localhost:5080
 ### Pruebas
 
 ```bash
-dotnet test tests/EcommerceApi.Tests/EcommerceApi.Tests.csproj
+dotnet test EcommerceApi.sln
 ```
 
-Las pruebas usan un esquema de autenticación de test y no necesitan un tenant
-real. Cubren 401, validación de entrada, mass assignment y BOLA entre dos usuarios.
+Tres suites, cada una con un propósito distinto:
+
+| Suite | Qué verifica | Pruebas |
+|---|---|---|
+| `EcommerceApi.UnitTests` | Invariantes del dominio y handlers de aplicación, sin host ni base de datos | 33 |
+| `EcommerceApi.Architecture.Tests` | Regla de dependencias entre capas y agregados sin setters públicos | 7 |
+| `EcommerceApi.Tests` | Integración HTTP: 401, validación, *mass assignment* y BOLA entre dos usuarios | 10 |
+
+Las pruebas de integración usan un esquema de autenticación de test y no necesitan
+un tenant real.
 
 ### Docker
 
@@ -209,8 +246,9 @@ en producción se complementaría con API Management/WAF y límites por usuario.
 
 Los resultados SARIF se publican en la pestaña **Security → Code scanning** del
 repositorio. La pipeline completa finalizó en verde el **2026-10-19** (run
-`39243360276`): build, formato, 10 pruebas, Gitleaks, CodeQL, Trivy SCA,
-contenedor no-root, Trivy image y Trivy config sobre Bicep.
+`39243360276`) con las entonces 10 pruebas de integración, Gitleaks, CodeQL, Trivy
+SCA, contenedor no-root, Trivy image y Trivy config sobre Bicep. La suite actual
+amplía esa cobertura con pruebas unitarias de dominio y de arquitectura.
 
 ---
 
@@ -238,6 +276,7 @@ Estos documentos fijan las decisiones antes de escribir código o desplegar. **N
 - [App Service](docs/app-service.md) — plataforma de ejecución, entrada/salida de red, identidad, slots y coste.
 - [Azure Functions](docs/functions.md) — cómputo asíncrono, idempotencia, dead-letter y hosting.
 - [Integración de IA](docs/ai-integration.md) — gateway, controles de seguridad y evaluación.
+- [Registro de decisiones (ADR)](docs/adr/README.md) — monolito modular, capas y CQRS ligero.
 
 ## Relación con el portfolio
 
@@ -255,6 +294,9 @@ Estos documentos fijan las decisiones antes de escribir código o desplegar. **N
 
 - Almacenamiento en memoria: los datos se pierden al reiniciar.
 - Sin base de datos, migraciones ni transacciones.
+- Sin eventos publicados ni patrón outbox implementados todavía: `OrderPlaced` se
+  registra en el agregado, pero no hay consumidor externo ni broker.
+- Sin microservicios: el despliegue es un monolito modular ([ADR-0001](docs/adr/0001-monolito-modular-vs-microservicios.md)).
 - Sin scopes/roles aplicados endpoint a endpoint.
 - Sin WAF/API Management desplegado.
 - Sin pruebas de carga ni caos.

@@ -129,10 +129,16 @@ curl -i -H "Authorization: Bearer ${TOKEN_B}" "${API_URL}/api/orders/${ORDER_ID}
 ## Pruebas automatizadas
 
 ```bash
-dotnet test tests/EcommerceApi.Tests/EcommerceApi.Tests.csproj
+dotnet test EcommerceApi.sln
 ```
 
-Las pruebas usan `X-Test-User` para simular identidades y cubren:
+| Suite | Cobertura |
+|---|---|
+| `tests/EcommerceApi.UnitTests` | Invariantes de `Order`, `OrderLine`, `Money` y `Product`; handlers de comando y query |
+| `tests/EcommerceApi.Architecture.Tests` | Regla de dependencias entre capas y agregados sin setters públicos |
+| `tests/EcommerceApi.Tests` | Comportamiento HTTP completo |
+
+Las pruebas de integración usan `X-Test-User` para simular identidades y cubren:
 
 - `401` sin token.
 - `400` por validación.

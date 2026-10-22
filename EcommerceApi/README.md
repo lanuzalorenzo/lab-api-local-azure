@@ -1,10 +1,9 @@
 # EcommerceApi — proyecto .NET 10
 
 API REST de laboratorio con autenticación Microsoft Entra ID, autorización por
-usuario, DTOs de entrada y pruebas de integración.
-
-La documentación principal está en el [README raíz](../README.md). Este archivo
-resume el proyecto y evita duplicar guías desactualizadas.
+usuario, DTOs de entrada y arquitectura por capas. La documentación principal está
+en el [README raíz](../README.md); este archivo resume el proyecto y evita duplicar
+guías desactualizadas.
 
 ## Estructura
 
@@ -15,18 +14,28 @@ EcommerceApi/
 ├── Controllers/
 │   ├── ProductsController.cs
 │   └── OrdersController.cs
+├── ErrorHandling/
+│   └── DomainExceptionHandler.cs
 ├── Models/
 │   ├── CreateProductRequest.cs
-│   ├── Order.cs
-│   └── Product.cs
-├── Services/
-│   └── InMemoryStore.cs
-├── Program.cs
+│   └── CreateOrderRequest.cs
+├── Program.cs                  # Pipeline HTTP y composition root
 ├── appsettings.json
 ├── appsettings.Development.example.json
 ├── EcommerceApi.csproj
 └── EcommerceApi.http
 ```
+
+El dominio, los casos de uso y los adaptadores viven en proyectos propios:
+
+```text
+EcommerceApi.Domain/          # Order, Product, Money, eventos, invariantes
+EcommerceApi.Application/     # Comandos, queries, handlers y puertos
+EcommerceApi.Infrastructure/  # Repositorios en memoria
+```
+
+Dependencias: `Domain` ← `Application` ← `Infrastructure` ← host. La regla se
+verifica en `tests/EcommerceApi.Architecture.Tests`.
 
 ## Ejecución
 
@@ -42,11 +51,12 @@ dotnet run --urls http://localhost:5080
 ## Pruebas
 
 ```bash
-dotnet test ../tests/EcommerceApi.Tests/EcommerceApi.Tests.csproj
+dotnet test ../EcommerceApi.sln
 ```
 
 ## Documentación
 
+- [Decisiones de arquitectura](../docs/adr/README.md)
 - [Configuración de Entra ID](../docs/azure-ad-config.md)
 - [Registro de la aplicación](../docs/azure-ad-register.md)
 - [Pruebas con tokens](../docs/azure-ad-tests.md)
@@ -56,8 +66,9 @@ dotnet test ../tests/EcommerceApi.Tests/EcommerceApi.Tests.csproj
 ## Alcance
 
 Incluye autenticación, autorización por usuario, validación de entrada, CORS,
-rate limiting y pruebas. No incluye base de datos, roles/scopes granulares,
-observabilidad persistente ni despliegue real en Azure.
+rate limiting, DDD táctico y CQRS ligero en pedidos. No incluye base de datos,
+publicación de eventos, roles/scopes granulares, observabilidad persistente,
+microservicios ni despliegue real en Azure.
 
 ## Licencia
 

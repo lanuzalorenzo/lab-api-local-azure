@@ -14,7 +14,9 @@ desplegados en producción.
 - `GET /health` (anónimo)
 
 Autenticación con JWT de Microsoft Entra ID. Almacenamiento en memoria
-(`InMemoryStore`), sin base de datos ni alta disponibilidad.
+(`InMemoryProductRepository` e `InMemoryOrderRepository`), sin base de datos ni
+alta disponibilidad. La lógica de aplicación vive en `EcommerceApi.Application` y
+el dominio en `EcommerceApi.Domain`; los controladores solo orquestan handlers.
 
 ### Diagrama de flujo
 
@@ -23,7 +25,9 @@ graph TD
     Client[Cliente / Swagger] -->|HTTPS + Bearer JWT| API[EcommerceApi ASP.NET Core]
     API -->|Valida issuer, audience, firma y expiración| EntraID[Microsoft Entra ID]
     API -->|DTOs + validación| Controllers[Products / Orders]
-    Controllers -->|UserId del token| Store[(InMemoryStore)]
+    Controllers -->|comandos y queries| Handlers[Application handlers]
+    Handlers -->|UserId del token| Domain[Order / Product aggregates]
+    Handlers -->|puertos| Store[(Repositorios en memoria)]
 ```
 
 ## 2. STRIDE
@@ -67,11 +71,16 @@ graph TD
 - Swagger confinado a `Development`.
 - Contenedor multi-stage con usuario no-root.
 - Pruebas de integración de autenticación, validación y BOLA.
+- Pruebas unitarias de invariantes y handlers; regla de dependencias entre capas
+  verificada en `tests/EcommerceApi.Architecture.Tests`.
+- Invariantes de dominio (agregados `Order` y `Product`) que impiden persistir
+  estados inconsistentes aunque la validación de transporte se relaje.
 
 ## 5. Riesgos residuales
 
 1. **Sin persistencia**: los datos se pierden al reiniciar; no hay integridad
-   transaccional ni backups.
+   transaccional ni backups. Sin outbox, un evento de dominio no sobrevive a un
+   fallo entre la escritura y una futura publicación.
 2. **Sin autorización granular**: no se validan scopes/roles por endpoint.
 3. **Sin auditoría inmutable**: los logs no están centralizados ni firmados.
 4. **Sin WAF/API Management**: el rate limit es local y por IP.

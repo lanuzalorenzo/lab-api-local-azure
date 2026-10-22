@@ -6,7 +6,8 @@ Este repositorio contiene la API empresarial desarrollada en .NET 10 y utilizada
 - Los runbooks y las evidencias se enlazan desde el portfolio. No publiques datos reales, secretos ni salidas sin redactar.
 
 ## Convenciones de desarrollo y seguridad
-- Mantener la arquitectura desacoplada en .NET (controladores REST, DTOs y modelos).
+- Mantener la arquitectura desacoplada en .NET: `Domain` no depende de nadie, `Application` solo de `Domain`, `Infrastructure` de ambas y el host compone todo. La regla se verifica en `tests/EcommerceApi.Architecture.Tests`; no la debilites.
+- Documentar toda decisión estructural como ADR en `docs/adr/` antes o junto al código que la implementa.
 - Respetar los principios de Security by Design y directrices de AppSec (OWASP API Security Top 10).
 - No eliminar ni debilitar la validación criptográfica de tokens JWT/JWKS en `Program.cs`.
 - Mantener el contenedor Dockerfile con usuario no privilegiado (`USER $APP_UID`) y configuraciones seguras.
@@ -19,9 +20,10 @@ Este repositorio contiene la API empresarial desarrollada en .NET 10 y utilizada
 
 ## Comandos de verificación
 ```bash
-dotnet restore tests/EcommerceApi.Tests/EcommerceApi.Tests.csproj
-dotnet build EcommerceApi/EcommerceApi.csproj -c Release --no-restore
-dotnet test tests/EcommerceApi.Tests/EcommerceApi.Tests.csproj -c Release --no-restore
+dotnet restore EcommerceApi.sln
+dotnet build EcommerceApi.sln -c Release --no-restore
+dotnet test EcommerceApi.sln -c Release --no-build --no-restore
+dotnet format EcommerceApi.sln --verify-no-changes --no-restore
 bicep build infra/main.bicep --outfile /tmp/main.json
 gitleaks detect --source . --redact --verbose --exit-code 2
 ```
