@@ -323,6 +323,7 @@ Estos documentos fijan las decisiones antes de escribir código o desplegar. El 
 - [Azure Functions](docs/functions.md) — cómputo asíncrono, idempotencia, dead-letter y hosting. **Parcial**: consumidor y outbox probados en local, sin despliegue.
 - [Integración de IA](docs/ai-integration.md) — gateway, controles de seguridad y evaluación.
 - [Registro de decisiones (ADR)](docs/adr/README.md) — monolito modular, capas, CQRS ligero y outbox transaccional.
+- [Gobernanza del repositorio](docs/repo-governance.md) — **Pendiente**: exigir PR y checks obligatorios en `main`; el push directo del 2026-10-22 los bypassó.
 
 ## Relación con el portfolio
 
@@ -351,6 +352,10 @@ Estos documentos fijan las decisiones antes de escribir código o desplegar. El 
 - Sin WAF/API Management desplegado.
 - Sin pruebas de carga ni caos.
 - La plantilla Bicep no se ha desplegado; su validación es estática.
+- **Gobernanza pendiente:** el push directo del 2026-10-22 saltó la regla de PR y
+  los 7 checks requeridos de `main`. Está registrado en
+  [docs/repo-governance.md](docs/repo-governance.md) para cerrarlo con un PR de
+  prueba y checks obligatorios.
 
 Estas limitaciones son deliberadas y se declaran para no confundir un laboratorio
 con un sistema productivo.
