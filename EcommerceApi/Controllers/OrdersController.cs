@@ -1,22 +1,32 @@
-using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
+using EcommerceApi.Application.Orders;
 using EcommerceApi.Models;
-using EcommerceApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EcommerceApi.Controllers;
 
+/// <summary>
+/// Order endpoints. Reads and writes go through separate handlers (CQRS-lite):
+/// commands mutate the aggregate, queries return a flat projection.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
 public class OrdersController : ControllerBase
 {
-    private readonly InMemoryStore _store;
+    private readonly ICreateOrderHandler _createOrder;
+    private readonly IGetOrdersHandler _getOrders;
+    private readonly IGetOrderByIdHandler _getOrderById;
 
-    public OrdersController(InMemoryStore store)
+    public OrdersController(
+        ICreateOrderHandler createOrder,
+        IGetOrdersHandler getOrders,
+        IGetOrderByIdHandler getOrderById)
     {
-        _store = store;
+        _createOrder = createOrder;
+        _getOrders = getOrders;
+        _getOrderById = getOrderById;
     }
 
     /// <summary>
@@ -33,10 +43,10 @@ public class OrdersController : ControllerBase
     /// Get the orders owned by the authenticated user.
     /// </summary>
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<Order>), StatusCodes.Status200OK)]
-    public ActionResult<IEnumerable<Order>> GetAllOrders()
+    [ProducesResponseType(typeof(IEnumerable<OrderSummary>), StatusCodes.Status200OK)]
+    public ActionResult<IEnumerable<OrderSummary>> GetAllOrders()
     {
-        return Ok(_store.GetOrders(CurrentUserId));
+        return Ok(_getOrders.Handle(CurrentUserId));
     }
 
     /// <summary>
@@ -44,11 +54,11 @@ public class OrdersController : ControllerBase
     /// users are deliberately reported as 404 to avoid object enumeration.
     /// </summary>
     [HttpGet("{id:int}")]
-    [ProducesResponseType(typeof(Order), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(OrderSummary), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult<Order> GetOrderById(int id)
+    public ActionResult<OrderSummary> GetOrderById(int id)
     {
-        var order = _store.GetOrder(id, CurrentUserId);
+        var order = _getOrderById.Handle(id, CurrentUserId);
         if (order is null)
         {
             return NotFound(new { message = $"Order with ID {id} not found" });
@@ -62,39 +72,31 @@ public class OrdersController : ControllerBase
     /// </summary>
     [HttpPost]
     [RequestSizeLimit(16 * 1024)]
-    [ProducesResponseType(typeof(Order), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(OrderSummary), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<Order> CreateOrder([FromBody] CreateOrderRequest request)
+    public async Task<ActionResult<OrderSummary>> CreateOrder(
+        [FromBody] CreateOrderRequest request,
+        CancellationToken cancellationToken)
     {
-        var productIds = request.ProductIds.Distinct().ToList();
+        var result = await _createOrder.HandleAsync(
+            new CreateOrderCommand(CurrentUserId, request.ProductIds),
+            cancellationToken);
 
-        if (!_store.AllProductsExist(productIds))
+        if (result.MissingProductIds.Count > 0)
         {
-            var invalidProductIds = productIds
-                .Where(productId => _store.GetProduct(productId) is null)
-                .ToList();
-
-            return BadRequest(new { message = $"Products not found: {string.Join(", ", invalidProductIds)}" });
+            return BadRequest(new
+            {
+                message = $"Products not found: {string.Join(", ", result.MissingProductIds)}"
+            });
         }
 
-        var order = new Order
+        if (!result.Succeeded)
         {
-            CreatedAt = DateTime.UtcNow,
-            ProductIds = productIds,
-            Total = _store.CalculateTotal(productIds),
-            UserId = CurrentUserId
-        };
+            return BadRequest(new { message = string.Join(" ", result.Errors) });
+        }
 
-        _store.AddOrder(order);
+        var summary = OrderSummary.From(result.Order!);
 
-        return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, order);
+        return CreatedAtAction(nameof(GetOrderById), new { id = summary.Id }, summary);
     }
-}
-
-public sealed class CreateOrderRequest
-{
-    [Required]
-    [MinLength(1)]
-    [MaxLength(20)]
-    public List<int> ProductIds { get; set; } = new List<int>();
 }

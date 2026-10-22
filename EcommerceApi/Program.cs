@@ -1,6 +1,10 @@
 using System.Threading.RateLimiting;
+using EcommerceApi.Application.Abstractions;
+using EcommerceApi.Application.Orders;
+using EcommerceApi.Application.Products;
 using EcommerceApi.Configuration;
-using EcommerceApi.Services;
+using EcommerceApi.ErrorHandling;
+using EcommerceApi.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
@@ -19,8 +23,22 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<DomainExceptionHandler>();
 builder.Services.AddHealthChecks();
-builder.Services.AddSingleton<InMemoryStore>();
+
+// Composition root: the host is the only place that knows about concrete adapters.
+// Application and domain code depend only on the ports.
+builder.Services.AddSingleton<IProductRepository, InMemoryProductRepository>();
+builder.Services.AddSingleton<IOrderRepository, InMemoryOrderRepository>();
+builder.Services.AddSingleton(TimeProvider.System);
+
+builder.Services.AddSingleton<IGetProductsHandler, GetProductsHandler>();
+builder.Services.AddSingleton<IGetProductByIdHandler, GetProductByIdHandler>();
+builder.Services.AddSingleton<ICreateProductHandler, CreateProductHandler>();
+
+builder.Services.AddSingleton<ICreateOrderHandler, CreateOrderHandler>();
+builder.Services.AddSingleton<IGetOrdersHandler, GetOrdersHandler>();
+builder.Services.AddSingleton<IGetOrderByIdHandler, GetOrderByIdHandler>();
 
 // CORS is deny-by-default. Browser clients must be explicitly allowlisted through
 // configuration (Cors__AllowedOrigins__0, ...). Same-origin calls (Swagger) do not

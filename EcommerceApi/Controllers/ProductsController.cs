@@ -1,41 +1,52 @@
+using EcommerceApi.Application.Products;
 using EcommerceApi.Models;
-using EcommerceApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EcommerceApi.Controllers;
 
+/// <summary>
+/// Catalogue endpoints. Products keep a simple CRUD shape: the read and write
+/// models do not diverge enough to justify a full CQRS split (see ADR-0003).
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
 public class ProductsController : ControllerBase
 {
-    private readonly InMemoryStore _store;
+    private readonly IGetProductsHandler _getProducts;
+    private readonly IGetProductByIdHandler _getProductById;
+    private readonly ICreateProductHandler _createProduct;
 
-    public ProductsController(InMemoryStore store)
+    public ProductsController(
+        IGetProductsHandler getProducts,
+        IGetProductByIdHandler getProductById,
+        ICreateProductHandler createProduct)
     {
-        _store = store;
+        _getProducts = getProducts;
+        _getProductById = getProductById;
+        _createProduct = createProduct;
     }
 
     /// <summary>
     /// Get all products.
     /// </summary>
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<Product>), StatusCodes.Status200OK)]
-    public ActionResult<IEnumerable<Product>> GetAllProducts()
+    [ProducesResponseType(typeof(IEnumerable<ProductView>), StatusCodes.Status200OK)]
+    public ActionResult<IEnumerable<ProductView>> GetAllProducts()
     {
-        return Ok(_store.GetProducts());
+        return Ok(_getProducts.Handle());
     }
 
     /// <summary>
     /// Get a product by ID.
     /// </summary>
     [HttpGet("{id:int}")]
-    [ProducesResponseType(typeof(Product), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProductView), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult<Product> GetProductById(int id)
+    public ActionResult<ProductView> GetProductById(int id)
     {
-        var product = _store.GetProduct(id);
+        var product = _getProductById.Handle(id);
         if (product is null)
         {
             return NotFound(new { message = $"Product with ID {id} not found" });
@@ -49,18 +60,12 @@ public class ProductsController : ControllerBase
     /// </summary>
     [HttpPost]
     [RequestSizeLimit(16 * 1024)]
-    [ProducesResponseType(typeof(Product), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProductView), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<Product> CreateProduct([FromBody] CreateProductRequest request)
+    public ActionResult<ProductView> CreateProduct([FromBody] CreateProductRequest request)
     {
-        var product = new Product
-        {
-            Name = request.Name.Trim(),
-            Price = request.Price,
-            Stock = request.Stock
-        };
-
-        _store.AddProduct(product);
+        var product = _createProduct.Handle(
+            new CreateProductCommand(request.Name, request.Price, request.Stock));
 
         return CreatedAtAction(nameof(GetProductById), new { id = product.Id }, product);
     }

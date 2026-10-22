@@ -11,6 +11,9 @@ WORKDIR /src
 
 # Copiar csproj y restaurar dependencias primero para aprovechar la caché de capas
 COPY ["EcommerceApi/EcommerceApi.csproj", "EcommerceApi/"]
+COPY ["EcommerceApi.Domain/EcommerceApi.Domain.csproj", "EcommerceApi.Domain/"]
+COPY ["EcommerceApi.Application/EcommerceApi.Application.csproj", "EcommerceApi.Application/"]
+COPY ["EcommerceApi.Infrastructure/EcommerceApi.Infrastructure.csproj", "EcommerceApi.Infrastructure/"]
 RUN dotnet restore "EcommerceApi/EcommerceApi.csproj"
 
 # Copiar el resto del código y compilar en modo Release
