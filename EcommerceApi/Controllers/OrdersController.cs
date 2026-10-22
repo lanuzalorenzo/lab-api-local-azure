@@ -44,9 +44,10 @@ public class OrdersController : ControllerBase
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<OrderSummary>), StatusCodes.Status200OK)]
-    public ActionResult<IEnumerable<OrderSummary>> GetAllOrders()
+    public async Task<ActionResult<IEnumerable<OrderSummary>>> GetAllOrders(
+        CancellationToken cancellationToken)
     {
-        return Ok(_getOrders.Handle(CurrentUserId));
+        return Ok(await _getOrders.HandleAsync(CurrentUserId, cancellationToken));
     }
 
     /// <summary>
@@ -56,9 +57,11 @@ public class OrdersController : ControllerBase
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(OrderSummary), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult<OrderSummary> GetOrderById(int id)
+    public async Task<ActionResult<OrderSummary>> GetOrderById(
+        int id,
+        CancellationToken cancellationToken)
     {
-        var order = _getOrderById.Handle(id, CurrentUserId);
+        var order = await _getOrderById.HandleAsync(id, CurrentUserId, cancellationToken);
         if (order is null)
         {
             return NotFound(new { message = $"Order with ID {id} not found" });

@@ -9,8 +9,12 @@ public sealed class GetProductsHandler : IGetProductsHandler
 
     public GetProductsHandler(IProductRepository products) => _products = products;
 
-    public IReadOnlyList<ProductView> Handle() =>
-        _products.GetAll().Select(product => product.ToView()).ToList();
+    public async Task<IReadOnlyList<ProductView>> HandleAsync(CancellationToken cancellationToken = default)
+    {
+        var products = await _products.GetAllAsync(cancellationToken);
+
+        return products.Select(product => product.ToView()).ToList();
+    }
 }
 
 public sealed class GetProductByIdHandler : IGetProductByIdHandler
@@ -19,7 +23,12 @@ public sealed class GetProductByIdHandler : IGetProductByIdHandler
 
     public GetProductByIdHandler(IProductRepository products) => _products = products;
 
-    public ProductView? Handle(int id) => _products.Find(id)?.ToView();
+    public async Task<ProductView?> HandleAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var product = await _products.FindAsync(id, cancellationToken);
+
+        return product?.ToView();
+    }
 }
 
 public sealed class CreateProductHandler : ICreateProductHandler
@@ -28,10 +37,12 @@ public sealed class CreateProductHandler : ICreateProductHandler
 
     public CreateProductHandler(IProductRepository products) => _products = products;
 
-    public ProductView Handle(CreateProductCommand command)
+    public async Task<ProductView> HandleAsync(
+        CreateProductCommand command,
+        CancellationToken cancellationToken = default)
     {
         var product = Product.Create(command.Name, command.Price, command.Stock);
-        _products.Add(product);
+        await _products.AddAsync(product, cancellationToken);
 
         return product.ToView();
     }

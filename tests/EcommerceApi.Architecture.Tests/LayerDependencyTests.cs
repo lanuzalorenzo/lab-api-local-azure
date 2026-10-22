@@ -58,7 +58,7 @@ public sealed class LayerDependencyTests
     [Fact]
     public void Infrastructure_DoesNotReferenceTheHost()
     {
-        var forbidden = ReferencedAssemblies(typeof(Infrastructure.Persistence.InMemoryOrderRepository).Assembly)
+        var forbidden = ReferencedAssemblies(typeof(Infrastructure.Persistence.SqliteOrderRepository).Assembly)
             .Where(name => name == "EcommerceApi")
             .ToList();
 

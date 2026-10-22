@@ -4,24 +4,25 @@ namespace EcommerceApi.Application.Orders;
 
 public sealed class GetOrdersHandler : IGetOrdersHandler
 {
-    private readonly IOrderRepository _orders;
+    private readonly IOrderReadModel _orders;
 
-    public GetOrdersHandler(IOrderRepository orders) => _orders = orders;
+    public GetOrdersHandler(IOrderReadModel orders) => _orders = orders;
 
-    public IReadOnlyList<OrderSummary> Handle(string userId) =>
-        _orders.GetByUser(userId).Select(OrderSummary.From).ToList();
+    public Task<IReadOnlyList<OrderSummary>> HandleAsync(
+        string userId,
+        CancellationToken cancellationToken = default) =>
+        _orders.GetByUserAsync(userId, cancellationToken);
 }
 
 public sealed class GetOrderByIdHandler : IGetOrderByIdHandler
 {
-    private readonly IOrderRepository _orders;
+    private readonly IOrderReadModel _orders;
 
-    public GetOrderByIdHandler(IOrderRepository orders) => _orders = orders;
+    public GetOrderByIdHandler(IOrderReadModel orders) => _orders = orders;
 
-    public OrderSummary? Handle(int id, string userId)
-    {
-        var order = _orders.Find(id, userId);
-
-        return order is null ? null : OrderSummary.From(order);
-    }
+    public Task<OrderSummary?> HandleAsync(
+        int id,
+        string userId,
+        CancellationToken cancellationToken = default) =>
+        _orders.FindAsync(id, userId, cancellationToken);
 }

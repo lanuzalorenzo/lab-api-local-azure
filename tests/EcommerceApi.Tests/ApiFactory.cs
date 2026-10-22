@@ -9,6 +9,9 @@ namespace EcommerceApi.Tests;
 
 public sealed class ApiFactory : WebApplicationFactory<Program>
 {
+    private readonly string _databasePath =
+        Path.Combine(Path.GetTempPath(), $"ecommerce-api-tests-{Guid.NewGuid():N}.db");
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
@@ -21,7 +24,9 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
                 ["AzureAd:ClientId"] = "11111111-1111-1111-1111-111111111111",
                 ["AzureAd:Audience"] = "api://11111111-1111-1111-1111-111111111111",
                 ["AzureAd:Authority"] = "https://login.microsoftonline.com/00000000-0000-0000-0000-000000000000/v2.0",
-                ["Cors:AllowedOrigins:0"] = "https://frontend.test"
+                ["Cors:AllowedOrigins:0"] = "https://frontend.test",
+                ["Storage:ConnectionString"] = $"Data Source={_databasePath};Pooling=False",
+                ["Publisher:Mode"] = "Log"
             });
         });
 
@@ -36,5 +41,19 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
                     TestAuthHandler.SchemeName,
                     _ => { });
         });
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+
+        foreach (var suffix in new[] { "", "-wal", "-shm" })
+        {
+            var path = _databasePath + suffix;
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
     }
 }

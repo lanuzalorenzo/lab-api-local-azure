@@ -1,0 +1,10 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "ServiceBus__QueueName": "orders",
+    "ServiceBus": "<service-bus-connection-string>",
+    "Storage__ConnectionString": "Data Source=data/ecommerce.db"
+  }
+}

@@ -1,4 +1,6 @@
 using EcommerceApi.Application.Abstractions;
+using EcommerceApi.Application.Orders;
+using EcommerceApi.Application.Outbox;
 using EcommerceApi.Domain.Orders;
 using EcommerceApi.Domain.Products;
 
@@ -6,48 +8,126 @@ namespace EcommerceApi.UnitTests.Fakes;
 
 internal sealed class FakeProductRepository : IProductRepository
 {
-    private readonly Dictionary<int, Product> _items = new();
+    private readonly List<Product> _items = [];
     private int _nextId;
 
     public FakeProductRepository(params Product[] products)
     {
         foreach (var product in products)
         {
-            Add(product);
+            AddAsync(product).GetAwaiter().GetResult();
         }
     }
 
-    public IReadOnlyList<Product> GetAll() => _items.Values.OrderBy(product => product.Id).ToList();
+    public Task<IReadOnlyList<Product>> GetAllAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<Product>>(_items.OrderBy(product => product.Id).ToList());
 
-    public Product? Find(int id) => _items.TryGetValue(id, out var product) ? product : null;
+    public Task<Product?> FindAsync(int id, CancellationToken cancellationToken = default) =>
+        Task.FromResult(_items.FirstOrDefault(product => product.Id == id));
 
-    public Product Add(Product product)
+    public Task AddAsync(Product product, CancellationToken cancellationToken = default)
     {
         product.AssignIdentity(++_nextId);
-        _items[product.Id] = product;
-        return product;
+        _items.Add(product);
+        return Task.CompletedTask;
     }
 }
 
 internal sealed class FakeOrderRepository : IOrderRepository
 {
-    private readonly Dictionary<int, Order> _items = new();
+    private readonly List<Order> _items = [];
     private int _nextId;
 
-    public IReadOnlyList<Order> GetByUser(string userId) =>
-        _items.Values
-            .Where(order => order.UserId == userId)
-            .OrderBy(order => order.Id)
-            .ToList();
+    public IReadOnlyList<Order> Items => _items;
 
-    public Order? Find(int id, string userId) =>
-        _items.TryGetValue(id, out var order) && order.UserId == userId ? order : null;
-
-    public Order Add(Order order)
+    public Task AddAsync(Order order, CancellationToken cancellationToken = default)
     {
         order.AssignIdentity(++_nextId);
-        _items[order.Id] = order;
-        return order;
+        _items.Add(order);
+        return Task.CompletedTask;
+    }
+}
+
+internal sealed class FakeOrderReadModel : IOrderReadModel
+{
+    private readonly Dictionary<string, List<OrderSummary>> _byUser = new(StringComparer.Ordinal);
+
+    public void Add(string userId, OrderSummary summary)
+    {
+        if (!_byUser.TryGetValue(userId, out var summaries))
+        {
+            summaries = [];
+            _byUser[userId] = summaries;
+        }
+
+        summaries.Add(summary);
+    }
+
+    public Task<IReadOnlyList<OrderSummary>> GetByUserAsync(
+        string userId,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<OrderSummary>>(
+            _byUser.GetValueOrDefault(userId)?.OrderBy(order => order.Id).ToList() ?? []);
+
+    public Task<OrderSummary?> FindAsync(
+        int id,
+        string userId,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(_byUser.GetValueOrDefault(userId)?.FirstOrDefault(order => order.Id == id));
+}
+
+internal sealed class FakeOutboxWriter : IOutboxWriter
+{
+    public List<OutboxMessage> Messages { get; } = [];
+
+    public Task AddAsync(OutboxMessage message, CancellationToken cancellationToken = default)
+    {
+        Messages.Add(message);
+        return Task.CompletedTask;
+    }
+}
+
+internal sealed class FakeUnitOfWork : IUnitOfWork
+{
+    public bool Committed { get; private set; }
+
+    public Task<IUnitOfWorkTransaction> BeginTransactionAsync(
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult<IUnitOfWorkTransaction>(new Transaction(this));
+
+    private sealed class Transaction : IUnitOfWorkTransaction
+    {
+        private readonly FakeUnitOfWork _unitOfWork;
+
+        public Transaction(FakeUnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
+
+        public Task CommitAsync(CancellationToken cancellationToken = default)
+        {
+            _unitOfWork.Committed = true;
+            return Task.CompletedTask;
+        }
+
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
+}
+
+internal sealed class FakeProcessedMessageStore : IProcessedMessageStore
+{
+    private readonly HashSet<string> _processed = new(StringComparer.Ordinal);
+
+    public int MarkProcessedCalls { get; private set; }
+
+    public Task<bool> ExistsAsync(string messageId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(_processed.Contains(messageId));
+
+    public Task MarkProcessedAsync(
+        string messageId,
+        DateTime processedAt,
+        CancellationToken cancellationToken = default)
+    {
+        MarkProcessedCalls++;
+        _processed.Add(messageId);
+        return Task.CompletedTask;
     }
 }
 

@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\EcommerceApi.Domain\EcommerceApi.Domain.csproj" />
+    <ProjectReference Include="..\EcommerceApi.Contracts\EcommerceApi.Contracts.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

@@ -1,10 +1,13 @@
 using System.Threading.RateLimiting;
 using EcommerceApi.Application.Abstractions;
+using EcommerceApi.Application.OrderProcessing;
 using EcommerceApi.Application.Orders;
 using EcommerceApi.Application.Products;
 using EcommerceApi.Configuration;
 using EcommerceApi.ErrorHandling;
+using EcommerceApi.Infrastructure.Outbox;
 using EcommerceApi.Infrastructure.Persistence;
+using EcommerceApi.Infrastructure.Processing;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
@@ -28,17 +31,50 @@ builder.Services.AddHealthChecks();
 
 // Composition root: the host is the only place that knows about concrete adapters.
 // Application and domain code depend only on the ports.
-builder.Services.AddSingleton<IProductRepository, InMemoryProductRepository>();
-builder.Services.AddSingleton<IOrderRepository, InMemoryOrderRepository>();
+builder.Services.Configure<StorageOptions>(
+    builder.Configuration.GetSection(StorageOptions.SectionName));
+
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<SqliteConnectionFactory>();
+builder.Services.AddSingleton<SqliteSchemaInitializer>();
+builder.Services.AddScoped<SqliteSession>();
+builder.Services.AddScoped<IUnitOfWork, SqliteUnitOfWork>();
 
-builder.Services.AddSingleton<IGetProductsHandler, GetProductsHandler>();
-builder.Services.AddSingleton<IGetProductByIdHandler, GetProductByIdHandler>();
-builder.Services.AddSingleton<ICreateProductHandler, CreateProductHandler>();
+builder.Services.AddScoped<IProductRepository, SqliteProductRepository>();
+builder.Services.AddScoped<IOrderRepository, SqliteOrderRepository>();
+builder.Services.AddScoped<IOrderReadModel, SqliteOrderReadModel>();
+builder.Services.AddScoped<IProcessedMessageStore, SqliteProcessedMessageStore>();
 
-builder.Services.AddSingleton<ICreateOrderHandler, CreateOrderHandler>();
-builder.Services.AddSingleton<IGetOrdersHandler, GetOrdersHandler>();
-builder.Services.AddSingleton<IGetOrderByIdHandler, GetOrderByIdHandler>();
+builder.Services.AddScoped<SqliteOutboxStore>();
+builder.Services.AddScoped<IOutboxWriter>(provider => provider.GetRequiredService<SqliteOutboxStore>());
+builder.Services.AddScoped<IOutboxStore>(provider => provider.GetRequiredService<SqliteOutboxStore>());
+builder.Services.AddScoped<OutboxPublisher>();
+builder.Services.AddHostedService<OutboxDispatcher>();
+
+// The local sink proves the outbox pipeline; Service Bus is opt-in and requires a
+// real namespace (Publisher__Mode=ServiceBus plus ServiceBus__ConnectionString).
+var publisherMode = builder.Configuration["Publisher:Mode"] ?? "Log";
+if (string.Equals(publisherMode, "ServiceBus", StringComparison.OrdinalIgnoreCase))
+{
+    var serviceBusOptions = builder.Configuration
+        .GetSection(ServiceBusOptions.SectionName)
+        .Get<ServiceBusOptions>() ?? new ServiceBusOptions();
+    builder.Services.AddSingleton(serviceBusOptions);
+    builder.Services.AddSingleton<IEventPublisher, ServiceBusEventPublisher>();
+}
+else
+{
+    builder.Services.AddSingleton<IEventPublisher, LoggingEventPublisher>();
+}
+
+builder.Services.AddScoped<IGetProductsHandler, GetProductsHandler>();
+builder.Services.AddScoped<IGetProductByIdHandler, GetProductByIdHandler>();
+builder.Services.AddScoped<ICreateProductHandler, CreateProductHandler>();
+
+builder.Services.AddScoped<ICreateOrderHandler, CreateOrderHandler>();
+builder.Services.AddScoped<IGetOrdersHandler, GetOrdersHandler>();
+builder.Services.AddScoped<IGetOrderByIdHandler, GetOrderByIdHandler>();
+builder.Services.AddSingleton<IProcessOrderHandler, ProcessOrderHandler>();
 
 // CORS is deny-by-default. Browser clients must be explicitly allowlisted through
 // configuration (Cors__AllowedOrigins__0, ...). Same-origin calls (Swagger) do not
@@ -136,6 +172,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHealthChecks("/health").AllowAnonymous();
+
+await app.Services.GetRequiredService<SqliteSchemaInitializer>().InitializeAsync();
 
 app.Run();
 

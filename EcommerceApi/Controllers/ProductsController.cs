@@ -33,9 +33,10 @@ public class ProductsController : ControllerBase
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<ProductView>), StatusCodes.Status200OK)]
-    public ActionResult<IEnumerable<ProductView>> GetAllProducts()
+    public async Task<ActionResult<IEnumerable<ProductView>>> GetAllProducts(
+        CancellationToken cancellationToken)
     {
-        return Ok(_getProducts.Handle());
+        return Ok(await _getProducts.HandleAsync(cancellationToken));
     }
 
     /// <summary>
@@ -44,9 +45,11 @@ public class ProductsController : ControllerBase
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(ProductView), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult<ProductView> GetProductById(int id)
+    public async Task<ActionResult<ProductView>> GetProductById(
+        int id,
+        CancellationToken cancellationToken)
     {
-        var product = _getProductById.Handle(id);
+        var product = await _getProductById.HandleAsync(id, cancellationToken);
         if (product is null)
         {
             return NotFound(new { message = $"Product with ID {id} not found" });
@@ -62,10 +65,13 @@ public class ProductsController : ControllerBase
     [RequestSizeLimit(16 * 1024)]
     [ProducesResponseType(typeof(ProductView), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<ProductView> CreateProduct([FromBody] CreateProductRequest request)
+    public async Task<ActionResult<ProductView>> CreateProduct(
+        [FromBody] CreateProductRequest request,
+        CancellationToken cancellationToken)
     {
-        var product = _createProduct.Handle(
-            new CreateProductCommand(request.Name, request.Price, request.Stock));
+        var product = await _createProduct.HandleAsync(
+            new CreateProductCommand(request.Name, request.Price, request.Stock),
+            cancellationToken);
 
         return CreatedAtAction(nameof(GetProductById), new { id = product.Id }, product);
     }

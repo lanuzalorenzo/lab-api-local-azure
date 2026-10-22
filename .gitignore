@@ -43,3 +43,12 @@ Thumbs.db
 # Generated IaC output and security reports
 infra/main.json
 trivy-*.sarif
+
+# Local SQLite lab database (never commit data)
+*.db
+*.db-wal
+*.db-shm
+data/
+
+# Azure Functions local settings
+functions/**/local.settings.json

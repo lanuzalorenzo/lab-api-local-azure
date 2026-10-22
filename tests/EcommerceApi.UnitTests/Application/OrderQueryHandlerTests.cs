@@ -1,6 +1,4 @@
 using EcommerceApi.Application.Orders;
-using EcommerceApi.Domain.Common;
-using EcommerceApi.Domain.Orders;
 using EcommerceApi.UnitTests.Fakes;
 using Xunit;
 
@@ -10,43 +8,40 @@ public sealed class OrderQueryHandlerTests
 {
     private static readonly DateTime CreatedAt = new(2026, 10, 22, 10, 0, 0, DateTimeKind.Utc);
 
-    private static Order Line(string owner, int productId) =>
-        Order.Create(owner, [new OrderLine(productId, Money.From(10m), 1)], CreatedAt);
-
     [Fact]
-    public void GetOrders_ReturnsOnlyTheCallersOrders()
+    public async Task GetOrders_ReturnsOnlyTheCallersOrders()
     {
-        var repository = new FakeOrderRepository();
-        var first = repository.Add(Line("owner", 1));
-        var second = repository.Add(Line("owner", 2));
-        repository.Add(Line("other", 3));
-        var handler = new GetOrdersHandler(repository);
+        var readModel = new FakeOrderReadModel();
+        readModel.Add("owner", new OrderSummary(1, CreatedAt, [1], 10m));
+        readModel.Add("owner", new OrderSummary(2, CreatedAt, [2], 20m));
+        readModel.Add("other", new OrderSummary(3, CreatedAt, [3], 30m));
+        var handler = new GetOrdersHandler(readModel);
 
-        var result = handler.Handle("owner");
+        var result = await handler.HandleAsync("owner");
 
-        Assert.Equal([first.Id, second.Id], result.Select(summary => summary.Id));
+        Assert.Equal([1, 2], result.Select(summary => summary.Id));
     }
 
     [Fact]
-    public void GetOrderById_ForAnotherUser_ReturnsNull()
+    public async Task GetOrderById_ForAnotherUser_ReturnsNull()
     {
-        var repository = new FakeOrderRepository();
-        var order = repository.Add(Line("owner", 1));
-        var handler = new GetOrderByIdHandler(repository);
+        var readModel = new FakeOrderReadModel();
+        readModel.Add("owner", new OrderSummary(1, CreatedAt, [1], 10m));
+        var handler = new GetOrderByIdHandler(readModel);
 
-        var result = handler.Handle(order.Id, "other");
+        var result = await handler.HandleAsync(1, "other");
 
         Assert.Null(result);
     }
 
     [Fact]
-    public void GetOrderById_ForOwner_ReturnsProjection()
+    public async Task GetOrderById_ForOwner_ReturnsProjection()
     {
-        var repository = new FakeOrderRepository();
-        var order = repository.Add(Line("owner", 7));
-        var handler = new GetOrderByIdHandler(repository);
+        var readModel = new FakeOrderReadModel();
+        readModel.Add("owner", new OrderSummary(7, CreatedAt, [7], 10m));
+        var handler = new GetOrderByIdHandler(readModel);
 
-        var result = handler.Handle(order.Id, "owner");
+        var result = await handler.HandleAsync(7, "owner");
 
         Assert.NotNull(result);
         Assert.Equal([7], result.ProductIds);

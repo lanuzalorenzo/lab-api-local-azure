@@ -19,10 +19,10 @@ public interface ICreateOrderHandler
 
 public interface IGetOrdersHandler
 {
-    IReadOnlyList<OrderSummary> Handle(string userId);
+    Task<IReadOnlyList<OrderSummary>> HandleAsync(string userId, CancellationToken cancellationToken = default);
 }
 
 public interface IGetOrderByIdHandler
 {
-    OrderSummary? Handle(int id, string userId);
+    Task<OrderSummary?> HandleAsync(int id, string userId, CancellationToken cancellationToken = default);
 }

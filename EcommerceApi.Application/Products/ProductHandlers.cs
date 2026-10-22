@@ -6,17 +6,17 @@ public sealed record CreateProductCommand(string Name, decimal Price, int Stock)
 
 public interface IGetProductsHandler
 {
-    IReadOnlyList<ProductView> Handle();
+    Task<IReadOnlyList<ProductView>> HandleAsync(CancellationToken cancellationToken = default);
 }
 
 public interface IGetProductByIdHandler
 {
-    ProductView? Handle(int id);
+    Task<ProductView?> HandleAsync(int id, CancellationToken cancellationToken = default);
 }
 
 public interface ICreateProductHandler
 {
-    ProductView Handle(CreateProductCommand command);
+    Task<ProductView> HandleAsync(CreateProductCommand command, CancellationToken cancellationToken = default);
 }
 
 internal static class ProductMapping

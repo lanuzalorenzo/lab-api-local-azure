@@ -3,6 +3,14 @@
   <ItemGroup>
     <ProjectReference Include="..\EcommerceApi.Application\EcommerceApi.Application.csproj" />
     <ProjectReference Include="..\EcommerceApi.Domain\EcommerceApi.Domain.csproj" />
+    <ProjectReference Include="..\EcommerceApi.Contracts\EcommerceApi.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.21.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.13" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.11" />
   </ItemGroup>
 
   <PropertyGroup>
