@@ -5,6 +5,11 @@
 **/bin
 **/obj
 **/docs
+functions
+tests
+**/*.db
+**/*.db-wal
+**/*.db-shm
 README.md
 .dockerignore
 Dockerfile

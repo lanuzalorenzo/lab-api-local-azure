@@ -33,6 +33,10 @@ EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 
+# Directorio escribible para la base SQLite del laboratorio. Se crea antes de
+# cambiar de usuario y pertenece al usuario de aplicación.
+RUN mkdir -p /app/data && chown $APP_UID:$APP_UID /app/data
+
 # Principio de mínimos privilegios: ejecutar con usuario de aplicación no-root
 # En imágenes oficiales de .NET (Alpine/Debian/Chiseled), APP_UID corresponde al usuario 'app' (UID 1654)
 USER $APP_UID
