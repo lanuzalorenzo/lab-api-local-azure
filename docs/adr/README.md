@@ -17,6 +17,7 @@ criterio para revisarla. Una decisión sin criterio de revisión es un dogma.
 | [0001](0001-monolito-modular-vs-microservicios.md) | Monolito modular con extracción asíncrona, no microservicios por defecto | Aceptada |
 | [0002](0002-capas-y-regla-de-dependencias.md) | Capas y regla de dependencias verificada con pruebas | Aceptada |
 | [0003](0003-cqrs-ligero-en-pedidos.md) | CQRS ligero aplicado solo a pedidos | Aceptada |
+| [0004](0004-persistencia-sqlite-y-outbox.md) | Persistencia SQLite y outbox transaccional | Aceptada |
 
 ## Estados
 

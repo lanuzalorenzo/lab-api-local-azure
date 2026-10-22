@@ -1,8 +1,8 @@
 # Azure Functions — diseño del cómputo asíncrono
 
-> **Estado:** Diseño. No hay proyecto de Functions ni despliegue.
+> **Estado:** Parcial. Proyecto de Function, contrato versionado, outbox transaccional e idempotencia implementados y probados en local. Sin Service Bus real ni despliegue en Azure.
 > **Ámbito:** procesamiento asíncrono del workload `EcommerceApi`.
-> **Última revisión:** 2026-10-21.
+> **Última revisión:** 2026-10-22.
 > **Sesión asociada:** T6 (estudio y decisiones) → T7 (implementación local) → T8 (despliegue y observación).
 
 ## 1. Para qué sirve este documento
@@ -107,35 +107,43 @@ customMetrics
 
 ## 9. Desarrollo local
 
-- **Storage:** Azurite (contenedor o npm) para tablas y colas.
-- **Service Bus:** emulador oficial en Docker si la versión lo permite; si no, se usa una cola de Storage **solo para el ejercicio local** y se documenta la diferencia.
+- **Persistencia:** SQLite local (`data/ecommerce.db`, ignorado por Git). La API y la Function comparten el fichero en el laboratorio; en Azure no pueden hacerlo.
+- **Publicación:** por defecto `Publisher:Mode=Log`, que registra el mensaje sin broker. El outbox, los reintentos y el dead-letter se prueban contra SQLite.
+- **Service Bus:** el adaptador `ServiceBusEventPublisher` se activa con `Publisher__Mode=ServiceBus` y una conexión real. El emulador no se ha ejecutado.
 - **Settings:** `local.settings.json` ignorado por Git; se versiona `local.settings.example.json` sin valores reales.
-- **Tests:** unitarios del handler (idempotencia, validación, mensaje corrupto) y una prueba de integración con el emulador.
+- **Tests:** unitarios del consumidor (idempotencia, validación y mensaje corrupto) y pruebas de infraestructura sobre SQLite real (atomicidad, rollback, dead-letter y ciclo del dispatcher). No hay prueba con el emulador de Service Bus.
 
-## 10. Estructura propuesta
+## 10. Estructura implementada
 
 ```text
 lab-api-local-azure/
+├── EcommerceApi.Contracts/
+│   └── OrderCreatedV1.cs
+├── EcommerceApi.Infrastructure/
+│   ├── Outbox/            # SqliteOutboxStore, OutboxPublisher, dispatcher y adaptadores
+│   └── Processing/        # SqliteProcessedMessageStore
 ├── functions/
 │   └── OrderProcessor/
 │       ├── OrderProcessor.csproj
 │       ├── Program.cs
-│       ├── ProcessOrder.cs
+│       ├── ProcessOrderFunction.cs
 │       ├── host.json
 │       └── local.settings.example.json
 ├── tests/
-│   └── OrderProcessor.Tests/
+│   ├── EcommerceApi.UnitTests/
+│   └── EcommerceApi.Infrastructure.Tests/
 └── infra/
-    └── modules/
-        ├── serviceBus.bicep
-        └── functionApp.bicep
+    └── main.bicep         # sin módulos de Service Bus ni Function App todavía
 ```
 
-La API publica el mensaje mediante un `IServiceBusPublisher` con implementación no-op en local y real en Azure, para no romper los tests existentes.
+La API publica el mensaje mediante un `IEventPublisher` con dos adaptadores:
+`LoggingEventPublisher` en local (por defecto) y `ServiceBusEventPublisher` cuando
+`Publisher:Mode=ServiceBus`. El contrato `OrderCreatedV1` vive en
+`EcommerceApi.Contracts` y lo comparten productor y consumidor.
 
 ## 11. Despliegue
 
-- Bicep: plan Flex, Function App con identidad gestionada, configuración de la cola, Private Endpoints y diagnóstico.
+- Bicep (**diseño, no autorado todavía**): plan Flex, Function App con identidad gestionada, configuración de la cola, Private Endpoints y diagnóstico.
 - Pipeline: build + tests + Trivy; despliegue por OIDC, solo manual (`workflow_dispatch`), nunca en cada push.
 - La Function y la API comparten VNet pero **no** el plan: escalan por separado.
 
@@ -169,6 +177,9 @@ Confirmar antes de T8. El laboratorio se destruye el mismo día.
 ## 15. Limitaciones
 
 - El diseño asume un volumen de laboratorio, no de producción.
-- No hay base de datos transaccional; la idempotencia se demuestra con almacén simple.
+- Persistencia SQLite de un solo escritor; el consumidor comparte el fichero solo en
+  local. En Azure el adaptador de idempotencia debe ser Table Storage o SQL.
 - No cubre multi-región, ni orden garantizado, ni particiones.
-- Nada está implementado todavía.
+- Service Bus y la Function no se han desplegado: el estado es **Parcial**.
+- El despachador es at-least-once; la garantía efectiva depende de la idempotencia
+  del consumidor, que sí está probada.

@@ -30,8 +30,9 @@ El dominio, los casos de uso y los adaptadores viven en proyectos propios:
 
 ```text
 EcommerceApi.Domain/          # Order, Product, Money, eventos, invariantes
-EcommerceApi.Application/     # Comandos, queries, handlers y puertos
-EcommerceApi.Infrastructure/  # Repositorios en memoria
+EcommerceApi.Application/     # Comandos, queries, handlers, puertos y consumidor
+EcommerceApi.Infrastructure/  # SQLite, outbox, dispatcher e idempotencia
+EcommerceApi.Contracts/       # OrderCreatedV1 compartido con la Function
 ```
 
 Dependencias: `Domain` ← `Application` ← `Infrastructure` ← host. La regla se
@@ -47,6 +48,7 @@ dotnet run --urls http://localhost:5080
 
 - Swagger: <http://localhost:5080/swagger>
 - Health: <http://localhost:5080/health>
+- Base de datos: `data/ecommerce.db` (ignorada por Git)
 
 ## Pruebas
 
@@ -66,9 +68,10 @@ dotnet test ../EcommerceApi.sln
 ## Alcance
 
 Incluye autenticación, autorización por usuario, validación de entrada, CORS,
-rate limiting, DDD táctico y CQRS ligero en pedidos. No incluye base de datos,
-publicación de eventos, roles/scopes granulares, observabilidad persistente,
-microservicios ni despliegue real en Azure.
+rate limiting, DDD táctico, CQRS ligero en pedidos, persistencia SQLite, outbox
+transaccional y consumidor idempotente. No incluye Service Bus ni Function
+desplegados, roles/scopes granulares, observabilidad persistente, microservicios
+ni despliegue real en Azure.
 
 ## Licencia
 

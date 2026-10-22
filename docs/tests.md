@@ -134,9 +134,27 @@ dotnet test EcommerceApi.sln
 
 | Suite | Cobertura |
 |---|---|
-| `tests/EcommerceApi.UnitTests` | Invariantes de `Order`, `OrderLine`, `Money` y `Product`; handlers de comando y query |
+| `tests/EcommerceApi.UnitTests` | Invariantes de `Order`, `OrderLine`, `Money` y `Product`; handlers de comando y query; idempotencia del consumidor |
 | `tests/EcommerceApi.Architecture.Tests` | Regla de dependencias entre capas y agregados sin setters públicos |
+| `tests/EcommerceApi.Infrastructure.Tests` | Atomicidad del outbox, rollback, reintentos, dead-letter, dispatcher (scope asíncrono) e idempotencia sobre SQLite real |
 | `tests/EcommerceApi.Tests` | Comportamiento HTTP completo |
+
+### Ciclo TDD: rojo → verde
+
+Las pruebas describen el comportamiento antes de la implementación. El ejemplo
+reproducible que queda en el repositorio es el del dispatcher del outbox:
+
+1. **Rojo:** se añadió `Dispatcher_ProcessesPendingMessages_WithoutDisposalErrors`,
+   que arranca el `OutboxDispatcher` con un `IServiceScopeFactory` real y exige que
+   no se registre ningún error. Con `CreateScope()` falla:
+   `'SqliteSession' type only implements IAsyncDisposable. Use DisposeAsync`.
+2. **Verde:** el dispatcher pasa a `CreateAsyncScope()` y la prueba deja de fallar;
+   la suite completa queda en **67 pruebas**.
+3. La prueba se conserva como regresión: si alguien vuelve al scope síncrono, el
+   fallo reaparece en CI.
+
+El mismo orden se siguió en el dominio: primero las pruebas de invariantes
+(`Order`, `OrderLine`, `Money`), después el agregado que las satisface.
 
 Las pruebas de integración usan `X-Test-User` para simular identidades y cubren:
 

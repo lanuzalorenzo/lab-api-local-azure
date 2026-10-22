@@ -13,10 +13,13 @@ desplegados en producción.
 - `GET/POST /api/orders`
 - `GET /health` (anónimo)
 
-Autenticación con JWT de Microsoft Entra ID. Almacenamiento en memoria
-(`InMemoryProductRepository` e `InMemoryOrderRepository`), sin base de datos ni
-alta disponibilidad. La lógica de aplicación vive en `EcommerceApi.Application` y
-el dominio en `EcommerceApi.Domain`; los controladores solo orquestan handlers.
+Autenticación con JWT de Microsoft Entra ID. Persistencia en **SQLite local** con
+**outbox transaccional** (`SqliteOrderRepository`, `SqliteProductRepository` y
+`SqliteOutboxStore`), sin alta disponibilidad ni backups. La lógica de aplicación
+vive en `EcommerceApi.Application` y el dominio en `EcommerceApi.Domain`; los
+controladores solo orquestan handlers. El consumidor idempotente
+(`ProcessOrderHandler` + `ProcessedMessages`) se ejecuta en local; la Function y
+Service Bus están diseñados pero no desplegados.
 
 ### Diagrama de flujo
 
@@ -27,7 +30,11 @@ graph TD
     API -->|DTOs + validación| Controllers[Products / Orders]
     Controllers -->|comandos y queries| Handlers[Application handlers]
     Handlers -->|UserId del token| Domain[Order / Product aggregates]
-    Handlers -->|puertos| Store[(Repositorios en memoria)]
+    Handlers -->|puertos| Store[(SQLite)]
+    Handlers -->|commit atómico| Outbox[(Outbox)]
+    Outbox --> Dispatcher[OutboxDispatcher]
+    Dispatcher -->|OrderCreatedV1| Consumer[Consumidor idempotente]
+    Consumer --> Idem[(ProcessedMessages)]
 ```
 
 ## 2. STRIDE
@@ -36,6 +43,7 @@ graph TD
 |---|---|---|---|
 | **Spoofing** | Token falsificado o expirado | `JwtBearer` valida firma (JWKS), `iss`, `aud`, `exp` y `nbf` | Implementado |
 | **Tampering** | Modificación de payloads o mass assignment | DTOs de entrada, validación con DataAnnotations, HTTPS | Implementado |
+| **Tampering** | Reenvío o duplicado de `OrderCreatedV1` | Idempotencia por `messageId` en `ProcessedMessages`; el outbox escribe el mensaje en la misma transacción que el pedido | Implementado (local) |
 | **Repudiation** | Usuario niega una operación | No hay auditoría persistente; solo logs de aplicación | Parcial |
 | **Information Disclosure** | Fuga de IDs, stack traces o tokens | `UserId` no se serializa, `ProblemDetails`, Swagger solo en Development | Parcial |
 | **Denial of Service** | Peticiones masivas o cuerpos enormes | Rate limit 120/min por IP, límite de 16 KB, límites del contenedor | Parcial |
@@ -75,12 +83,20 @@ graph TD
   verificada en `tests/EcommerceApi.Architecture.Tests`.
 - Invariantes de dominio (agregados `Order` y `Product`) que impiden persistir
   estados inconsistentes aunque la validación de transporte se relaje.
+- Persistencia SQLite con importes en céntimos y transacción explícita.
+- Outbox transaccional: el pedido y el mensaje `OrderCreatedV1` se confirman juntos
+  o no se confirma ninguno.
+- Consumidor idempotente por `messageId`; los mensajes inválidos fallan para que el
+  broker los reintente y los mueva a la DLQ.
+- Pruebas de infraestructura sobre SQLite real: atomicidad, rollback, reintentos,
+  dead-letter e idempotencia.
 
 ## 5. Riesgos residuales
 
-1. **Sin persistencia**: los datos se pierden al reiniciar; no hay integridad
-   transaccional ni backups. Sin outbox, un evento de dominio no sobrevive a un
-   fallo entre la escritura y una futura publicación.
+1. **Persistencia de laboratorio**: SQLite no ofrece backups, réplica ni alta
+   disponibilidad, y el esquema se crea con `CREATE TABLE IF NOT EXISTS` sin
+   migraciones versionadas. El outbox y la idempotencia protegen la entrega, no la
+   disponibilidad del almacén.
 2. **Sin autorización granular**: no se validan scopes/roles por endpoint.
 3. **Sin auditoría inmutable**: los logs no están centralizados ni firmados.
 4. **Sin WAF/API Management**: el rate limit es local y por IP.

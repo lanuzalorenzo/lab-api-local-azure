@@ -18,7 +18,7 @@ esa separación no dependa de la disciplina de quien edita el código.
 
 ## 2. Decisión
 
-Cuatro proyectos con una única dirección de dependencias:
+Cinco proyectos con una única dirección de dependencias:
 
 ```mermaid
 flowchart LR
@@ -27,13 +27,16 @@ flowchart LR
     I --> A
     I --> D[EcommerceApi.Domain<br/>agregados, VOs, eventos]
     A --> D
+    A --> C[EcommerceApi.Contracts<br/>contratos versionados]
+    I --> C
 ```
 
 | Proyecto | Puede depender de | Contiene |
 |---|---|---|
 | `EcommerceApi.Domain` | nada (solo BCL) | `Order`, `OrderLine`, `Money`, `Product`, eventos de dominio, `DomainException` |
-| `EcommerceApi.Application` | `Domain` | comandos, queries, handlers, DTOs de lectura y puertos (`IOrderRepository`, `IProductRepository`) |
-| `EcommerceApi.Infrastructure` | `Application`, `Domain` | adaptadores en memoria (y en el futuro persistencia/outbox) |
+| `EcommerceApi.Application` | `Domain`, `Contracts` | comandos, queries, handlers, DTOs de lectura y puertos (`IOrderRepository`, `IProductRepository`) |
+| `EcommerceApi.Infrastructure` | `Application`, `Domain`, `Contracts` | adaptadores SQLite, outbox transaccional, dispatcher y almacén de idempotencia |
+| `EcommerceApi.Contracts` | nada (solo BCL) | contrato versionado `OrderCreatedV1`, compartido por productor y consumidor |
 | `EcommerceApi` (host) | `Application`, `Infrastructure` | controladores, autenticación, CORS, rate limiting y **composition root** |
 
 Reglas adicionales:

@@ -20,13 +20,17 @@
 - Arquitectura por capas con la regla de dependencias **verificada por pruebas**.
 - DDD táctico: agregados, *value objects*, invariantes y eventos de dominio.
 - CQRS ligero en pedidos (modelo de escritura y proyección de lectura separados).
-- Pruebas unitarias, de arquitectura y de integración.
+- Persistencia SQLite con transacciones e importes en céntimos enteros.
+- **Outbox transaccional** con reintentos y *dead-letter*, sin perder eventos.
+- Contrato versionado `OrderCreatedV1` y consumidor idempotente (Function aislada).
+- Pruebas unitarias, de arquitectura, de infraestructura y de integración.
 - Pipeline con SAST, SCA, escaneo de secretos, escaneo de contenedor y escaneo de IaC.
 
-**No es** un sistema listo para producción. El almacenamiento es en memoria, no hay
-base de datos, no hay alta disponibilidad y no se han validado scopes/roles
-granulares ni un despliegue real en Azure. Tampoco es una implementación de
-microservicios: es un monolito modular (ver [ADR-0001](docs/adr/0001-monolito-modular-vs-microservicios.md)).
+**No es** un sistema listo para producción. Usa SQLite de laboratorio (un solo
+escritor, sin backups ni alta disponibilidad), no hay Service Bus ni Function
+desplegados y no se han validado scopes/roles granulares ni un despliegue real en
+Azure. Tampoco es una implementación de microservicios: es un monolito modular con
+un segundo despliegue asíncrono (ver [ADR-0001](docs/adr/0001-monolito-modular-vs-microservicios.md)).
 El estado de cada control se indica en la tabla siguiente.
 
 ---
@@ -39,7 +43,11 @@ flowchart LR
     API -->|Valida firma, issuer, audience y expiración| ENTRA[Microsoft Entra ID]
     API --> APP[Application: handlers]
     APP --> DOM[Domain: agregados y eventos]
-    APP --> REPO[(Repositorios en memoria)]
+    APP --> DB[(SQLite)]
+    APP --> OUT[(Outbox)]
+    OUT --> DISP[OutboxDispatcher]
+    DISP -->|OrderCreatedV1| FN[Function OrderProcessor]
+    FN --> IDEM[(Idempotencia)]
     API -->|Logs y métricas| OBS[Application Insights / Log Analytics]
     CI[GitHub Actions] -->|SAST · SCA · Secretos · Contenedor · IaC| API
 ```
@@ -49,9 +57,11 @@ La API expone dos controladores:
 - `ProductsController`: catálogo de productos.
 - `OrdersController`: pedidos ligados al usuario autenticado (`oid`/`sub`).
 
-El código se organiza en cuatro proyectos con una única dirección de dependencias:
-`Domain` ← `Application` ← `Infrastructure` ← host `EcommerceApi`. Los controladores
-solo conocen handlers de `Application`; los adaptadores viven en `Infrastructure`.
+El código se organiza en cinco proyectos con una única dirección de dependencias:
+`Domain` ← `Application` ← `Infrastructure` ← host `EcommerceApi`, más
+`Contracts`, que no depende de nadie y comparten productor y consumidor. Los
+controladores solo conocen handlers de `Application`; los adaptadores viven en
+`Infrastructure`. La Function es un segundo desplegable dentro del mismo repo.
 
 ### Capas, patrones y decisiones
 
@@ -61,7 +71,27 @@ solo conocen handlers de `Application`; los adaptadores viven en `Infrastructure
 | Regla de dependencias entre capas | [ADR-0002](docs/adr/0002-capas-y-regla-de-dependencias.md) | `tests/EcommerceApi.Architecture.Tests` |
 | CQRS ligero solo en pedidos | [ADR-0003](docs/adr/0003-cqrs-ligero-en-pedidos.md) | `EcommerceApi.Application/Orders` |
 | Agregado `Order` con invariantes y evento `OrderPlaced` | [ADR-0002](docs/adr/0002-capas-y-regla-de-dependencias.md) | `EcommerceApi.Domain/Orders` |
-| Puertos y adaptadores (DIP) | [ADR-0002](docs/adr/0002-capas-y-regla-de-dependencias.md) | `IOrderRepository` + `InMemoryOrderRepository` |
+| Puertos y adaptadores (DIP) | [ADR-0002](docs/adr/0002-capas-y-regla-de-dependencias.md) | `IOrderRepository` + `SqliteOrderRepository` |
+| Persistencia SQLite y outbox transaccional | [ADR-0004](docs/adr/0004-persistencia-sqlite-y-outbox.md) | `EcommerceApi.Infrastructure/Outbox` + pruebas de infraestructura |
+| Contrato versionado y consumidor idempotente | [ADR-0004](docs/adr/0004-persistencia-sqlite-y-outbox.md) | `EcommerceApi.Contracts` + `functions/OrderProcessor` |
+
+### Eventos, outbox y consumidor
+
+1. `POST /api/orders` abre una transacción y escribe el pedido, sus líneas y el
+   mensaje `OrderCreatedV1` en la tabla de outbox.
+2. La transacción confirma: o existen los tres, o no existe ninguno.
+3. `OutboxDispatcher` publica los pendientes cada 2 segundos. Si el publicador
+   falla, incrementa el contador de intentos y deja el mensaje para el siguiente
+   ciclo; tras 5 fallos lo marca como *dead-letter*.
+4. La Function `OrderProcessor` consume el mensaje, valida el contrato y consulta
+   `ProcessedMessages` por `messageId` antes de registrar el efecto.
+5. Un mensaje repetido se reconoce sin repetir el efecto; uno inválido se lanza
+   para que Service Bus lo reintente y, agotado `maxDeliveryCount`, lo mueva a la
+   DLQ.
+
+`Publisher:Mode=Log` (por defecto) registra el mensaje en el log local;
+`Publisher:Mode=ServiceBus` usa un namespace real. **Service Bus y la Function no
+están desplegados**: el outbox y la idempotencia se validan contra SQLite en local.
 
 ### Flujo de autorización
 
@@ -85,8 +115,14 @@ solo conocen handlers de `Application`; los adaptadores viven en `Infrastructure
 | Límite de tamaño de petición | Implementado | 16 KB en endpoints de escritura |
 | `Problem Details` y cabeceras de seguridad | Implementado | `AddProblemDetails`, middleware |
 | Regla de dependencias entre capas | Implementado | `tests/EcommerceApi.Architecture.Tests` (7 pruebas) |
-| Pruebas unitarias de dominio y aplicación | Implementado | `tests/EcommerceApi.UnitTests` (33 pruebas) |
+| Pruebas unitarias de dominio y aplicación | Implementado | `tests/EcommerceApi.UnitTests` (43 pruebas) |
+| Pruebas de infraestructura sobre SQLite | Implementado | `tests/EcommerceApi.Infrastructure.Tests` (7 pruebas) |
 | Pruebas de integración | Implementado | `tests/EcommerceApi.Tests` (10 pruebas) |
+| Persistencia transaccional | Implementado (laboratorio) | SQLite + importes en céntimos |
+| Outbox transaccional y dead-letter | Implementado | `OutboxMessages`, `OutboxPublisher` y pruebas de rollback |
+| Consumidor idempotente | Implementado (local) | `ProcessOrderHandler` + `ProcessedMessages` |
+| Publicación en Service Bus | Diseño | `ServiceBusEventPublisher`, sin namespace desplegado |
+| Function desplegada en Azure | Diseño | `functions/OrderProcessor` compila; no se ha desplegado |
 | Escaneo de secretos | Implementado | Gitleaks sobre historial completo |
 | SAST | Implementado | CodeQL C# (`security-extended`) |
 | SCA | Implementado | Trivy filesystem, bloqueante para CRITICAL/HIGH |
@@ -94,7 +130,7 @@ solo conocen handlers de `Application`; los adaptadores viven en `Infrastructure
 | IaC seguro | Implementado (plantilla) | `infra/main.bicep` + Trivy config |
 | Despliegue real en Azure | Pendiente | Sin suscripción/credenciales en este repositorio |
 | Scopes/roles granulares | Pendiente | Documentado en `docs/azure-ad-config.md` |
-| Persistencia y alta disponibilidad | Fuera de alcance | Almacén en memoria |
+| Persistencia y alta disponibilidad | Fuera de alcance | SQLite de laboratorio, sin backups ni HA |
 | OIDC de GitHub Actions a Azure | Documentado, no activo | `infra/README.md` |
 
 > **Criterio de rigor:** “Implementado” significa que el código o la configuración
@@ -108,19 +144,23 @@ solo conocen handlers de `Application`; los adaptadores viven en `Infrastructure
 ```text
 lab-api-local-azure/
 ├── EcommerceApi.Domain/        # Agregados, value objects, eventos, invariantes
-├── EcommerceApi.Application/   # Comandos, queries, handlers y puertos
-├── EcommerceApi.Infrastructure/# Adaptadores: repositorios en memoria
+├── EcommerceApi.Application/   # Comandos, queries, handlers, puertos y consumidor
+├── EcommerceApi.Infrastructure/# SQLite, outbox, dispatcher e idempotencia
+├── EcommerceApi.Contracts/     # OrderCreatedV1 compartido con la Function
 ├── EcommerceApi/               # Host HTTP: controladores, auth, composición
 │   ├── Configuration/          # Opciones de Entra ID
 │   ├── Controllers/            # ProductsController, OrdersController
 │   ├── ErrorHandling/          # DomainException -> 400
 │   ├── Models/                 # DTOs de entrada
 │   ├── Program.cs              # Pipeline HTTP, auth, CORS, rate limiting
-│   └── appsettings.json        # Placeholders, sin credenciales
+│   └── appsettings.json        # Configuración sin secretos
+├── functions/OrderProcessor/   # Function aislada: trigger de Service Bus
 ├── tests/EcommerceApi.Tests/   # Pruebas de integración xUnit (10)
-├── tests/EcommerceApi.UnitTests/           # Dominio y handlers (33)
+├── tests/EcommerceApi.UnitTests/           # Dominio y handlers (43)
+├── tests/EcommerceApi.Infrastructure.Tests/ # SQLite, outbox y dispatcher (7)
 ├── tests/EcommerceApi.Architecture.Tests/  # Regla de dependencias (7)
 ├── EcommerceApi.sln            # Solución única para build, formato y pruebas
+├── data/                       # Base SQLite local (ignorada por Git)
 ├── infra/                      # Bicep: VNet, NSG, Key Vault, App Service, PE
 ├── docs/adr/                   # Decisiones de arquitectura
 ├── docs/                       # Autenticación, pruebas y threat model
@@ -175,6 +215,9 @@ dotnet run --project EcommerceApi --urls http://localhost:5080
 - Swagger (solo Development): <http://localhost:5080/swagger>
 - Health check: <http://localhost:5080/health>
 - API: <http://localhost:5080/api/products>
+- Base de datos: `data/ecommerce.db`, creada al arrancar y **no versionada**. El
+  esquema se inicializa con `CREATE TABLE IF NOT EXISTS` y se siembra el catálogo
+  solo si está vacío.
 
 ### Pruebas
 
@@ -182,25 +225,28 @@ dotnet run --project EcommerceApi --urls http://localhost:5080
 dotnet test EcommerceApi.sln
 ```
 
-Tres suites, cada una con un propósito distinto:
+Cuatro suites, cada una con un propósito distinto:
 
 | Suite | Qué verifica | Pruebas |
 |---|---|---|
-| `EcommerceApi.UnitTests` | Invariantes del dominio y handlers de aplicación, sin host ni base de datos | 33 |
+| `EcommerceApi.UnitTests` | Invariantes del dominio, handlers de aplicación e idempotencia del consumidor | 43 |
 | `EcommerceApi.Architecture.Tests` | Regla de dependencias entre capas y agregados sin setters públicos | 7 |
+| `EcommerceApi.Infrastructure.Tests` | Atomicidad del outbox, rollback, reintentos, dead-letter, dispatcher e idempotencia sobre SQLite real | 7 |
 | `EcommerceApi.Tests` | Integración HTTP: 401, validación, *mass assignment* y BOLA entre dos usuarios | 10 |
 
-Las pruebas de integración usan un esquema de autenticación de test y no necesitan
-un tenant real.
+Total: **67 pruebas**. Las de integración usan un esquema de autenticación de test
+y no necesitan un tenant real; cada factory crea su propia base SQLite temporal.
 
 ### Docker
 
 ```bash
 docker build -t ecommerce-api .
-docker run --rm -p 8080:8080 ecommerce-api
+docker run --rm -p 8080:8080 -v ecommerce-data:/app/data ecommerce-api
 ```
 
-El contenedor se ejecuta con `USER $APP_UID` (no root) y escucha en `8080`.
+El contenedor se ejecuta con `USER $APP_UID` (no root), escucha en `8080` y escribe
+la base SQLite en `/app/data`. Sin volumen, los datos se pierden al eliminar el
+contenedor.
 
 ---
 
@@ -248,7 +294,7 @@ Los resultados SARIF se publican en la pestaña **Security → Code scanning** d
 repositorio. La pipeline completa finalizó en verde el **2026-10-19** (run
 `39243360276`) con las entonces 10 pruebas de integración, Gitleaks, CodeQL, Trivy
 SCA, contenedor no-root, Trivy image y Trivy config sobre Bicep. La suite actual
-amplía esa cobertura con pruebas unitarias de dominio y de arquitectura.
+amplía esa cobertura con pruebas unitarias, de arquitectura y de infraestructura.
 
 ---
 
@@ -271,12 +317,12 @@ en una suscripción real; se valida con `bicep build` y Trivy config en CI.
 
 ## Documentación de diseño
 
-Estos documentos fijan las decisiones antes de escribir código o desplegar. **Ninguno está ejecutado**; su estado es *Diseño*.
+Estos documentos fijan las decisiones antes de escribir código o desplegar. El estado se indica en cada uno y no se presenta como ejecutado lo que solo está diseñado.
 
-- [App Service](docs/app-service.md) — plataforma de ejecución, entrada/salida de red, identidad, slots y coste.
-- [Azure Functions](docs/functions.md) — cómputo asíncrono, idempotencia, dead-letter y hosting.
+- [App Service](docs/app-service.md) — plataforma de ejecución, Bicep frente al pipeline YAML, plan/site, entrada/salida de red, identidad, slots y coste.
+- [Azure Functions](docs/functions.md) — cómputo asíncrono, idempotencia, dead-letter y hosting. **Parcial**: consumidor y outbox probados en local, sin despliegue.
 - [Integración de IA](docs/ai-integration.md) — gateway, controles de seguridad y evaluación.
-- [Registro de decisiones (ADR)](docs/adr/README.md) — monolito modular, capas y CQRS ligero.
+- [Registro de decisiones (ADR)](docs/adr/README.md) — monolito modular, capas, CQRS ligero y outbox transaccional.
 
 ## Relación con el portfolio
 
@@ -292,11 +338,15 @@ Estos documentos fijan las decisiones antes de escribir código o desplegar. **N
 
 ## Limitaciones conocidas
 
-- Almacenamiento en memoria: los datos se pierden al reiniciar.
-- Sin base de datos, migraciones ni transacciones.
-- Sin eventos publicados ni patrón outbox implementados todavía: `OrderPlaced` se
-  registra en el agregado, pero no hay consumidor externo ni broker.
-- Sin microservicios: el despliegue es un monolito modular ([ADR-0001](docs/adr/0001-monolito-modular-vs-microservicios.md)).
+- Persistencia SQLite de laboratorio: un solo escritor, sin backups ni alta
+  disponibilidad; el esquema se crea con `CREATE TABLE IF NOT EXISTS`, sin
+  migraciones versionadas.
+- Service Bus y la Function no están desplegados: el publicador por defecto
+  (`Publisher:Mode=Log`) registra el mensaje en lugar de entregarlo a un broker.
+- El outbox es *at-least-once*: la garantía efectiva depende de la idempotencia del
+  consumidor, que sí está probada.
+- Sin microservicios: el despliegue es un monolito modular más una Function
+  ([ADR-0001](docs/adr/0001-monolito-modular-vs-microservicios.md)).
 - Sin scopes/roles aplicados endpoint a endpoint.
 - Sin WAF/API Management desplegado.
 - Sin pruebas de carga ni caos.
