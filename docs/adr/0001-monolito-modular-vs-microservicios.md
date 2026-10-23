@@ -42,7 +42,7 @@ flowchart LR
 
 ### Por qué no varios repositorios
 
-- El portfolio ya fija en [`laboratorio-final/README.md`](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/blob/main/docs/laboratorio-final/README.md) que no se crea un repositorio nuevo en esta fase.
+- El portfolio ya fija en [`laboratorio-final/README.md`](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/blob/main/laboratorio-final/README.md) que no se crea un repositorio nuevo en esta fase.
 - Un cambio de contrato (`OrderCreated`) y su consumidor deben viajar en el mismo commit; con polyrepo se convierte en dos PR coordinados.
 - El coste marginal de cada repo (CI, IaC, Docker, auth, documentación) es alto y el beneficio en un equipo unipersonal es nulo.
 - Un repositorio puede contener **varios desplegables**. Repositorio, despliegue y contexto acotado son tres dimensiones independientes.

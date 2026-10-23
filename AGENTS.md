@@ -2,7 +2,7 @@
 
 Este repositorio contiene la API empresarial desarrollada en .NET 10 y utilizada como Workload de Referencia en el portfolio de ciberseguridad. Cualquier asistente de IA (GitHub Copilot, Google Antigravity, Claude, etc.) debe respetar estas directrices:
 
-- Este repositorio es el workload del laboratorio final. La arquitectura del laboratorio (identidad, red, detección, respuesta y forense) se documenta en `portfolio-ciberseguridad-lorenzo/docs/laboratorio-final/`; no dupliques aquí IaC de plataforma.
+- Este repositorio es el workload del laboratorio final. La arquitectura del laboratorio (identidad, red, detección, respuesta y forense) se documenta en `portfolio-ciberseguridad-lorenzo/laboratorio-final/`; no dupliques aquí IaC de plataforma.
 - Los runbooks y las evidencias se enlazan desde el portfolio. No publiques datos reales, secretos ni salidas sin redactar.
 
 ## Convenciones de desarrollo y seguridad
