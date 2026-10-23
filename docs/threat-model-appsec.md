@@ -1,9 +1,8 @@
 # Modelado de amenazas y AppSec — EcommerceApi
 
-Análisis STRIDE y contraste con OWASP API Security Top 10 (2023) sobre el código
-actual. Cada control incluye su estado real: **implementado**, **parcial** o
-**pendiente**. No se presentan controles documentados como si estuvieran
-desplegados en producción.
+> **En fácil:** el documento contrasta la API con las amenazas más habituales de un servicio web y con el Top 10 de OWASP para APIs. Cada fila dice si el control está implementado, es parcial o sigue pendiente.
+
+Análisis STRIDE y contraste con OWASP API Security Top 10 (2023) sobre el código actual. Cada control incluye su estado real: **implementado**, **parcial** o **pendiente**. No se presentan controles documentados como si estuvieran desplegados en producción.
 
 ## 1. Alcance
 
@@ -13,13 +12,7 @@ desplegados en producción.
 - `GET/POST /api/orders`
 - `GET /health` (anónimo)
 
-Autenticación con JWT de Microsoft Entra ID. Persistencia en **SQLite local** con
-**outbox transaccional** (`SqliteOrderRepository`, `SqliteProductRepository` y
-`SqliteOutboxStore`), sin alta disponibilidad ni backups. La lógica de aplicación
-vive en `EcommerceApi.Application` y el dominio en `EcommerceApi.Domain`; los
-controladores solo orquestan handlers. El consumidor idempotente
-(`ProcessOrderHandler` + `ProcessedMessages`) se ejecuta en local; la Function y
-Service Bus están diseñados pero no desplegados.
+Autenticación con JWT de Microsoft Entra ID. Persistencia en **SQLite local** con **outbox transaccional** (`SqliteOrderRepository`, `SqliteProductRepository` y `SqliteOutboxStore`), sin alta disponibilidad ni backups. La lógica de aplicación vive en `EcommerceApi.Application` y el dominio en `EcommerceApi.Domain`; los controladores solo orquestan handlers. El consumidor idempotente (`ProcessOrderHandler` + `ProcessedMessages`) se ejecuta en local; la Function y Service Bus están diseñados pero no desplegados.
 
 ### Diagrama de flujo
 
@@ -74,37 +67,26 @@ graph TD
 - CORS con allowlist y denegación por defecto.
 - Rate limiting global por IP.
 - Límite de tamaño de petición en escrituras.
-- `ProblemDetails` y cabeceras `X-Content-Type-Options`, `X-Frame-Options`,
-  `Referrer-Policy` y `Permissions-Policy`.
+- `ProblemDetails` y cabeceras `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` y `Permissions-Policy`.
 - Swagger confinado a `Development`.
 - Contenedor multi-stage con usuario no-root.
 - Pruebas de integración de autenticación, validación y BOLA.
-- Pruebas unitarias de invariantes y handlers; regla de dependencias entre capas
-  verificada en `tests/EcommerceApi.Architecture.Tests`.
-- Invariantes de dominio (agregados `Order` y `Product`) que impiden persistir
-  estados inconsistentes aunque la validación de transporte se relaje.
+- Pruebas unitarias de invariantes y handlers; regla de dependencias entre capas verificada en `tests/EcommerceApi.Architecture.Tests`.
+- Invariantes de dominio (agregados `Order` y `Product`) que impiden persistir estados inconsistentes aunque la validación de transporte se relaje.
 - Persistencia SQLite con importes en céntimos y transacción explícita.
-- Outbox transaccional: el pedido y el mensaje `OrderCreatedV1` se confirman juntos
-  o no se confirma ninguno.
-- Consumidor idempotente por `messageId`; los mensajes inválidos fallan para que el
-  broker los reintente y los mueva a la DLQ.
-- Pruebas de infraestructura sobre SQLite real: atomicidad, rollback, reintentos,
-  dead-letter e idempotencia.
+- Outbox transaccional: el pedido y el mensaje `OrderCreatedV1` se confirman juntos o no se confirma ninguno.
+- Consumidor idempotente por `messageId`; los mensajes inválidos fallan para que el broker los reintente y los mueva a la DLQ.
+- Pruebas de infraestructura sobre SQLite real: atomicidad, rollback, reintentos, dead-letter e idempotencia.
 
 ## 5. Riesgos residuales
 
-1. **Persistencia de laboratorio**: SQLite no ofrece backups, réplica ni alta
-   disponibilidad, y el esquema se crea con `CREATE TABLE IF NOT EXISTS` sin
-   migraciones versionadas. El outbox y la idempotencia protegen la entrega, no la
-   disponibilidad del almacén.
+1. **Persistencia de laboratorio**: SQLite no ofrece backups, réplica ni alta disponibilidad, y el esquema se crea con `CREATE TABLE IF NOT EXISTS` sin migraciones versionadas. El outbox y la idempotencia protegen la entrega, no la disponibilidad del almacén.
 2. **Sin autorización granular**: no se validan scopes/roles por endpoint.
 3. **Sin auditoría inmutable**: los logs no están centralizados ni firmados.
 4. **Sin WAF/API Management**: el rate limit es local y por IP.
-5. **Sin despliegue real**: la plantilla Bicep y los Private Endpoints no se han
-   probado contra Azure.
+5. **Sin despliegue real**: la plantilla Bicep y los Private Endpoints no se han probado contra Azure.
 6. **Sin pruebas de carga**: el límite de 120/min no se ha calibrado.
-7. **Client credentials**: el claim `sub` identifica a la aplicación, no a una
-   persona; las pruebas de usuario final requieren flujos delegados.
+7. **Client credentials**: el claim `sub` identifica a la aplicación, no a una persona; las pruebas de usuario final requieren flujos delegados.
 
 ## 6. Verificación en CI
 

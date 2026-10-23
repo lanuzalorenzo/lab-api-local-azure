@@ -1,7 +1,8 @@
 # Pruebas funcionales de la API
 
-Todas las rutas de negocio requieren un token JWT válido. El endpoint `/health`
-es anónimo. La URL base de ejemplo es `http://localhost:5080`.
+> **En fácil:** estas pruebas comprueban que cada endpoint responde lo que debe cuando el token es válido, falta o pertenece a otro usuario. Los comandos de `curl` se pueden copiar y ejecutar contra la API local.
+
+Todas las rutas de negocio requieren un token JWT válido. El endpoint `/health` es anónimo. La URL base de ejemplo es `http://localhost:5080`.
 
 ## Prerrequisitos
 
@@ -68,8 +69,7 @@ curl -i -X POST "${API_URL}/api/products" \
   -d '{"id":999999,"name":"Intento","price":10,"stock":1}'
 ```
 
-Esperado: `201 Created` con un `id` asignado por el servidor, distinto de
-`999999`. El DTO de entrada no acepta `id`.
+Esperado: `201 Created` con un `id` asignado por el servidor, distinto de `999999`. El DTO de entrada no acepta `id`.
 
 ## Pedidos
 
@@ -141,20 +141,13 @@ dotnet test EcommerceApi.sln
 
 ### Ciclo TDD: rojo → verde
 
-Las pruebas describen el comportamiento antes de la implementación. El ejemplo
-reproducible que queda en el repositorio es el del dispatcher del outbox:
+Las pruebas describen el comportamiento antes de la implementación. El ejemplo reproducible que queda en el repositorio es el del dispatcher del outbox:
 
-1. **Rojo:** se añadió `Dispatcher_ProcessesPendingMessages_WithoutDisposalErrors`,
-   que arranca el `OutboxDispatcher` con un `IServiceScopeFactory` real y exige que
-   no se registre ningún error. Con `CreateScope()` falla:
-   `'SqliteSession' type only implements IAsyncDisposable. Use DisposeAsync`.
-2. **Verde:** el dispatcher pasa a `CreateAsyncScope()` y la prueba deja de fallar;
-   la suite completa queda en **67 pruebas**.
-3. La prueba se conserva como regresión: si alguien vuelve al scope síncrono, el
-   fallo reaparece en CI.
+1. **Rojo:** se añadió `Dispatcher_ProcessesPendingMessages_WithoutDisposalErrors`, que arranca el `OutboxDispatcher` con un `IServiceScopeFactory` real y exige que no se registre ningún error. Con `CreateScope()` falla: `'SqliteSession' type only implements IAsyncDisposable. Use DisposeAsync`.
+2. **Verde:** el dispatcher pasa a `CreateAsyncScope()` y la prueba deja de fallar; la suite completa queda en **67 pruebas**.
+3. La prueba se conserva como regresión: si alguien vuelve al scope síncrono, el fallo reaparece en CI.
 
-El mismo orden se siguió en el dominio: primero las pruebas de invariantes
-(`Order`, `OrderLine`, `Money`), después el agregado que las satisface.
+El mismo orden se siguió en el dominio: primero las pruebas de invariantes (`Order`, `OrderLine`, `Money`), después el agregado que las satisface.
 
 Las pruebas de integración usan `X-Test-User` para simular identidades y cubren:
 

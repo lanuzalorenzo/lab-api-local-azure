@@ -1,8 +1,8 @@
 # Configuración de Microsoft Entra ID en la API
 
-Esta guía describe la configuración **real** del código actual. Los valores
-sensibles no se guardan en el repositorio: usa `appsettings.Development.json`
-(ignorado por Git), user-secrets o variables de entorno.
+> **En fácil:** este documento explica cómo la API valida el token de Entra ID y qué ajustes necesita para arrancar. Los valores reales van fuera del repositorio.
+
+Esta guía describe la configuración real del código actual. Los valores sensibles no se guardan en el repositorio: usa `appsettings.Development.json` (ignorado por Git), user-secrets o variables de entorno.
 
 ## 1. Opciones de configuración
 
@@ -19,9 +19,7 @@ sensibles no se guardan en el repositorio: usa `appsettings.Development.json`
 }
 ```
 
-`appsettings.json` solo contiene placeholders (`YOUR_TENANT_ID`,
-`YOUR_API_CLIENT_ID`). La API arranca con ellos, pero registra una advertencia y
-no podrá validar tokens reales hasta que se configure un tenant.
+`appsettings.json` solo contiene placeholders (`YOUR_TENANT_ID`, `YOUR_API_CLIENT_ID`). La API arranca con ellos, pero registra una advertencia y no podrá validar tokens reales hasta que se configure un tenant.
 
 ## 2. Validación JWT en `Program.cs`
 
@@ -44,8 +42,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 ```
 
-La firma se valida con las claves públicas (JWKS) que publica Entra ID en el
-documento de metadatos de la autoridad configurada.
+La firma se valida con las claves públicas (JWKS) que publica Entra ID en el documento de metadatos de la autoridad configurada.
 
 ## 3. Orden del pipeline
 
@@ -62,9 +59,7 @@ app.MapControllers();
 app.MapHealthChecks("/health").AllowAnonymous();
 ```
 
-`UseAuthentication()` debe ejecutarse antes de `UseAuthorization()`. `UseCors()`
-se ejecuta antes de autenticación para que las respuestas de preflight no
-requieran token.
+`UseAuthentication()` debe ejecutarse antes de `UseAuthorization()`. `UseCors()` se ejecuta antes de autenticación para que las respuestas de preflight no requieran token.
 
 ## 4. CORS
 
@@ -94,13 +89,9 @@ WAF y cuotas por usuario.
 
 ## 6. Autorización por usuario
 
-`OrdersController` obtiene la identidad de `ClaimTypes.NameIdentifier`, `oid` o
-`sub`, y filtra los pedidos por `UserId`. Un pedido de otro usuario devuelve
-`404` para no revelar su existencia.
+`OrdersController` obtiene la identidad de `ClaimTypes.NameIdentifier`, `oid` o `sub`, y filtra los pedidos por `UserId`. Un pedido de otro usuario devuelve `404` para no revelar su existencia.
 
-La autorización granular por scopes (`scp`) y roles (`roles`) **no está
-implementada** todavía. Está documentada como línea de trabajo para no
-sobreafirmar controles.
+La autorización granular por scopes (`scp`) y roles (`roles`) **no está implementada** todavía. Está documentada como línea de trabajo para no sobreafirmar controles.
 
 ## 7. Registro de la aplicación
 
