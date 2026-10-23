@@ -5,13 +5,15 @@
 > **Última revisión:** 2026-10-22.
 > **Sesión asociada:** T10 (estudio, implementación local y evaluación) → T11 (despliegue opcional).
 
+> **En fácil:** el documento decide cómo se usaría un modelo de lenguaje para resumir pedidos sin sacar datos de la empresa. Todavía es un diseño: no hay código, ni evaluación, ni despliegue.
+
 ## 1. Para qué sirve este documento
 
-Convertir la IA en **una pieza de arquitectura demostrable**, no en una demo. La pregunta que responde es: *¿cómo se integra un modelo en un sistema empresarial sin abrir un agujero de seguridad, de datos o de coste?*
+Convertir la IA en una pieza de arquitectura demostrable, no en una demo. La pregunta que responde es: *¿cómo se integra un modelo en un sistema empresarial sin abrir un agujero de seguridad, de datos o de coste?*
 
 ## 2. El caso de uso
 
-Sobre el flujo de pedidos, una Function genera un **resumen operativo** del pedido (texto corto y estructurado) para el equipo de soporte. Es una tarea acotada, verificable y con un dato claro de entrada y salida. No es un chatbot ni un agente autónomo.
+Sobre el flujo de pedidos, una Function genera un resumen operativo del pedido (texto corto y estructurado) para el equipo de soporte. Es una tarea acotada, verificable y con un dato claro de entrada y salida. No es un chatbot ni un agente autónomo.
 
 ```mermaid
 flowchart LR
@@ -122,7 +124,7 @@ Tres reglas para que la comparativa sea honesta:
 | Función, gateway y tests | `lab-api-local-azure` |
 | Modelo local, configuración de Ollama y bitácora | `ai-agent-local-lab` |
 | Narrativa pública y evidencia | `portfolio-ciberseguridad-lorenzo` |
-| Plan y decisiones | `privatenotes` |
+| Plan y decisiones | notas privadas de trabajo (no publicadas) |
 
 No se crea un quinto repositorio. La integración es una Function más del workload.
 

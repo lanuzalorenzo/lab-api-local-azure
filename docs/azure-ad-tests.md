@@ -1,8 +1,8 @@
 # Pruebas de autenticación con Microsoft Entra ID
 
-Guía para validar la API con tokens reales de Entra ID. Usa un tenant de
-laboratorio y tokens desechables. No pegues tokens de producción en sitios
-externos como jwt.io.
+> **En fácil:** estas pruebas comprueban que la API acepta tokens válidos y rechaza los que no lo son. Se ejecutan con un tenant de laboratorio y tokens desechables.
+
+Guía para validar la API con tokens reales de Entra ID. Usa un tenant de laboratorio y tokens desechables. No pegues tokens de producción en sitios externos como jwt.io.
 
 ## 1. Variables de entorno
 

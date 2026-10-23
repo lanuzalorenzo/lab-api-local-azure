@@ -1,5 +1,7 @@
 # EcommerceApi — API de referencia para AppSec y DevSecOps
 
+> **En fácil:** esta API es el banco de pruebas del portfolio: una tienda mínima donde se comprueba que cada puerta rechaza a quien no debe entrar. Si solo lees una frase, quédate con la tabla de «Estado de seguridad»: separa lo probado de lo solo diseñado.
+
 **API REST en .NET 10 protegida con Microsoft Entra ID, usada como activo de laboratorio para validar controles de seguridad, pruebas de autorización y un pipeline DevSecOps.**
 
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat&logo=dotnet)](https://dotnet.microsoft.com/)
@@ -11,27 +13,24 @@
 
 ## Qué es y qué no es
 
-**Es** un laboratorio reproducible para demostrar:
+**Es** un laboratorio reproducible con estas capacidades:
 
-- Validación de tokens JWT emitidos por Microsoft Entra ID.
-- Autorización a nivel de objeto (BOLA/IDOR) y separación por usuario.
-- Mitigación de *mass assignment* mediante DTOs.
-- CORS restrictivo, *rate limiting*, límites de tamaño y *Problem Details*.
-- Arquitectura por capas con la regla de dependencias **verificada por pruebas**.
-- DDD táctico: agregados, *value objects*, invariantes y eventos de dominio.
-- CQRS ligero en pedidos (modelo de escritura y proyección de lectura separados).
-- Persistencia SQLite con transacciones e importes en céntimos enteros.
-- **Outbox transaccional** con reintentos y *dead-letter*, sin perder eventos.
-- Contrato versionado `OrderCreatedV1` y consumidor idempotente (Function aislada).
-- Pruebas unitarias, de arquitectura, de infraestructura y de integración.
-- Pipeline con SAST, SCA, escaneo de secretos, escaneo de contenedor y escaneo de IaC.
+| Capacidad | Qué demuestra |
+|---|---|
+| Tokens JWT de Entra ID | Validación de firma, emisor, audiencia y expiración |
+| Autorización por objeto | BOLA/IDOR y separación por usuario |
+| DTOs de entrada | Mitigación de *mass assignment* |
+| CORS, *rate limiting* y límites | Configuración restrictiva y *Problem Details* |
+| Arquitectura por capas | Regla de dependencias verificada por pruebas |
+| DDD táctico | Agregados, *value objects*, invariantes y eventos de dominio |
+| CQRS ligero | Modelo de escritura y proyección de lectura en pedidos |
+| Persistencia SQLite | Transacciones e importes en céntimos enteros |
+| Outbox transaccional | Reintentos y *dead-letter* sin perder eventos |
+| Contrato y consumidor | Contrato `OrderCreatedV1` e idempotencia |
+| Pruebas | Unitarias, de arquitectura, de infraestructura y de integración |
+| Pipeline DevSecOps | SAST, SCA, secretos, contenedor e IaC |
 
-**No es** un sistema listo para producción. Usa SQLite de laboratorio (un solo
-escritor, sin backups ni alta disponibilidad), no hay Service Bus ni Function
-desplegados y no se han validado scopes/roles granulares ni un despliegue real en
-Azure. Tampoco es una implementación de microservicios: es un monolito modular con
-un segundo despliegue asíncrono (ver [ADR-0001](docs/adr/0001-monolito-modular-vs-microservicios.md)).
-El estado de cada control se indica en la tabla siguiente.
+**No es** un sistema listo para producción. Usa SQLite de laboratorio (un solo escritor, sin backups ni alta disponibilidad), no hay Service Bus ni Function desplegados y no se han validado scopes/roles granulares ni un despliegue real en Azure. Tampoco es una implementación de microservicios: es un monolito modular con un segundo despliegue asíncrono (ver [ADR-0001](docs/adr/0001-monolito-modular-vs-microservicios.md)). El estado de cada control se indica en la tabla siguiente.
 
 ---
 
@@ -57,11 +56,7 @@ La API expone dos controladores:
 - `ProductsController`: catálogo de productos.
 - `OrdersController`: pedidos ligados al usuario autenticado (`oid`/`sub`).
 
-El código se organiza en cinco proyectos con una única dirección de dependencias:
-`Domain` ← `Application` ← `Infrastructure` ← host `EcommerceApi`, más
-`Contracts`, que no depende de nadie y comparten productor y consumidor. Los
-controladores solo conocen handlers de `Application`; los adaptadores viven en
-`Infrastructure`. La Function es un segundo desplegable dentro del mismo repo.
+El código se organiza en cinco proyectos con una única dirección de dependencias: `Domain` ← `Application` ← `Infrastructure` ← host `EcommerceApi`, más `Contracts`, que no depende de nadie y comparten productor y consumidor. Los controladores solo conocen handlers de `Application`; los adaptadores viven en `Infrastructure`. La Function es un segundo desplegable dentro del mismo repo.
 
 ### Capas, patrones y decisiones
 
@@ -133,8 +128,8 @@ están desplegados**: el outbox y la idempotencia se validan contra SQLite en lo
 | Persistencia y alta disponibilidad | Fuera de alcance | SQLite de laboratorio, sin backups ni HA |
 | OIDC de GitHub Actions a Azure | Documentado, no activo | `infra/README.md` |
 
-> **Criterio de rigor:** “Implementado” significa que el código o la configuración
-> existe y se ha ejecutado localmente o en CI. “Pendiente” significa que no se ha
+> **Criterio de rigor:** «Implementado» significa que el código o la configuración
+> existe y se ha ejecutado localmente o en CI. «Pendiente» significa que no se ha
 > validado y no se presenta como terminado.
 
 ---
