@@ -7,14 +7,9 @@
 
 ## 1. Contexto
 
-Antes de esta decisión, `EcommerceApi` era un único proyecto: los controladores
-dependían de una clase concreta (`InMemoryStore`), los modelos eran anémicos y las
-reglas de negocio vivían mezcladas con el transporte HTTP. Eso impide cambiar el
-almacenamiento sin tocar los controladores y hace imposible probar las reglas sin
-levantar la API.
+Antes de esta decisión, `EcommerceApi` era un único proyecto: los controladores dependían de una clase concreta (`InMemoryStore`), los modelos eran anémicos y las reglas de negocio vivían mezcladas con el transporte HTTP. Eso impide cambiar el almacenamiento sin tocar los controladores y hace imposible probar las reglas sin levantar la API.
 
-El objetivo es que el **dominio no sepa cómo se persiste ni cómo se expone**, y que
-esa separación no dependa de la disciplina de quien edita el código.
+El objetivo es que el **dominio no sepa cómo se persiste ni cómo se expone**, y que esa separación no dependa de la disciplina de quien edita el código.
 
 ## 2. Decisión
 
@@ -41,14 +36,10 @@ flowchart LR
 
 Reglas adicionales:
 
-- Los controladores solo conocen handlers de `Application`, nunca tipos de
-  `Infrastructure`.
-- Los agregados no exponen `set` públicos: el estado se cambia con métodos que
-  validan invariantes.
-- El dominio no usa `DataAnnotations`: la validación de entrada es un asunto del
-  transporte, no del modelo.
-- No se introducen `MediatR`, `AutoMapper` ni un contenedor adicional para algo que
-  se resuelve con interfaces explícitas y el contenedor de ASP.NET Core.
+- Los controladores solo conocen handlers de `Application`, nunca tipos de `Infrastructure`.
+- Los agregados no exponen `set` públicos: el estado se cambia con métodos que validan invariantes.
+- El dominio no usa `DataAnnotations`: la validación de entrada es un asunto del transporte, no del modelo.
+- No se introducen `MediatR`, `AutoMapper` ni un contenedor adicional para algo que se resuelve con interfaces explícitas y el contenedor de ASP.NET Core.
 
 ## 3. Verificación automática
 
@@ -69,7 +60,7 @@ La regla no se documenta y se olvida: se comprueba en cada ejecución de pruebas
 | Opción | Motivo para descartarla |
 |---|---|
 | Un solo proyecto con carpetas | La frontera es una convención: nada impide el `using` que la rompe |
-| Plantilla "Clean Architecture" con cinco proyectos y MediatR | Ceremonia y dependencias para cinco endpoints; el valor está en la regla, no en el número de carpetas |
+| Plantilla «Clean Architecture» con cinco proyectos y MediatR | Ceremonia y dependencias para cinco endpoints; el valor está en la regla, no en el número de carpetas |
 | Vertical slices por caso de uso | Atractivo, pero el objetivo del repo es demostrar capas y DDD táctico de forma legible |
 | Microservicios por capa | Antipatrón: distribuye el coste sin aislar nada |
 
@@ -84,16 +75,11 @@ La regla no se documenta y se olvida: se comprueba en cada ejecución de pruebas
 ### Negativas y límites
 
 - Más proyectos y `using` que un CRUD de un solo archivo.
-- Para un dominio de dos agregados, la separación es deliberadamente
-  desproporcionada: aquí se justifica por el objetivo docente y de portfolio.
-- Las pruebas de arquitectura validan referencias de ensamblado, no la semántica:
-  un `using` dentro del mismo ensamblado no se detecta por capas si algún día se
-  fusionan proyectos.
+- Para un dominio de dos agregados, la separación es deliberadamente desproporcionada: aquí se justifica por el objetivo docente y de portfolio.
+- Las pruebas de arquitectura validan referencias de ensamblado, no la semántica: un `using` dentro del mismo ensamblado no se detecta por capas si algún día se fusionan proyectos.
 
 ## 6. Cuándo revisar esta decisión
 
-- Si el número de agregados crece y aparece un contexto acotado distinto: valorar
-  separar en módulos o extraer un servicio (ADR-0001).
-- Si los handlers empiezan a necesitar comportamiento transversal (validación,
-  transacciones, eventos): valorar un pipeline explícito antes que un framework.
+- Si el número de agregados crece y aparece un contexto acotado distinto: valorar separar en módulos o extraer un servicio (ADR-0001).
+- Si los handlers empiezan a necesitar comportamiento transversal (validación, transacciones, eventos): valorar un pipeline explícito antes que un framework.
 - Si el equipo crece: revisar la ceremonia frente a la velocidad de entrega.

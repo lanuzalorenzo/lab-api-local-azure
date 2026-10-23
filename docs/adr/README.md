@@ -1,14 +1,12 @@
 # Arquitectura: registro de decisiones (ADR)
 
-Cada decisión estructural del repositorio se documenta antes o junto al código que
-la implementa. La regla es la misma que en el resto del laboratorio: **no se
-introduce una pieza sin una decisión escrita** y no se presenta como ejecutado lo
-que solo está diseñado.
+> **En fácil:** cada decisión grande del código se anota aquí con su motivo y la alternativa que se descartó. Si algo cambia, se revisa la nota o se escribe una nueva; no se borra el historial.
+
+Cada decisión estructural del repositorio se documenta antes o junto al código que la implementa. La regla es la misma que en el resto del laboratorio: **no se introduce una pieza sin una decisión escrita** y no se presenta como ejecutado lo que solo está diseñado.
 
 ## Formato
 
-Cada ADR contiene: contexto, decisión, alternativas descartadas, consecuencias y
-criterio para revisarla. Una decisión sin criterio de revisión es un dogma.
+Cada ADR contiene: contexto, decisión, alternativas descartadas, consecuencias y criterio para revisarla. Una decisión sin criterio de revisión es un dogma.
 
 ## Índice
 
