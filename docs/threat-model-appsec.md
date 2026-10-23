@@ -1,7 +1,5 @@
 # Modelado de amenazas y AppSec — EcommerceApi
 
-> **En fácil:** el documento contrasta la API con las amenazas más habituales de un servicio web y con el Top 10 de OWASP para APIs. Cada fila dice si el control está implementado, es parcial o sigue pendiente.
-
 Análisis STRIDE y contraste con OWASP API Security Top 10 (2023) sobre el código actual. Cada control incluye su estado real: **implementado**, **parcial** o **pendiente**. No se presentan controles documentados como si estuvieran desplegados en producción.
 
 ## 1. Alcance

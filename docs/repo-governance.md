@@ -4,8 +4,6 @@
 > **Última revisión:** 2026-10-22.
 > **Evidencia:** push directo a `main` del 2026-10-22, run [39767038845](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/39767038845).
 
-> **En fácil:** el repositorio tiene un pipeline, pero un push directo a `main` se saltó la regla que obliga a pasar por revisión. El documento registra la deuda y cómo cerrarla.
-
 ## 1. Qué pasó
 
 El push directo de 7 commits a `main` fue aceptado, pero GitHub registró un **bypass de las reglas de rama**:

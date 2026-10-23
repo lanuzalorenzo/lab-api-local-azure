@@ -1,7 +1,5 @@
 # Arquitectura: registro de decisiones (ADR)
 
-> **En fácil:** cada decisión grande del código se anota aquí con su motivo y la alternativa que se descartó. Si algo cambia, se revisa la nota o se escribe una nueva; no se borra el historial.
-
 Cada decisión estructural del repositorio se documenta antes o junto al código que la implementa. La regla es la misma que en el resto del laboratorio: **no se introduce una pieza sin una decisión escrita** y no se presenta como ejecutado lo que solo está diseñado.
 
 ## Formato

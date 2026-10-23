@@ -1,8 +1,6 @@
 # EcommerceApi — API de referencia para AppSec y DevSecOps
 
-> **En fácil:** esta API es el banco de pruebas del portfolio: una tienda mínima donde se comprueba que cada puerta rechaza a quien no debe entrar. Si solo lees una frase, quédate con la tabla de «Estado de seguridad»: separa lo probado de lo solo diseñado.
-
-**API REST en .NET 10 protegida con Microsoft Entra ID, usada como activo de laboratorio para validar controles de seguridad, pruebas de autorización y un pipeline DevSecOps.**
+API REST en .NET 10 protegida con Microsoft Entra ID y usada como banco de pruebas del portfolio: una tienda mínima donde cada puerta rechaza a quien no debe entrar. La tabla de «Estado de seguridad» separa lo probado de lo solo diseñado.
 
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat&logo=dotnet)](https://dotnet.microsoft.com/)
 [![Microsoft Entra ID](https://img.shields.io/badge/Auth-Microsoft%20Entra%20ID-0078D4?style=flat&logo=microsoftazure)](https://learn.microsoft.com/entra/)
@@ -30,7 +28,7 @@
 | Pruebas | Unitarias, de arquitectura, de infraestructura y de integración |
 | Pipeline DevSecOps | SAST, SCA, secretos, contenedor e IaC |
 
-**No es** un sistema listo para producción. Usa SQLite de laboratorio (un solo escritor, sin backups ni alta disponibilidad), no hay Service Bus ni Function desplegados y no se han validado scopes/roles granulares ni un despliegue real en Azure. Tampoco es una implementación de microservicios: es un monolito modular con un segundo despliegue asíncrono (ver [ADR-0001](docs/adr/0001-monolito-modular-vs-microservicios.md)). El estado de cada control se indica en la tabla siguiente.
+**No es** un sistema listo para producción ni una implementación de microservicios: es un monolito modular con un segundo despliegue asíncrono (ver [ADR-0001](docs/adr/0001-monolito-modular-vs-microservicios.md)). Las limitaciones concretas están al final, en [Limitaciones conocidas](#limitaciones-conocidas). El estado de cada control está en [Estado de seguridad](#estado-de-seguridad).
 
 ---
 
@@ -314,9 +312,9 @@ en una suscripción real; se valida con `bicep build` y Trivy config en CI.
 
 Estos documentos fijan las decisiones antes de escribir código o desplegar. El estado se indica en cada uno y no se presenta como ejecutado lo que solo está diseñado.
 
-- [App Service](docs/app-service.md) — plataforma de ejecución, Bicep frente al pipeline YAML, plan/site, entrada/salida de red, identidad, slots y coste.
+- [App Service](docs/app-service.md) — **Diseño**: plataforma de ejecución, Bicep frente al pipeline YAML, plan/site, entrada/salida de red, identidad, slots y coste.
 - [Azure Functions](docs/functions.md) — cómputo asíncrono, idempotencia, dead-letter y hosting. **Parcial**: consumidor y outbox probados en local, sin despliegue.
-- [Integración de IA](docs/ai-integration.md) — gateway, controles de seguridad y evaluación.
+- [Integración de IA](docs/ai-integration.md) — **Diseño**: gateway, controles de seguridad y evaluación.
 - [Registro de decisiones (ADR)](docs/adr/README.md) — monolito modular, capas, CQRS ligero y outbox transaccional.
 - [Gobernanza del repositorio](docs/repo-governance.md) — **Pendiente**: exigir PR y checks obligatorios en `main`; el push directo del 2026-10-22 los bypassó.
 

@@ -1,7 +1,5 @@
 # EcommerceApi — proyecto .NET 10
 
-> **En fácil:** esta carpeta contiene la API en sí: los controladores, la autenticación y la configuración. Aquí se explica cómo arrancarla y dónde está cada cosa; el resto del sistema vive en proyectos aparte.
-
 API REST de laboratorio con autenticación Microsoft Entra ID, autorización por usuario, DTOs de entrada y arquitectura por capas. La documentación principal está en el [README raíz](../README.md); este archivo resume el proyecto y evita duplicar guías desactualizadas.
 
 ## Estructura

@@ -5,8 +5,6 @@
 > **Última revisión:** 2026-10-22.
 > **Sesión asociada:** T2 (estudio y preguntas) → T3 (IaC) → T4 (despliegue) → T5 (slots).
 
-> **En fácil:** este documento es el plano de cómo se ejecutaría la API en Azure: qué piezas hay, qué hace cada una y qué falta antes de desplegar. Todavía no se ha desplegado nada.
-
 ## 1. Para qué sirve este documento
 
 Explicar cómo se ejecuta la API en Azure, qué decisiones hay detrás y qué se debe comprobar antes de desplegar. No es un tutorial: es el plano que se estudia en T2 y que se corrige si algo no cuadra.

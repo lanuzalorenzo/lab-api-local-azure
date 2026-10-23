@@ -1,7 +1,5 @@
 # Infraestructura de referencia — EcommerceApi
 
-> **En fácil:** este documento describe la infraestructura de Azure que está escrita, no la que está funcionando: la plantilla se valida sin desplegarla. Sirve para revisar qué recursos y controles definiría un despliegue real.
-
 Plantilla Bicep que describe un despliegue de referencia para la API. **No se ha desplegado en una suscripción real**: se valida con `bicep build` y con Trivy config en el pipeline. No contiene secretos ni identificadores reales.
 
 ## Arquitectura

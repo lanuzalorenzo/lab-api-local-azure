@@ -5,8 +5,6 @@
 > **Última revisión:** 2026-10-22.
 > **Sesión asociada:** T6 (estudio y decisiones) → T7 (implementación local) → T8 (despliegue y observación).
 
-> **En fácil:** la Function es el ayudante que hace el trabajo pesado después de responder al cliente: recibe el pedido, lo procesa y no repite el efecto si el mensaje llega dos veces. Está probada en local; en Azure todavía no está desplegada.
-
 ## 1. Para qué sirve este documento
 
 Fijar qué función añadimos, por qué, con qué garantías y cómo se prueba, antes de escribir código. La regla del repositorio es no introducir una pieza nueva sin una decisión escrita.

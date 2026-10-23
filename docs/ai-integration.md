@@ -5,8 +5,6 @@
 > **Última revisión:** 2026-10-22.
 > **Sesión asociada:** T10 (estudio, implementación local y evaluación) → T11 (despliegue opcional).
 
-> **En fácil:** el documento decide cómo se usaría un modelo de lenguaje para resumir pedidos sin sacar datos de la empresa. Todavía es un diseño: no hay código, ni evaluación, ni despliegue.
-
 ## 1. Para qué sirve este documento
 
 Convertir la IA en una pieza de arquitectura demostrable, no en una demo. La pregunta que responde es: *¿cómo se integra un modelo en un sistema empresarial sin abrir un agujero de seguridad, de datos o de coste?*

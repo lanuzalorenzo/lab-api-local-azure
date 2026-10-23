@@ -1,7 +1,5 @@
 # Pruebas funcionales de la API
 
-> **En fácil:** estas pruebas comprueban que cada endpoint responde lo que debe cuando el token es válido, falta o pertenece a otro usuario. Los comandos de `curl` se pueden copiar y ejecutar contra la API local.
-
 Todas las rutas de negocio requieren un token JWT válido. El endpoint `/health` es anónimo. La URL base de ejemplo es `http://localhost:5080`.
 
 ## Prerrequisitos

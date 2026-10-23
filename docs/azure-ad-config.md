@@ -1,8 +1,15 @@
 # Configuración de Microsoft Entra ID en la API
 
-> **En fácil:** este documento explica cómo la API valida el token de Entra ID y qué ajustes necesita para arrancar. Los valores reales van fuera del repositorio.
-
 Esta guía describe la configuración real del código actual. Los valores sensibles no se guardan en el repositorio: usa `appsettings.Development.json` (ignorado por Git), user-secrets o variables de entorno.
+
+## Conceptos clave
+
+- **Tenant ID**: identificador del directorio de Entra ID.
+- **Client ID**: identificador público del App Registration de la API.
+- **Audience**: Application ID URI, por ejemplo `api://<client-id>`.
+- **Authority**: `https://login.microsoftonline.com/<tenant-id>/v2.0`.
+- **Scope**: permiso granular que expone la API. La API actual no aplica autorización por scopes; solo valida el token.
+- **JWT**: token firmado con claims `iss`, `aud`, `exp`, `oid`/`sub`, `scp` y `roles`.
 
 ## 1. Opciones de configuración
 

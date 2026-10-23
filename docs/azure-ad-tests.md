@@ -1,8 +1,8 @@
 # Pruebas de autenticación con Microsoft Entra ID
 
-> **En fácil:** estas pruebas comprueban que la API acepta tokens válidos y rechaza los que no lo son. Se ejecutan con un tenant de laboratorio y tokens desechables.
+Guía para validar la API con **tokens reales de Entra ID**. Usa un tenant de laboratorio y tokens desechables. No pegues tokens de producción en sitios externos como jwt.io.
 
-Guía para validar la API con tokens reales de Entra ID. Usa un tenant de laboratorio y tokens desechables. No pegues tokens de producción en sitios externos como jwt.io.
+Las pruebas funcionales de la API con el esquema de test (`X-Test-User`) están en [`tests.md`](tests.md).
 
 ## 1. Variables de entorno
 
@@ -14,8 +14,7 @@ export AUDIENCE="api://11111111-1111-1111-1111-111111111111"
 export API_URL="http://localhost:5080"
 ```
 
-El `CLIENT_SECRET` debe obtenerse de un almacén seguro (Key Vault, user-secrets
-o variable de entorno). Nunca se commitea.
+El `CLIENT_SECRET` debe obtenerse de un almacén seguro (Key Vault, user-secrets o variable de entorno). Nunca se commitea.
 
 ## 2. Obtener un token (client credentials)
 
@@ -35,7 +34,7 @@ test -n "${TOKEN}" && test "${TOKEN}" != "null" || {
 }
 ```
 
-## 3. Pruebas con curl
+## 3. Validar que el token funciona
 
 ### Health check (anónimo)
 
@@ -56,8 +55,7 @@ Esperado: `401 Unauthorized`.
 ### Token inválido (debe fallar)
 
 ```bash
-curl -i -H "Authorization: Bearer invalid-token" \
-  "${API_URL}/api/products"
+curl -i -H "Authorization: Bearer invalid-token" "${API_URL}/api/products"
 ```
 
 Esperado: `401 Unauthorized`.
@@ -65,51 +63,17 @@ Esperado: `401 Unauthorized`.
 ### Token válido
 
 ```bash
-curl -i -H "Authorization: Bearer ${TOKEN}" \
-  "${API_URL}/api/products"
+curl -i -H "Authorization: Bearer ${TOKEN}" "${API_URL}/api/products"
 ```
 
 Esperado: `200 OK`.
 
-### Crear un producto
+## 4. Prueba de BOLA con dos identidades (client credentials)
+
+Para demostrar la separación por identidad de cliente necesitas dos App Registrations con credenciales distintas. Con dos client credentials:
 
 ```bash
-curl -i -X POST "${API_URL}/api/products" \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Keyboard","price":49.99,"stock":20}'
-```
-
-Esperado: `201 Created`.
-
-### Crear un pedido
-
-```bash
-curl -i -X POST "${API_URL}/api/orders" \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d '{"productIds":[1,2]}'
-```
-
-Esperado: `201 Created` con `productIds`, `total` y `createdAt`. El campo
-`userId` no se serializa.
-
-### Pedido inexistente
-
-```bash
-curl -i -H "Authorization: Bearer ${TOKEN}" \
-  "${API_URL}/api/orders/999999"
-```
-
-Esperado: `404 Not Found`.
-
-## 4. Prueba de BOLA con dos identidades
-
-Para demostrar la separación por usuario necesitas dos clientes o dos usuarios
-con tokens distintos. Con dos client credentials:
-
-```bash
-# Token del usuario A
+# Token del cliente A
 TOKEN_A=$(curl -s -X POST \
   "https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token" \
   -H "Content-Type: application/x-www-form-urlencoded" \
@@ -118,7 +82,7 @@ TOKEN_A=$(curl -s -X POST \
   -d "client_secret=${CLIENT_A_SECRET}" \
   -d "grant_type=client_credentials" | jq -r '.access_token')
 
-# Token del usuario B
+# Token del cliente B
 TOKEN_B=$(curl -s -X POST \
   "https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token" \
   -H "Content-Type: application/x-www-form-urlencoded" \
@@ -142,20 +106,17 @@ curl -i -H "Authorization: Bearer ${TOKEN_B}" "${API_URL}/api/orders/${ORDER_ID}
 
 Resultado esperado: `200` para A y `404` para B.
 
-> Con client credentials, el claim `sub` identifica a la aplicación cliente, no
-> a una persona. Para pruebas de usuario final usa flujos delegados (authorization
-> code + PKCE) y dos usuarios de laboratorio.
+> Con client credentials, el claim `sub` identifica a la aplicación cliente, no a una persona. Para pruebas de usuario final usa flujos delegados (authorization code + PKCE) y dos usuarios de laboratorio.
 
-## 5. Swagger
+## 5. Swagger con token real
 
 ```bash
 dotnet run --project EcommerceApi --urls http://localhost:5080
 ```
 
-Abre <http://localhost:5080/swagger>, pulsa **Authorize** y pega el token sin el
-prefijo `Bearer`. Swagger solo está activo en `Development`.
+Abre <http://localhost:5080/swagger>, pulsa **Authorize** y pega el token sin el prefijo `Bearer`. Swagger solo está activo en `Development`.
 
-## 6. Errores comunes
+## 6. Errores comunes de Entra ID
 
 | Error | Causa | Solución |
 |---|---|---|
@@ -164,7 +125,7 @@ prefijo `Bearer`. Swagger solo está activo en `Development`.
 | `AADSTS7000215` | Secret inválido | Genera uno nuevo y guárdalo de forma segura |
 | `401` con token válido | Audience/issuer incorrectos | Revisa `AzureAd` y `aud`/`iss` |
 | `429` | Rate limit | Espera un minuto |
-| CORS bloqueado | Origen no allowlisted | Añade el origen exacto |
+| CORS bloqueado | Origen no allowlisted | Añade el origen exacto en `Cors:AllowedOrigins` |
 
 ## 7. Checklist
 
@@ -173,5 +134,5 @@ prefijo `Bearer`. Swagger solo está activo en `Development`.
 - [ ] Token inválido responde `401`.
 - [ ] Token válido responde `200`.
 - [ ] `POST` inválido responde `400`.
-- [ ] Usuario B no puede leer el pedido de A (`404`).
+- [ ] Cliente B no puede leer el pedido de A (`404`).
 - [ ] Los logs no incluyen tokens ni secretos.

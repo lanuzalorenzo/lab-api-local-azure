@@ -1,6 +1,6 @@
 # Registro de la API en Microsoft Entra ID
 
-> **En fácil:** registrar la API es darle una identidad propia en el directorio de Microsoft: un nombre, una dirección y una lista de permisos. Esta guía describe los pasos en el portal; no significa que ya se hayan ejecutado.
+Registrar la API es darle una identidad propia en el directorio: un nombre, una dirección y una lista de permisos. Esta guía describe los pasos en el portal; no significa que ya se hayan ejecutado.
 
 ## 1. Qué es Entra ID y el registro de una aplicación
 
