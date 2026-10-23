@@ -4,10 +4,11 @@
 > **Última revisión:** 2026-10-22.
 > **Evidencia:** push directo a `main` del 2026-10-22, run [39767038845](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/39767038845).
 
+> **En fácil:** el repositorio tiene un pipeline, pero un push directo a `main` se saltó la regla que obliga a pasar por revisión. El documento registra la deuda y cómo cerrarla.
+
 ## 1. Qué pasó
 
-El push directo de 7 commits a `main` fue aceptado, pero GitHub registró un
-**bypass de las reglas de rama**:
+El push directo de 7 commits a `main` fue aceptado, pero GitHub registró un **bypass de las reglas de rama**:
 
 ```text
 Bypassed rule violations for refs/heads/main:
@@ -15,10 +16,7 @@ Bypassed rule violations for refs/heads/main:
 - 7 of 7 required status checks are expected.
 ```
 
-El pipeline posterior terminó en verde, pero **eso no sustituye al flujo**: la
-protección se saltó por permisos de administrador, no porque el cambio cumpliera
-la regla. Un resultado verde después del push no demuestra que el merge estuviera
-bloqueado hasta que los checks pasaran.
+El pipeline posterior terminó en verde, pero **eso no sustituye al flujo**: la protección se saltó por permisos de administrador, no porque el cambio cumpliera la regla. Un resultado verde después del push no demuestra que el merge estuviera bloqueado hasta que los checks pasaran.
 
 ## 2. Qué queda pendiente
 
@@ -33,17 +31,13 @@ bloqueado hasta que los checks pasaran.
 ## 3. Cómo se cerrará
 
 1. Abrir un PR de prueba con un cambio inocuo.
-2. Comprobar que los checks aparecen como obligatorios y que el merge está
-   bloqueado mientras alguno falle.
+2. Comprobar que los checks aparecen como obligatorios y que el merge está bloqueado mientras alguno falle.
 3. Hacer merge solo con todos los checks en verde y sin bypass.
 4. Guardar el enlace al PR y al run como evidencia.
 
 ## 4. Por qué importa
 
-El repositorio se presenta como workload DevSecOps. Si `main` acepta pushes
-directos que saltan PR y checks, la evidencia del pipeline es más débil: los
-controles existen, pero no son **obligatorios**. Cerrar esta deuda convierte el
-pipeline de "se ejecuta" en "gobierna la integración".
+El repositorio se presenta como workload DevSecOps. Si `main` acepta pushes directos que saltan PR y checks, la evidencia del pipeline es más débil: los controles existen, pero no son **obligatorios**. Cerrar esta deuda convierte el pipeline de «se ejecuta» en «gobierna la integración».
 
 ## 5. Referencias
 

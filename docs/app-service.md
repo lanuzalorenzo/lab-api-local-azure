@@ -5,11 +5,13 @@
 > **Última revisión:** 2026-10-22.
 > **Sesión asociada:** T2 (estudio y preguntas) → T3 (IaC) → T4 (despliegue) → T5 (slots).
 
+> **En fácil:** este documento es el plano de cómo se ejecutaría la API en Azure: qué piezas hay, qué hace cada una y qué falta antes de desplegar. Todavía no se ha desplegado nada.
+
 ## 1. Para qué sirve este documento
 
-Explicar **cómo se ejecuta la API en Azure**, qué decisiones hay detrás y qué se debe comprobar antes de desplegar. No es un tutorial: es el plano que se estudia en T2 y que se corrige si algo no cuadra.
+Explicar cómo se ejecuta la API en Azure, qué decisiones hay detrás y qué se debe comprobar antes de desplegar. No es un tutorial: es el plano que se estudia en T2 y que se corrige si algo no cuadra.
 
-Incluye una separación explícita entre **Bicep, el pipeline YAML y el artefacto** (§3) y un desglose de **qué define exactamente la plantilla** (§4), porque es la confusión más habitual al leer `infra/main.bicep`.
+Incluye una separación explícita entre Bicep, el pipeline YAML y el artefacto (§3) y un desglose de qué define exactamente la plantilla (§4), porque es la confusión más habitual al leer `infra/main.bicep`.
 
 ## 2. Modelo de ejecución
 
@@ -24,7 +26,7 @@ Idea clave: **el plan se paga siempre; el site no cuesta aparte**. Varios sites 
 
 ## 3. Bicep no es el pipeline: tres capas que conviene separar
 
-Una confusión habitual es llamar "YAML de infraestructura" a todo. En realidad hay tres capas distintas que se complementan:
+Una confusión habitual es llamar «YAML de infraestructura» a todo. En realidad hay tres capas distintas que se complementan:
 
 | Capa | Pregunta que responde | Herramienta | En este repositorio |
 |---|---|---|---|
@@ -77,11 +79,11 @@ Bicep es un **DSL de Microsoft, exclusivo de Azure**, que se compila a **plantil
 | **`what-if`** | `az deployment group what-if` muestra qué cambiaría antes de aplicar |
 | **`existing`** | Permite referenciar un recurso ya definido y obtener su `id` sin duplicar la declaración. El repo lo usa para las subredes declaradas dentro de la VNet |
 
-Bicep es **solo Azure**. Si el laboratorio necesitara AWS o GCP, el equivalente sería Terraform o Pulumi; no tiene sentido mezclarlos solo por moda.
+Bicep es solo Azure. Si el laboratorio necesitara AWS o GCP, el equivalente sería Terraform o Pulumi; no tiene sentido mezclarlos solo por moda.
 
 ## 4. Qué define exactamente el Bicep de este repositorio
 
-No define "un App Service" aislado: define **todo el grupo de recursos y las relaciones entre sus piezas**.
+No define «un App Service» aislado: define todo el grupo de recursos y las relaciones entre sus piezas.
 
 ### 4.1. Recursos declarados
 
@@ -139,7 +141,7 @@ resource apiApp 'Microsoft.Web/sites@2023-12-01' = {
 | **Plan** | `Microsoft.Web/serverfarms` | Familia, SKU, número de instancias, sistema operativo | Implícito en el SKU |
 | **Site** | `Microsoft.Web/sites` | Runtime, variables, identidad, TLS, red, slots | No se declara aquí |
 
-**No se pone "2 vCPU y 8 GB" como número.** Se elige un SKU y Azure deriva la capacidad:
+**No se pone «2 vCPU y 8 GB» como número.** Se elige un SKU y Azure deriva la capacidad:
 
 | SKU | vCPU aproximadas | RAM aproximada | Uso típico |
 |---|---|---|---|
@@ -149,7 +151,7 @@ resource apiApp 'Microsoft.Web/sites@2023-12-01' = {
 | `P2v3` | 4 | 16 GB | Más carga |
 | `P3v3` | 8 | 32 GB | Carga alta |
 
-> Los valores exactos dependen de la región y de la tabla oficial de SKUs; confírmalos antes de T4. `capacity: 1` significa **una instancia**, no "un núcleo".
+> Los valores exactos dependen de la región y de la tabla oficial de SKUs; confírmalos antes de T4. `capacity: 1` significa **una instancia**, no «un núcleo».
 
 Escalar tiene dos direcciones:
 
@@ -193,7 +195,7 @@ Pero **no llega a Azure**. El Bicep define código, no contenedor.
 | Complejidad | Baja: sin registro ni pull | Media: ACR, rol `AcrPull`, tags |
 | Escaneo de seguridad | Trivy sobre el `Dockerfile` | Trivy sobre la imagen que realmente se despliega |
 | Arranque | Más rápido | Pull + arranque del contenedor |
-| Coherencia con el portfolio | Menor | Mayor si el discurso es "contenedor endurecido" |
+| Coherencia con el portfolio | Menor | Mayor si el discurso es «contenedor endurecido» |
 
 **Estado actual:** el diseño es **zip deploy** y el Bicep lo refleja. La decisión no está cerrada; si se elige contenedor, hay que cambiar `linuxFxVersion`, añadir el registro y actualizar este documento y el pipeline. No se debe afirmar que el contenedor está desplegado.
 

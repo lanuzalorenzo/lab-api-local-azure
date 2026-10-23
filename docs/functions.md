@@ -5,9 +5,11 @@
 > **Última revisión:** 2026-10-22.
 > **Sesión asociada:** T6 (estudio y decisiones) → T7 (implementación local) → T8 (despliegue y observación).
 
+> **En fácil:** la Function es el ayudante que hace el trabajo pesado después de responder al cliente: recibe el pedido, lo procesa y no repite el efecto si el mensaje llega dos veces. Está probada en local; en Azure todavía no está desplegada.
+
 ## 1. Para qué sirve este documento
 
-Fijar **qué función añadimos, por qué, con qué garantías y cómo se prueba**, antes de escribir código. La regla del repositorio es no introducir una pieza nueva sin una decisión escrita.
+Fijar qué función añadimos, por qué, con qué garantías y cómo se prueba, antes de escribir código. La regla del repositorio es no introducir una pieza nueva sin una decisión escrita.
 
 ## 2. El caso de uso
 
@@ -36,7 +38,7 @@ flowchart LR
 | Aislamiento de fallos | Sí | Un fallo puede tumbar la API |
 | Complejidad operativa | Media | Baja |
 
-La Function no sustituye a la API: **separa el trabajo que no debe bloquear la respuesta**.
+La Function no sustituye a la API: separa el trabajo que no debe bloquear la respuesta.
 
 ## 4. Modelo de hosting
 
@@ -69,7 +71,7 @@ Runtime: **.NET 10 con modelo isolated**. El modelo in-process está retirado; n
 
 ## 6. Garantías y errores
 
-Service Bus entrega **al menos una vez**. No existe "exactamente una vez" gratis; la idempotencia es responsabilidad del consumidor.
+Service Bus entrega al menos una vez. No existe «exactamente una vez» gratis; la idempotencia es responsabilidad del consumidor.
 
 - **Idempotencia:** antes de procesar, se comprueba `messageId` en el almacén. Si ya está, se completa el mensaje sin repetir efectos.
 - **Reintentos:** `maxDeliveryCount` configurado (por ejemplo 5). Cada intento queda en el log con el `deliveryCount`.
@@ -136,10 +138,7 @@ lab-api-local-azure/
     └── main.bicep         # sin módulos de Service Bus ni Function App todavía
 ```
 
-La API publica el mensaje mediante un `IEventPublisher` con dos adaptadores:
-`LoggingEventPublisher` en local (por defecto) y `ServiceBusEventPublisher` cuando
-`Publisher:Mode=ServiceBus`. El contrato `OrderCreatedV1` vive en
-`EcommerceApi.Contracts` y lo comparten productor y consumidor.
+La API publica el mensaje mediante un `IEventPublisher` con dos adaptadores: `LoggingEventPublisher` en local (por defecto) y `ServiceBusEventPublisher` cuando `Publisher:Mode=ServiceBus`. El contrato `OrderCreatedV1` vive en `EcommerceApi.Contracts` y lo comparten productor y consumidor.
 
 ## 11. Despliegue
 
@@ -177,9 +176,7 @@ Confirmar antes de T8. El laboratorio se destruye el mismo día.
 ## 15. Limitaciones
 
 - El diseño asume un volumen de laboratorio, no de producción.
-- Persistencia SQLite de un solo escritor; el consumidor comparte el fichero solo en
-  local. En Azure el adaptador de idempotencia debe ser Table Storage o SQL.
+- Persistencia SQLite de un solo escritor; el consumidor comparte el fichero solo en local. En Azure el adaptador de idempotencia debe ser Table Storage o SQL.
 - No cubre multi-región, ni orden garantizado, ni particiones.
 - Service Bus y la Function no se han desplegado: el estado es **Parcial**.
-- El despachador es at-least-once; la garantía efectiva depende de la idempotencia
-  del consumidor, que sí está probada.
+- El despachador es at-least-once; la garantía efectiva depende de la idempotencia del consumidor, que sí está probada.
