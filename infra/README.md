@@ -1,8 +1,8 @@
 # Infraestructura de referencia — EcommerceApi
 
-Plantilla Bicep que describe un despliegue de referencia para la API. **No se ha
-desplegado en una suscripción real**: se valida con `bicep build` y con Trivy
-config en el pipeline. No contiene secretos ni identificadores reales.
+> **En fácil:** este documento describe la infraestructura de Azure que está escrita, no la que está funcionando: la plantilla se valida sin desplegarla. Sirve para revisar qué recursos y controles definiría un despliegue real.
+
+Plantilla Bicep que describe un despliegue de referencia para la API. **No se ha desplegado en una suscripción real**: se valida con `bicep build` y con Trivy config en el pipeline. No contiene secretos ni identificadores reales.
 
 ## Arquitectura
 
@@ -53,8 +53,7 @@ az deployment group create \
   --parameters infra/main.parameters.example.json
 ```
 
-Antes de desplegar, sustituye los placeholders de `main.parameters.example.json`
-por valores reales. No subas ese archivo con identificadores reales.
+Antes de desplegar, sustituye los placeholders de `main.parameters.example.json` por valores reales. No subas ese archivo con identificadores reales.
 
 ## OIDC de GitHub Actions a Azure (diseño, no activo)
 
@@ -62,8 +61,7 @@ El repositorio no incluye un workflow de despliegue. Para añadirlo de forma seg
 
 1. Crea una identidad federada en Entra ID para el repositorio.
 2. Asigna permisos mínimos sobre el grupo de recursos.
-3. Guarda `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` y `AZURE_SUBSCRIPTION_ID` como
-   variables del repositorio (no secretos de larga duración).
+3. Guarda `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` y `AZURE_SUBSCRIPTION_ID` como variables del repositorio (no secretos de larga duración).
 4. Usa `azure/login@v2` con `permissions: id-token: write`:
 
 ```yaml
@@ -80,14 +78,11 @@ steps:
       subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 ```
 
-No se incluye este workflow porque el repositorio no tiene una suscripción de
-Azure asociada y no se ha validado el despliegue.
+No se incluye este workflow porque el repositorio no tiene una suscripción de Azure asociada y no se ha validado el despliegue.
 
 ## Limitaciones
 
 - La plantilla usa una SKU `P1v3`; el coste no se ha estimado.
 - No incluye WAF, API Management, base de datos ni backup.
-- La integración VNet de App Service requiere que la subred esté delegada y que
-  el plan sea compatible (PremiumV3).
-- El Private Endpoint de App Service y el acceso público deshabilitado deben
-  probarse en un despliegue real.
+- La integración VNet de App Service requiere que la subred esté delegada y que el plan sea compatible (PremiumV3).
+- El Private Endpoint de App Service y el acceso público deshabilitado deben probarse en un despliegue real.

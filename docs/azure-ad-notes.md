@@ -1,7 +1,8 @@
 # Notas de preparación — Microsoft Entra ID
 
-Documento de apoyo para entender el flujo de autenticación de la API. La
-configuración vigente está en [`azure-ad-config.md`](azure-ad-config.md).
+> **En fácil:** estas notas explican en orden qué es cada pieza del token y qué hace la API con él. La configuración práctica está en la guía de configuración.
+
+Documento de apoyo para entender el flujo de autenticación de la API. La configuración vigente está en [`azure-ad-config.md`](azure-ad-config.md).
 
 ## Conceptos clave
 
@@ -9,10 +10,8 @@ configuración vigente está en [`azure-ad-config.md`](azure-ad-config.md).
 - **Client ID**: identificador público del App Registration de la API.
 - **Audience**: Application ID URI, por ejemplo `api://<client-id>`.
 - **Authority**: `https://login.microsoftonline.com/<tenant-id>/v2.0`.
-- **Scope**: permiso granular que expone la API. La API actual no aplica
-  autorización por scopes; solo valida el token.
-- **JWT**: token firmado con claims `iss`, `aud`, `exp`, `oid`/`sub`, `scp` y
-  `roles`.
+- **Scope**: permiso granular que expone la API. La API actual no aplica autorización por scopes; solo valida el token.
+- **JWT**: token firmado con claims `iss`, `aud`, `exp`, `oid`/`sub`, `scp` y `roles`.
 
 ## Flujo
 
@@ -20,8 +19,7 @@ configuración vigente está en [`azure-ad-config.md`](azure-ad-config.md).
 2. Entra ID emite un JWT.
 3. El cliente envía `Authorization: Bearer <token>`.
 4. La API valida firma, issuer, audience y expiración.
-5. La API resuelve la identidad (`NameIdentifier`/`oid`/`sub`) y autoriza el
-   recurso.
+5. La API resuelve la identidad (`NameIdentifier`/`oid`/`sub`) y autoriza el recurso.
 6. Si el token no es válido, responde `401`.
 
 ## Implementación actual
@@ -33,8 +31,7 @@ configuración vigente está en [`azure-ad-config.md`](azure-ad-config.md).
 - CORS deny-by-default.
 - Rate limiting y límite de cuerpo.
 
-No se usa `Microsoft.Identity.Web`; la integración se hace con
-`Microsoft.AspNetCore.Authentication.JwtBearer`.
+No se usa `Microsoft.Identity.Web`; la integración se hace con `Microsoft.AspNetCore.Authentication.JwtBearer`.
 
 ## Trabajo pendiente
 

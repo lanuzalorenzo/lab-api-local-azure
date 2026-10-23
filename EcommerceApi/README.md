@@ -1,9 +1,8 @@
 # EcommerceApi — proyecto .NET 10
 
-API REST de laboratorio con autenticación Microsoft Entra ID, autorización por
-usuario, DTOs de entrada y arquitectura por capas. La documentación principal está
-en el [README raíz](../README.md); este archivo resume el proyecto y evita duplicar
-guías desactualizadas.
+> **En fácil:** esta carpeta contiene la API en sí: los controladores, la autenticación y la configuración. Aquí se explica cómo arrancarla y dónde está cada cosa; el resto del sistema vive en proyectos aparte.
+
+API REST de laboratorio con autenticación Microsoft Entra ID, autorización por usuario, DTOs de entrada y arquitectura por capas. La documentación principal está en el [README raíz](../README.md); este archivo resume el proyecto y evita duplicar guías desactualizadas.
 
 ## Estructura
 
@@ -35,8 +34,7 @@ EcommerceApi.Infrastructure/  # SQLite, outbox, dispatcher e idempotencia
 EcommerceApi.Contracts/       # OrderCreatedV1 compartido con la Function
 ```
 
-Dependencias: `Domain` ← `Application` ← `Infrastructure` ← host. La regla se
-verifica en `tests/EcommerceApi.Architecture.Tests`.
+Dependencias: `Domain` ← `Application` ← `Infrastructure` ← host. La regla se verifica en `tests/EcommerceApi.Architecture.Tests`.
 
 ## Ejecución
 
@@ -67,11 +65,7 @@ dotnet test ../EcommerceApi.sln
 
 ## Alcance
 
-Incluye autenticación, autorización por usuario, validación de entrada, CORS,
-rate limiting, DDD táctico, CQRS ligero en pedidos, persistencia SQLite, outbox
-transaccional y consumidor idempotente. No incluye Service Bus ni Function
-desplegados, roles/scopes granulares, observabilidad persistente, microservicios
-ni despliegue real en Azure.
+Incluye autenticación, autorización por usuario, validación de entrada, CORS, rate limiting, DDD táctico, CQRS ligero en pedidos, persistencia SQLite, outbox transaccional y consumidor idempotente. No incluye Service Bus ni Function desplegados, roles/scopes granulares, observabilidad persistente, microservicios ni despliegue real en Azure.
 
 ## Licencia
 
