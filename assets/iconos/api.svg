@@ -1,16 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <title>Icono de la API de referencia</title>
-  <desc>Glifo api de Material Design Icons (Apache 2.0), recoloreado.</desc>
+  <title>API .NET de referencia</title>
+  <desc>Identidad visual: navy con degradado y glifo blanco.</desc>
   <defs>
-    <clipPath id="corte-api">
-      <rect width="64" height="64" rx="14"/>
-    </clipPath>
+    <linearGradient id="bg-api" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#07131e"/>
+      <stop offset="100%" stop-color="#0e2a47"/>
+    </linearGradient>
+    <linearGradient id="brd-api" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#0369a1" stop-opacity="0.5"/>
+    </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="14" fill="#512BD4"/>
-  <g transform="translate(12 12) scale(1.66667)">
-    <path fill="#ffffff" d="M7 7H5A2 2 0 0 0 3 9V17H5V13H7V17H9V9A2 2 0 0 0 7 7M7 11H5V9H7M14 7H10V17H12V13H14A2 2 0 0 0 16 11V9A2 2 0 0 0 14 7M14 11H12V9H14M20 9V15H21V17H17V15H18V9H17V7H21V9Z"/>
-  </g>
-  <g clip-path="url(#corte-api)">
-    <rect y="56" width="64" height="8" fill="#ffffff" fill-opacity="0.18"/>
+  <rect width="64" height="64" rx="16" fill="url(#bg-api)"/>
+  <rect x="1" y="1" width="62" height="62" rx="15" fill="none" stroke="url(#brd-api)" stroke-width="2"/>
+  <g transform="translate(10 10) scale(1.83334)" fill="#f8fafc">
+    <path d="M24 8.77h-2.468v7.565h-1.425V8.77h-2.462V7.53H24zm-6.852 7.565h-4.821V7.53h4.63v1.24h-3.205v2.494h2.953v1.234h-2.953v2.604h3.396zm-6.708 0H8.882L4.78 9.863a2.896 2.896 0 0 1-.258-.51h-.036c.032.189.048.592.048 1.21v5.772H3.157V7.53h1.659l3.965 6.32c.167.261.275.442.323.54h.024c-.04-.233-.06-.629-.06-1.185V7.529h1.372zm-8.703-.693a.868.829 0 0 1-.869.829.868.829 0 0 1-.868-.83.868.829 0 0 1 .868-.828.868.829 0 0 1 .869.829Z"/>
   </g>
 </svg>
