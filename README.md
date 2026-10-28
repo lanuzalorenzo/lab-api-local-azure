@@ -1,3 +1,5 @@
+<img src="assets/iconos/api.svg" width="64" alt="Icono de la API de referencia">
+
 # EcommerceApi — API de referencia para AppSec y DevSecOps
 
 API REST en .NET 10 protegida con Microsoft Entra ID y usada como banco de pruebas del portfolio: una tienda mínima donde cada puerta rechaza a quien no debe entrar. La tabla de «Estado de seguridad» separa lo probado de lo solo diseñado.
