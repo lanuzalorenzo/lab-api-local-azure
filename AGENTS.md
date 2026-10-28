@@ -1,25 +1,26 @@
-# Guía para agentes: EcommerceApi (lab-api-local-azure)
+# Guía para agentes: EcommerceApi
 
-> Si llegas nuevo: el contrato de contenido es el de `portfolio-ciberseguridad-lorenzo/AGENTS.md`. Este archivo añade convenciones técnicas de la API.
+API empresarial en .NET 10 y workload de referencia del portfolio público. Este archivo cubre el código, la seguridad y la verificación del repositorio.
 
-API empresarial en .NET 10 usada como Workload de Referencia del portfolio.
+## Arquitectura
 
-## Desarrollo y seguridad
+- Desacoplada: `Domain` sin dependencias, `Application` solo `Domain`, `Infrastructure` de ambas y el host compone todo. Verificado en `tests/EcommerceApi.Architecture.Tests`; no debilites esa separación.
+- Toda decisión estructural se documenta como ADR en `docs/adr/`.
+- `functions/` contiene el procesador de pedidos; los diseños de plataforma están en `docs/app-service.md`, `docs/functions.md` y `docs/ai-integration.md`. Si un cambio los contradice, actualiza el documento en el mismo lote.
+- `infra/main.bicep` es la infraestructura; sin recursos públicos por defecto.
 
-- Arquitectura desacoplada: `Domain` sin dependencias, `Application` solo `Domain`, `Infrastructure` de ambas, host compone todo. Verificado en `tests/EcommerceApi.Architecture.Tests`; no debilitar.
-- Toda decisión estructural como ADR en `docs/adr/`.
+## Seguridad
+
 - Security by Design y OWASP API Security Top 10.
-- No eliminar/debilitar validación criptográfica JWT/JWKS en `Program.cs`.
+- No elimines ni debilites la validación criptográfica JWT/JWKS de `Program.cs`.
+- CORS con denegación por defecto y orígenes explícitos.
 - Dockerfile con usuario no privilegiado (`USER $APP_UID`).
-- Sin secretos ni cadenas reales en código; usar `appsettings.Development.json` (ignorado), user-secrets o env vars.
-- CORS denegación por defecto; orígenes explícitos.
-- Pruebas de integración en `tests/EcommerceApi.Tests` para cambios de comportamiento.
-- Infra en `infra/main.bicep`; sin recursos públicos por defecto.
-- Diseños de plataforma en `docs/app-service.md`, `docs/functions.md`, `docs/ai-integration.md`; si un cambio los contradice, actualiza el doc en el mismo lote.
+- Sin secretos ni cadenas reales en el código: `appsettings.Development.json` (ignorado), user-secrets o variables de entorno.
+- Pruebas de integración en `tests/EcommerceApi.Tests` para cualquier cambio de comportamiento.
 
-## Contenido compartido (portfolio)
+## Contrato editorial
 
-Sin rótulos de registro; estados explícitos; estructura docs (README 240–310 palabras, `informe.md` solo si sostiene, `runbook.md` solo reejecutable, `bitacora/` solo hechos nuevos); evidencia vs hallazgo.
+Español claro y directo, sin rótulos de registro. Estados explícitos (Validado · Parcial · Runbook preparado · Diseño · Pendiente). Separa lo ejecutado de lo diseñado y no presentes un hallazgo como PASS. El contrato completo está en [portfolio-ciberseguridad-lorenzo](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/blob/main/AGENTS.md).
 
 ## Verificación
 
@@ -32,6 +33,8 @@ bicep build infra/main.bicep --outfile /tmp/main.json
 gitleaks detect --source . --redact --verbose --exit-code 2
 ```
 
+Son los mismos pasos de `.github/workflows/devsecops-ci.yml`. La gobernanza de `main` y los checks obligatorios están en `docs/repo-governance.md`; no presentes un bypass como flujo válido.
+
 ## Commits
 
-Formato: `type(scope): imperative summary in English`. Scopes: `api`, `auth`, `docker`, `ci`, `tests`, `infra`, `docs`, `repo`. Tipos: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`. Commit/push con autorización por lote.
+Formato: `type(scope): imperative summary in English`. Scopes: `api`, `auth`, `docker`, `ci`, `tests`, `infra`, `docs`, `repo`. Tipos: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`. Asunto imperativo, conciso y en inglés.
