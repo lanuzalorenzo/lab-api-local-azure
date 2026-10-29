@@ -96,7 +96,7 @@ están desplegados**: el outbox y la idempotencia se validan contra SQLite en lo
 | Rate limiting | Implementado (laboratorio) | 120 req/min por IP; prueba del `429` |
 | Límite de tamaño de petición | Implementado | 16 KB en endpoints de escritura |
 | Contrato de error único (`400`, `404`, `500`) | Implementado | `application/problem+json` con `detail` o `errors` y `traceId`; `ErrorContractTests` |
-| Errores no controlados (`500`) | Implementado | `ProblemDetails` con `traceId`, sin detalle; `tests/EcommerceApi.Tests/ErrorContractTests.cs` |
+| Sin fuga de detalles en `500` | Implementado | Título genérico, sin mensaje ni traza; `UnhandledException_ReturnsProblemDetailsWithoutInternalDetails` |
 | Trazas persistentes (Application Insights) | Parcial | Cadena de conexión en Bicep; SDK no registrado; ver [ADR-0005](docs/adr/0005-observabilidad.md) |
 | Cabeceras de seguridad | Implementado | Middleware en `Program.cs` |
 | Regla de dependencias entre capas | Implementado | `tests/EcommerceApi.Architecture.Tests` (7 pruebas) |
