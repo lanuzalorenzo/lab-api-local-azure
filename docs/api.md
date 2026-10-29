@@ -3,7 +3,7 @@
 > **Estado:** Implementado · verificado el 2026-10-29 contra `main`.
 > **Ámbito:** contrato HTTP de `EcommerceApi` (endpoints, autenticación, cuerpos, errores y límites).
 > **Evidencia:** `EcommerceApi/Controllers`, `EcommerceApi/Models`, `EcommerceApi.Application` y `tests/EcommerceApi.Tests`.
-> **Relacionada con:** [Pruebas funcionales](tests.md), [Persistencia y paginación](persistence.md), [Configuración de Entra ID](azure-ad-config.md).
+> **Relacionada con:** [Pruebas funcionales](tests.md), [Persistencia y paginación](persistence.md), [Configuración de Entra ID](azure-ad-config.md), [ADR-0005](adr/0005-observabilidad.md).
 
 Este documento describe lo que la API hace hoy, no lo que debería hacer. Los
 comportamientos no implementados se listan al final para que no se confundan con
@@ -235,7 +235,12 @@ de seguridad, para una `DomainException`.
 No incluye mensaje de la excepción ni traza. El detalle queda en el log del
 servidor, a nivel `Error`, con la categoría
 `Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddleware`. El `traceId` es el
-único puente entre la respuesta y el log.
+único puente entre la respuesta y el log. En esta fase no hay sink persistente:
+ver [ADR-0005](adr/0005-observabilidad.md).
+
+El contrato está fijado por `tests/EcommerceApi.Tests/ErrorContractTests.cs`, que
+comprueba el código, el `Content-Type`, la presencia de `traceId` y la ausencia
+de mensaje y tipo de excepción.
 
 Regla para el cliente: mirar `Content-Type`. Si es `application/problem+json`,
 leer `title` y `traceId`; si es `application/json`, leer `message`.
