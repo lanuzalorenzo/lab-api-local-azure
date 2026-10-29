@@ -246,6 +246,27 @@ resource apiApp 'Microsoft.Web/sites@2023-12-01' = {
   }
 }
 
+// App Service writes console output to the instance filesystem and the platform
+// forwards it to AppServiceConsoleLogs. Combined with the diagnostic setting below,
+// this is what makes the traceId of a 500 retrievable in Log Analytics.
+resource apiAppLogs 'Microsoft.Web/sites/config@2023-12-01' = {
+  parent: apiApp
+  name: 'logs'
+  properties: {
+    applicationLogs: {
+      fileSystem: {
+        level: 'Information'
+      }
+    }
+    httpLogs: {
+      fileSystem: {
+        enabled: true
+        retentionInDays: 7
+      }
+    }
+  }
+}
+
 resource apiAppDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   scope: apiApp
   name: '${appName}-diag'
