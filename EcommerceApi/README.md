@@ -54,6 +54,7 @@ dotnet test ../EcommerceApi.sln
 
 ## Documentación
 
+- [Referencia de la API](../docs/api.md)
 - [Decisiones de arquitectura](../docs/adr/README.md)
 - [Configuración de Entra ID](../docs/azure-ad-config.md)
 - [Registro de la aplicación](../docs/azure-ad-register.md)

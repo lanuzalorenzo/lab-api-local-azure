@@ -146,7 +146,7 @@ lab-api-local-azure/
 ├── data/                       # Base SQLite local (ignorada por Git)
 ├── infra/                      # Bicep: VNet, NSG, Key Vault, App Service, PE
 ├── docs/adr/                   # Decisiones de arquitectura
-├── docs/                       # Autenticación, persistencia, pruebas y threat model
+├── docs/                       # Referencia de API, capacidades, autenticación, persistencia y threat model
 ├── .github/workflows/          # Pipeline DevSecOps
 ├── Dockerfile                  # Multi-stage, usuario no-root
 └── README.md
@@ -297,6 +297,13 @@ amplía esa cobertura con pruebas unitarias, de arquitectura y de infraestructur
 
 Consulta [`infra/README.md`](infra/README.md). **La plantilla no se ha desplegado**
 en una suscripción real; se valida con `bicep build` y Trivy config en CI.
+
+---
+
+## Referencia y evidencia
+
+- [Referencia de la API](docs/api.md) — endpoints, autenticación, contratos, formatos de error, paginación y límites. **Implementado**: describe el comportamiento actual.
+- [Capacidades y evidencia](docs/capacidades.md) — qué puede afirmarse del repositorio, con qué prueba se comprueba y qué queda fuera. **Implementado**.
 
 ---
 
