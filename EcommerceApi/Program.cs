@@ -23,6 +23,15 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<DomainExceptionHandler>();
+
+// Telemetry is opt-in: without a connection string the SDK is not registered,
+// because the Azure Monitor exporter throws on startup when it is missing. The
+// deployment sets APPLICATIONINSIGHTS_CONNECTION_STRING in infra/main.bicep.
+var appInsightsConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
+{
+    builder.Services.AddApplicationInsightsTelemetry();
+}
 builder.Services.AddHealthChecks();
 
 // Composition root: the host is the only place that knows about concrete adapters.

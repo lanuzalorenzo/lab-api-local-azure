@@ -280,7 +280,9 @@ Decisión provisional: **B para T4**, documentando la apertura y el cierre en la
 ## 9. Observabilidad
 
 - Diagnóstico ya definido: `AppServiceHTTPLogs`, `AppServiceConsoleLogs`, `AppServiceAppLogs`, `AppServiceAuditLogs`, `AppServicePlatformLogs`.
-- Application Insights para trazas y dependencias.
+- Captura de logs declarada en Bicep: `Microsoft.Web/sites/config` con `applicationLogs` y `httpLogs`; sin ella, las categorías de diagnóstico no tendrían contenido.
+- Application Insights para trazas y dependencias, con el SDK condicionado a la cadena de conexión ([ADR-0005](adr/0005-observabilidad.md)).
+- **Estado:** la plantilla compila y se escanea en CI; la consulta de un `500` desplegado por su `traceId` sigue pendiente de un despliegue real.
 - Consultas de referencia:
 
 ```kusto

@@ -28,8 +28,8 @@ Resultado observado el 2026-10-29:
 | `EcommerceApi.UnitTests` | 45 | Invariantes de dominio y handlers de aplicación |
 | `EcommerceApi.Architecture.Tests` | 7 | Regla de dependencias entre capas |
 | `EcommerceApi.Infrastructure.Tests` | 10 | SQLite, outbox, rollback, consultas y dispatcher |
-| `EcommerceApi.Tests` | 23 | Contrato HTTP de productos, pedidos, BOLA, CORS, *rate limit* y errores |
-| **Total** | **85** | Sin umbral de cobertura configurado |
+| `EcommerceApi.Tests` | 25 | Contrato HTTP, BOLA, CORS, *rate limit*, errores y observabilidad |
+| **Total** | **87** | Sin umbral de cobertura configurado |
 
 Los recuentos cambian con el código: si actualizas la matriz, ejecuta la
 verificación y ajusta la tabla en el mismo lote.
@@ -106,7 +106,8 @@ importante y está en el threat model como `Parcial` en *Information Disclosure*
 | IaC Bicep con VNet, NSG, Key Vault, Private Endpoints y diagnóstico | `infra/main.bicep` | `bicep build` + Trivy config | Implementado (plantilla) |
 | Despliegue en Azure | — | — | Pendiente |
 | OIDC de GitHub Actions a Azure | [infra/README.md](../infra/README.md) | — | Documentado, no activo |
-| Observabilidad persistente | Application Insights creado en Bicep | `Program.cs` no registra el SDK; ver [ADR-0005](adr/0005-observabilidad.md) | Parcial |
+| Captura persistente de logs | `Microsoft.Web/sites/config` (`logs`) + diagnóstico a Log Analytics | `bicep build` + `bicep lint`; ver [ADR-0005](adr/0005-observabilidad.md) | Implementado (plantilla) |
+| Telemetría de aplicación | `AddApplicationInsightsTelemetry()` condicionado a la cadena | `ObservabilityTests` | Implementado (código) |
 
 ## 3. Lo que este repositorio no demuestra
 
@@ -134,7 +135,7 @@ Lista deliberada. Sirve para no arrastrar afirmaciones que el código no sostien
 | «Implementé microservicios con Service Bus» | «Implementé un monolito modular con outbox transaccional sobre SQLite, reintentos y *dead-letter*, y un consumidor idempotente; el adaptador de Service Bus está escrito y no desplegado» |
 | «Arquitectura en Azure» | «Diseñé y validé estáticamente una plantilla Bicep con red privada, Private Endpoints, Key Vault y diagnóstico; no la he desplegado» |
 | «Clean Architecture» | «Arquitectura por capas con inversión de dependencias, verificada con pruebas que fallan si se rompe la dirección» |
-| «Alta cobertura de tests» | «85 pruebas en cuatro proyectos: dominio, aplicación, arquitectura, infraestructura e integración HTTP; sin umbral de cobertura» |
+| «Alta cobertura de tests» | «87 pruebas en cuatro proyectos: dominio, aplicación, arquitectura, infraestructura e integración HTTP; sin umbral de cobertura» |
 | «API segura» | «Validación JWT con `JwtBearer`, autorización por propietario con `404` anti-enumeración, CORS denegado por defecto y *rate limiting* de laboratorio» |
 
 La forma general: **verbo + artefacto + límite**. Si falta el límite, la frase
@@ -157,8 +158,8 @@ suena a folleto y no se sostiene en una pregunta de seguimiento.
 6. **¿Cómo evitas que las capas se mezclen?** Con pruebas de arquitectura que
    inspeccionan referencias entre ensamblados, no con revisión manual.
 7. **¿Qué no llevarías a producción tal cual?** SQLite sin *backups*, *rate
-   limit* por IP detrás de un proxy, ausencia de *sink* persistente y una sola
-   instancia.
+   limit* por IP detrás de un proxy, telemetría sin validar en un despliegue real
+   y una sola instancia.
 
 ## 6. Mantenimiento
 
