@@ -134,15 +134,15 @@ dotnet test EcommerceApi.sln
 |---|---|
 | `tests/EcommerceApi.UnitTests` | Invariantes de `Order`, `OrderLine`, `Money` y `Product`; handlers de comando y query; idempotencia del consumidor |
 | `tests/EcommerceApi.Architecture.Tests` | Regla de dependencias entre capas y agregados sin setters públicos |
-| `tests/EcommerceApi.Infrastructure.Tests` | Atomicidad del outbox, rollback, reintentos, dead-letter, dispatcher (scope asíncrono) e idempotencia sobre SQLite real |
-| `tests/EcommerceApi.Tests` | Comportamiento HTTP completo |
+| `tests/EcommerceApi.Infrastructure.Tests` | Atomicidad del outbox, rollback, reintentos, dead-letter, dispatcher (scope asíncrono), idempotencia, paginación por cursor, rango de fechas y uso del índice sobre SQLite real |
+| `tests/EcommerceApi.Tests` | Comportamiento HTTP completo, incluido el contrato paginado del listado |
 
 ### Ciclo TDD: rojo → verde
 
 Las pruebas describen el comportamiento antes de la implementación. El ejemplo reproducible que queda en el repositorio es el del dispatcher del outbox:
 
 1. **Rojo:** se añadió `Dispatcher_ProcessesPendingMessages_WithoutDisposalErrors`, que arranca el `OutboxDispatcher` con un `IServiceScopeFactory` real y exige que no se registre ningún error. Con `CreateScope()` falla: `'SqliteSession' type only implements IAsyncDisposable. Use DisposeAsync`.
-2. **Verde:** el dispatcher pasa a `CreateAsyncScope()` y la prueba deja de fallar; la suite completa queda en **67 pruebas**.
+2. **Verde:** el dispatcher pasa a `CreateAsyncScope()` y la prueba deja de fallar; la suite completa queda en verde.
 3. La prueba se conserva como regresión: si alguien vuelve al scope síncrono, el fallo reaparece en CI.
 
 El mismo orden se siguió en el dominio: primero las pruebas de invariantes (`Order`, `OrderLine`, `Money`), después el agregado que las satisface.
@@ -154,6 +154,21 @@ Las pruebas de integración usan `X-Test-User` para simular identidades y cubren
 - *Mass assignment* ignorado.
 - Aislamiento de pedidos entre usuarios (BOLA).
 - `health` anónimo.
+- Contrato paginado: `limit`, `afterId` y rango de fechas.
+
+### Listado paginado
+
+```bash
+# Primera página
+curl -s -H "Authorization: Bearer ${TOKEN}" "${API_URL}/api/orders?limit=2"
+
+# Siguiente página con el nextCursor devuelto
+curl -s -H "Authorization: Bearer ${TOKEN}" "${API_URL}/api/orders?limit=2&afterId=42"
+
+# Rango de fechas: from inclusivo, to exclusivo
+curl -s -H "Authorization: Bearer ${TOKEN}" \
+  "${API_URL}/api/orders?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z"
+```
 
 ## Códigos HTTP esperados
 
@@ -163,7 +178,7 @@ Las pruebas de integración usan `X-Test-User` para simular identidades y cubren
 | GET | `/api/products` | 200 / 401 | Lista / sin token |
 | GET | `/api/products/{id}` | 200 / 404 | Producto / inexistente |
 | POST | `/api/products` | 201 / 400 | Creado / validación |
-| GET | `/api/orders` | 200 / 401 | Pedidos propios / sin token |
+| GET | `/api/orders` | 200 / 400 / 401 | Página de pedidos propios / parámetros inválidos / sin token |
 | GET | `/api/orders/{id}` | 200 / 404 | Propio / ajeno o inexistente |
 | POST | `/api/orders` | 201 / 400 | Creado / validación |
 | Cualquiera | Cualquiera | 429 | Rate limit excedido |

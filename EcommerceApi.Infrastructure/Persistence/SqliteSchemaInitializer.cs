@@ -23,7 +23,10 @@ public sealed class SqliteSchemaInitializer
             TotalCents INTEGER NOT NULL
         );
 
-        CREATE INDEX IF NOT EXISTS IX_Orders_UserId ON Orders (UserId);
+        -- Keyset pagination filters by owner and resumes after the last identifier.
+        -- The composite index also covers queries that only filter by UserId.
+        DROP INDEX IF EXISTS IX_Orders_UserId;
+        CREATE INDEX IF NOT EXISTS IX_Orders_UserId_Id ON Orders (UserId, Id);
 
         CREATE TABLE IF NOT EXISTS OrderLines (
             OrderId        INTEGER NOT NULL,

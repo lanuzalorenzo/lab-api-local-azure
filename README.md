@@ -54,6 +54,7 @@ El código se organiza en cinco proyectos con una única dirección de dependenc
 | Agregado `Order` con invariantes y evento `OrderPlaced` | [ADR-0002](docs/adr/0002-capas-y-regla-de-dependencias.md) | `EcommerceApi.Domain/Orders` |
 | Puertos y adaptadores (DIP) | [ADR-0002](docs/adr/0002-capas-y-regla-de-dependencias.md) | `IOrderRepository` + `SqliteOrderRepository` |
 | Persistencia SQLite y outbox transaccional | [ADR-0004](docs/adr/0004-persistencia-sqlite-y-outbox.md) | `EcommerceApi.Infrastructure/Outbox` + pruebas de infraestructura |
+| Consultas de lectura y paginación | [docs/persistence.md](docs/persistence.md) | `SqliteOrderReadModel` + pruebas de cursor y rango |
 | Contrato versionado y consumidor idempotente | [ADR-0004](docs/adr/0004-persistencia-sqlite-y-outbox.md) | `EcommerceApi.Contracts` + `functions/OrderProcessor` |
 
 ### Eventos, outbox y consumidor
@@ -96,10 +97,11 @@ están desplegados**: el outbox y la idempotencia se validan contra SQLite en lo
 | Límite de tamaño de petición | Implementado | 16 KB en endpoints de escritura |
 | `Problem Details` y cabeceras de seguridad | Implementado | `AddProblemDetails`, middleware |
 | Regla de dependencias entre capas | Implementado | `tests/EcommerceApi.Architecture.Tests` (7 pruebas) |
-| Pruebas unitarias de dominio y aplicación | Implementado | `tests/EcommerceApi.UnitTests` (43 pruebas) |
-| Pruebas de infraestructura sobre SQLite | Implementado | `tests/EcommerceApi.Infrastructure.Tests` (7 pruebas) |
-| Pruebas de integración | Implementado | `tests/EcommerceApi.Tests` (10 pruebas) |
+| Pruebas unitarias de dominio y aplicación | Implementado | `tests/EcommerceApi.UnitTests` (45 pruebas) |
+| Pruebas de infraestructura sobre SQLite | Implementado | `tests/EcommerceApi.Infrastructure.Tests` (10 pruebas) |
+| Pruebas de integración | Implementado | `tests/EcommerceApi.Tests` (16 pruebas) |
 | Persistencia transaccional | Implementado (laboratorio) | SQLite + importes en céntimos |
+| Consultas acotadas y paginación | Implementado | `afterId`, límite máximo y pruebas de plan en [docs/persistence.md](docs/persistence.md) |
 | Outbox transaccional y dead-letter | Implementado | `OutboxMessages`, `OutboxPublisher` y pruebas de rollback |
 | Consumidor idempotente | Implementado (local) | `ProcessOrderHandler` + `ProcessedMessages` |
 | Publicación en Service Bus | Diseño | `ServiceBusEventPublisher`, sin namespace desplegado |
@@ -136,15 +138,15 @@ lab-api-local-azure/
 │   ├── Program.cs              # Pipeline HTTP, auth, CORS, rate limiting
 │   └── appsettings.json        # Configuración sin secretos
 ├── functions/OrderProcessor/   # Function aislada: trigger de Service Bus
-├── tests/EcommerceApi.Tests/   # Pruebas de integración xUnit (10)
-├── tests/EcommerceApi.UnitTests/           # Dominio y handlers (43)
-├── tests/EcommerceApi.Infrastructure.Tests/ # SQLite, outbox y dispatcher (7)
+├── tests/EcommerceApi.Tests/   # Pruebas de integración xUnit (16)
+├── tests/EcommerceApi.UnitTests/           # Dominio y handlers (45)
+├── tests/EcommerceApi.Infrastructure.Tests/ # SQLite, outbox, consultas y dispatcher (10)
 ├── tests/EcommerceApi.Architecture.Tests/  # Regla de dependencias (7)
 ├── EcommerceApi.sln            # Solución única para build, formato y pruebas
 ├── data/                       # Base SQLite local (ignorada por Git)
 ├── infra/                      # Bicep: VNet, NSG, Key Vault, App Service, PE
 ├── docs/adr/                   # Decisiones de arquitectura
-├── docs/                       # Autenticación, pruebas y threat model
+├── docs/                       # Autenticación, persistencia, pruebas y threat model
 ├── .github/workflows/          # Pipeline DevSecOps
 ├── Dockerfile                  # Multi-stage, usuario no-root
 └── README.md
@@ -199,6 +201,8 @@ dotnet run --project EcommerceApi --urls http://localhost:5080
 - Base de datos: `data/ecommerce.db`, creada al arrancar y **no versionada**. El
   esquema se inicializa con `CREATE TABLE IF NOT EXISTS` y se siembra el catálogo
   solo si está vacío.
+- Pedidos: `GET /api/orders?limit=20&afterId=42`. Devuelve `items` y `nextCursor`;
+  las reglas de paginación y filtrado están en [docs/persistence.md](docs/persistence.md).
 
 ### Pruebas
 
@@ -210,12 +214,12 @@ Cuatro suites, cada una con un propósito distinto:
 
 | Suite | Qué verifica | Pruebas |
 |---|---|---|
-| `EcommerceApi.UnitTests` | Invariantes del dominio, handlers de aplicación e idempotencia del consumidor | 43 |
+| `EcommerceApi.UnitTests` | Invariantes del dominio, handlers de aplicación e idempotencia del consumidor | 45 |
 | `EcommerceApi.Architecture.Tests` | Regla de dependencias entre capas y agregados sin setters públicos | 7 |
-| `EcommerceApi.Infrastructure.Tests` | Atomicidad del outbox, rollback, reintentos, dead-letter, dispatcher e idempotencia sobre SQLite real | 7 |
-| `EcommerceApi.Tests` | Integración HTTP: 401, validación, *mass assignment* y BOLA entre dos usuarios | 10 |
+| `EcommerceApi.Infrastructure.Tests` | Atomicidad del outbox, rollback, reintentos, dead-letter, dispatcher, paginación por cursor y uso de índice sobre SQLite real | 10 |
+| `EcommerceApi.Tests` | Integración HTTP: 401, validación, *mass assignment*, BOLA y contrato del listado paginado | 16 |
 
-Total: **67 pruebas**. Las de integración usan un esquema de autenticación de test
+Total: **78 pruebas**. Las de integración usan un esquema de autenticación de test
 y no necesitan un tenant real; cada factory crea su propia base SQLite temporal.
 
 ### Docker

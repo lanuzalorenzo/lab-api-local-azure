@@ -40,14 +40,45 @@ public class OrdersController : ControllerBase
         ?? throw new InvalidOperationException("The authenticated principal has no stable user identifier.");
 
     /// <summary>
-    /// Get the orders owned by the authenticated user.
+    /// Get the orders owned by the authenticated user, ordered by identifier
+    /// ascending. The response includes the cursor for the next page.
     /// </summary>
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<OrderSummary>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<OrderSummary>>> GetAllOrders(
+    [ProducesResponseType(typeof(OrderPage), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<OrderPage>> GetAllOrders(
+        [FromQuery] int? limit,
+        [FromQuery] int? afterId,
+        [FromQuery] DateTimeOffset? from,
+        [FromQuery] DateTimeOffset? to,
         CancellationToken cancellationToken)
     {
-        return Ok(await _getOrders.HandleAsync(CurrentUserId, cancellationToken));
+        var pageSize = limit ?? OrderQuery.DefaultLimit;
+
+        if (pageSize is < 1 or > OrderQuery.MaxLimit)
+        {
+            return BadRequest(new
+            {
+                message = $"limit must be between 1 and {OrderQuery.MaxLimit}."
+            });
+        }
+
+        if (afterId is < 0)
+        {
+            return BadRequest(new
+            {
+                message = "afterId must be zero or a positive order identifier."
+            });
+        }
+
+        if (from is not null && to is not null && from >= to)
+        {
+            return BadRequest(new { message = "from must be earlier than to." });
+        }
+
+        var query = new OrderQuery(pageSize, afterId, from, to);
+
+        return Ok(await _getOrders.HandleAsync(CurrentUserId, query, cancellationToken));
     }
 
     /// <summary>

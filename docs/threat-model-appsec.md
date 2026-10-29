@@ -72,6 +72,7 @@ graph TD
 - Pruebas unitarias de invariantes y handlers; regla de dependencias entre capas verificada en `tests/EcommerceApi.Architecture.Tests`.
 - Invariantes de dominio (agregados `Order` y `Product`) que impiden persistir estados inconsistentes aunque la validación de transporte se relaje.
 - Persistencia SQLite con importes en céntimos y transacción explícita.
+- Listados acotados: límite máximo y paginación por cursor para evitar lecturas sin límite.
 - Outbox transaccional: el pedido y el mensaje `OrderCreatedV1` se confirman juntos o no se confirma ninguno.
 - Consumidor idempotente por `messageId`; los mensajes inválidos fallan para que el broker los reintente y los mueva a la DLQ.
 - Pruebas de infraestructura sobre SQLite real: atomicidad, rollback, reintentos, dead-letter e idempotencia.

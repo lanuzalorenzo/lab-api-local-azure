@@ -22,6 +22,7 @@ El diseño de [`docs/functions.md`](../functions.md) ya exigía una publicación
 7. **Publicador conmutable**:
    - `Publisher:Mode=Log` (por defecto): registra el mensaje en el log local.
    - `Publisher:Mode=ServiceBus`: publica en Azure Service Bus (requiere conexión real; no se ejecuta en este laboratorio).
+8. **Consultas de lectura acotadas**: el listado de pedidos usa un cursor (`afterId`), un límite máximo y rangos SARGables sobre `CreatedAt`; la página de pedidos y sus líneas se cargan en dos consultas. Las reglas y su verificación están en [`docs/persistence.md`](../persistence.md).
 
 ```mermaid
 sequenceDiagram
@@ -103,4 +104,5 @@ sequenceDiagram
 
 - Chris Richardson, *Transactional Outbox* y *Idempotent Consumer*.
 - [`docs/functions.md`](../functions.md): hosting, reintentos y dead-letter.
+- [`docs/persistence.md`](../persistence.md): reglas de consulta, paginación por cursor y verificación del plan.
 - [`docs/adr/0001`](0001-monolito-modular-vs-microservicios.md): por qué un segundo despliegue y no microservicios.

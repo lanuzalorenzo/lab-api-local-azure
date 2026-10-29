@@ -8,10 +8,11 @@ public sealed class GetOrdersHandler : IGetOrdersHandler
 
     public GetOrdersHandler(IOrderReadModel orders) => _orders = orders;
 
-    public Task<IReadOnlyList<OrderSummary>> HandleAsync(
+    public Task<OrderPage> HandleAsync(
         string userId,
+        OrderQuery query,
         CancellationToken cancellationToken = default) =>
-        _orders.GetByUserAsync(userId, cancellationToken);
+        _orders.GetByUserAsync(userId, query, cancellationToken);
 }
 
 public sealed class GetOrderByIdHandler : IGetOrderByIdHandler

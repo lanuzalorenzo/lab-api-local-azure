@@ -12,6 +12,27 @@ public sealed record OrderSummary(int Id, DateTime CreatedAt, IReadOnlyList<int>
         new(order.Id, order.CreatedAt, order.ProductIds, order.Total.Amount);
 }
 
+/// <summary>
+/// Options for the order list. <see cref="AfterId"/> is a keyset cursor: the page
+/// starts after that identifier. <see cref="From"/> is inclusive and
+/// <see cref="To"/> is exclusive, both expressed as instants.
+/// </summary>
+public sealed record OrderQuery(
+    int Limit = 20,
+    int? AfterId = null,
+    DateTimeOffset? From = null,
+    DateTimeOffset? To = null)
+{
+    public const int DefaultLimit = 20;
+    public const int MaxLimit = 100;
+}
+
+/// <summary>
+/// One page of orders. <see cref="NextCursor"/> is the identifier to pass as
+/// <c>afterId</c> for the next page, or null when the page is the last one.
+/// </summary>
+public sealed record OrderPage(IReadOnlyList<OrderSummary> Items, int? NextCursor);
+
 public interface ICreateOrderHandler
 {
     Task<CreateOrderResult> HandleAsync(CreateOrderCommand command, CancellationToken cancellationToken = default);
@@ -19,7 +40,10 @@ public interface ICreateOrderHandler
 
 public interface IGetOrdersHandler
 {
-    Task<IReadOnlyList<OrderSummary>> HandleAsync(string userId, CancellationToken cancellationToken = default);
+    Task<OrderPage> HandleAsync(
+        string userId,
+        OrderQuery query,
+        CancellationToken cancellationToken = default);
 }
 
 public interface IGetOrderByIdHandler

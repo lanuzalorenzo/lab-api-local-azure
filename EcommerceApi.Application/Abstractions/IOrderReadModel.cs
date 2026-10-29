@@ -8,8 +8,9 @@ namespace EcommerceApi.Application.Abstractions;
 /// </summary>
 public interface IOrderReadModel
 {
-    Task<IReadOnlyList<OrderSummary>> GetByUserAsync(
+    Task<OrderPage> GetByUserAsync(
         string userId,
+        OrderQuery query,
         CancellationToken cancellationToken = default);
 
     Task<OrderSummary?> FindAsync(
