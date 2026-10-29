@@ -1,6 +1,6 @@
 # ADR-0005 — Observabilidad: consola ahora, telemetría cuando haya despliegue
 
-> **Estado:** Propuesta · 2026-10-29
+> **Estado:** Aceptada · 2026-10-29
 > **Ámbito:** host HTTP `EcommerceApi` y Function `OrderProcessor`.
 > **Evidencia:** [`EcommerceApi/Program.cs`](../../EcommerceApi/Program.cs), [`infra/main.bicep`](../../infra/main.bicep) y [`tests/EcommerceApi.Tests/ErrorContractTests.cs`](../../tests/EcommerceApi.Tests/ErrorContractTests.cs).
 > **Relacionada con:** [ADR-0001](0001-monolito-modular-vs-microservicios.md).
@@ -15,6 +15,10 @@ Los niveles están definidos por el código:
 - `Error` para una excepción no controlada, con la categoría
   `Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddleware`.
 - `Information` para el flujo normal y el publicador de eventos local.
+
+El contrato de errores es uniforme desde el cierre de este lote: `400`, `404`
+y `500` responden `application/problem+json` con `traceId` cuando hay cuerpo. Lo
+que sigue sin resolverse es la persistencia de ese log.
 
 La infraestructura, en cambio, sugiere algo distinto: `infra/main.bicep` crea
 Application Insights, inyecta `APPLICATIONINSIGHTS_CONNECTION_STRING` y habilita

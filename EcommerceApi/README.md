@@ -12,7 +12,7 @@ EcommerceApi/
 │   ├── ProductsController.cs
 │   └── OrdersController.cs
 ├── ErrorHandling/
-│   └── DomainExceptionHandler.cs
+│   └── DomainExceptionHandler.cs   # DomainException -> 400 ProblemDetails
 ├── Models/
 │   ├── CreateProductRequest.cs
 │   └── CreateOrderRequest.cs

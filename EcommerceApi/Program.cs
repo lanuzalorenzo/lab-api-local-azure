@@ -18,10 +18,6 @@ var azureAdOptions = builder.Configuration
     .GetSection(AzureAdOptions.SectionName)
     .Get<AzureAdOptions>() ?? new AzureAdOptions();
 
-var allowedOrigins = builder.Configuration
-    .GetSection("Cors:AllowedOrigins")
-    .Get<string[]>() ?? Array.Empty<string>();
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -83,6 +79,12 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("ApiCors", policy =>
     {
+        // Read at policy-resolution time, not before Build: configuration providers
+        // added by the test host are only applied when the host is built.
+        var allowedOrigins = builder.Configuration
+            .GetSection("Cors:AllowedOrigins")
+            .Get<string[]>() ?? Array.Empty<string>();
+
         if (allowedOrigins.Length == 0)
         {
             policy.SetIsOriginAllowed(_ => false);

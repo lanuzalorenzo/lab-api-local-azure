@@ -57,23 +57,26 @@ public class OrdersController : ControllerBase
 
         if (pageSize is < 1 or > OrderQuery.MaxLimit)
         {
-            return BadRequest(new
-            {
-                message = $"limit must be between 1 and {OrderQuery.MaxLimit}."
-            });
+            return Problem(
+                detail: $"limit must be between 1 and {OrderQuery.MaxLimit}.",
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Invalid request");
         }
 
         if (afterId is < 0)
         {
-            return BadRequest(new
-            {
-                message = "afterId must be zero or a positive order identifier."
-            });
+            return Problem(
+                detail: "afterId must be zero or a positive order identifier.",
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Invalid request");
         }
 
         if (from is not null && to is not null && from >= to)
         {
-            return BadRequest(new { message = "from must be earlier than to." });
+            return Problem(
+                detail: "from must be earlier than to.",
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Invalid request");
         }
 
         var query = new OrderQuery(pageSize, afterId, from, to);
@@ -95,7 +98,10 @@ public class OrdersController : ControllerBase
         var order = await _getOrderById.HandleAsync(id, CurrentUserId, cancellationToken);
         if (order is null)
         {
-            return NotFound(new { message = $"Order with ID {id} not found" });
+            return Problem(
+                detail: $"Order with ID {id} not found",
+                statusCode: StatusCodes.Status404NotFound,
+                title: "Not found");
         }
 
         return Ok(order);
@@ -118,15 +124,18 @@ public class OrdersController : ControllerBase
 
         if (result.MissingProductIds.Count > 0)
         {
-            return BadRequest(new
-            {
-                message = $"Products not found: {string.Join(", ", result.MissingProductIds)}"
-            });
+            return Problem(
+                detail: $"Products not found: {string.Join(", ", result.MissingProductIds)}",
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Invalid request");
         }
 
         if (!result.Succeeded)
         {
-            return BadRequest(new { message = string.Join(" ", result.Errors) });
+            return Problem(
+                detail: string.Join(" ", result.Errors),
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Invalid request");
         }
 
         var summary = OrderSummary.From(result.Order!);

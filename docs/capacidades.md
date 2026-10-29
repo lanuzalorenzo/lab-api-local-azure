@@ -28,8 +28,8 @@ Resultado observado el 2026-10-29:
 | `EcommerceApi.UnitTests` | 45 | Invariantes de dominio y handlers de aplicación |
 | `EcommerceApi.Architecture.Tests` | 7 | Regla de dependencias entre capas |
 | `EcommerceApi.Infrastructure.Tests` | 10 | SQLite, outbox, rollback, consultas y dispatcher |
-| `EcommerceApi.Tests` | 17 | Contrato HTTP de productos, pedidos, BOLA, health y respuesta `500` |
-| **Total** | **79** | Sin umbral de cobertura configurado |
+| `EcommerceApi.Tests` | 23 | Contrato HTTP de productos, pedidos, BOLA, CORS, *rate limit* y errores |
+| **Total** | **85** | Sin umbral de cobertura configurado |
 
 Los recuentos cambian con el código: si actualizas la matriz, ejecuta la
 verificación y ajusta la tabla en el mismo lote.
@@ -44,12 +44,12 @@ verificación y ajusta la tabla en el mismo lote.
 | ASP.NET Core Web API con controladores y *host* mínimo | `EcommerceApi/Program.cs` | Swagger en `Development` o `curl` a `/api/products` | Implementado |
 | Contrato REST con `201` + `Location`, `404` y validación por DTO | `Controllers/`, `Models/` | `tests/EcommerceApi.Tests` | Implementado |
 | Paginación por cursor (*keyset*) con límites y filtro temporal | `OrderQuery`, `SqliteOrderReadModel` | `GetOrders_WithLimit_ReturnsCursorAndNextPage` | Implementado |
-| Errores 5xx sin filtrar detalles y con `traceId` | `UseExceptionHandler`, `AddProblemDetails` | `UnhandledException_ReturnsProblemDetailsWithoutInternalDetails` | Implementado |
-| CORS con denegación por defecto | `Program.cs:82-96` | Manual: origen no listado no recibe cabeceras CORS | Implementado, sin prueba dedicada |
-| Rate limit global de 120 req/min por IP | `Program.cs:100-112` | Manual: superar el límite y esperar `429` | Implementado (laboratorio) |
-| Límite de cuerpo de 16 KB en escrituras | `[RequestSizeLimit]` | Manual: enviar un cuerpo mayor y esperar `413` | Implementado |
+| Contrato de error único (`400`, `404`, `500`) | `ProblemDetails`, controladores y `DomainExceptionHandler` | `ErrorContractTests` (4 casos) | Implementado |
+| CORS con denegación por defecto | `Program.cs` | `AllowedOrigin_ReceivesCorsHeader`, `UnknownOrigin_DoesNotReceiveCorsHeader` | Implementado |
+| Rate limit global de 120 req/min por IP | `Program.cs` | `ExceedingGlobalLimit_ReturnsTooManyRequests` | Implementado (laboratorio) |
+| Límite de cuerpo de 16 KB en escrituras | `[RequestSizeLimit]` | Manual: `TestServer` no aplica el límite de Kestrel | Implementado |
 
-El contrato completo, incluidos los tres formatos de error, está en
+El contrato completo, incluido el formato de error, está en
 [docs/api.md](api.md).
 
 ### 2.2. Seguridad
@@ -134,7 +134,7 @@ Lista deliberada. Sirve para no arrastrar afirmaciones que el código no sostien
 | «Implementé microservicios con Service Bus» | «Implementé un monolito modular con outbox transaccional sobre SQLite, reintentos y *dead-letter*, y un consumidor idempotente; el adaptador de Service Bus está escrito y no desplegado» |
 | «Arquitectura en Azure» | «Diseñé y validé estáticamente una plantilla Bicep con red privada, Private Endpoints, Key Vault y diagnóstico; no la he desplegado» |
 | «Clean Architecture» | «Arquitectura por capas con inversión de dependencias, verificada con pruebas que fallan si se rompe la dirección» |
-| «Alta cobertura de tests» | «79 pruebas en cuatro proyectos: dominio, aplicación, arquitectura, infraestructura e integración HTTP; sin umbral de cobertura» |
+| «Alta cobertura de tests» | «85 pruebas en cuatro proyectos: dominio, aplicación, arquitectura, infraestructura e integración HTTP; sin umbral de cobertura» |
 | «API segura» | «Validación JWT con `JwtBearer`, autorización por propietario con `404` anti-enumeración, CORS denegado por defecto y *rate limiting* de laboratorio» |
 
 La forma general: **verbo + artefacto + límite**. Si falta el límite, la frase
@@ -157,8 +157,8 @@ suena a folleto y no se sostiene en una pregunta de seguimiento.
 6. **¿Cómo evitas que las capas se mezclen?** Con pruebas de arquitectura que
    inspeccionan referencias entre ensamblados, no con revisión manual.
 7. **¿Qué no llevarías a producción tal cual?** SQLite sin *backups*, *rate
-   limit* por IP detrás de un proxy, ausencia de *sink* persistente, una sola
-   instancia y errores `400` con dos formatos.
+   limit* por IP detrás de un proxy, ausencia de *sink* persistente y una sola
+   instancia.
 
 ## 6. Mantenimiento
 
