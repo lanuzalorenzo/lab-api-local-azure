@@ -170,6 +170,29 @@ curl -s -H "Authorization: Bearer ${TOKEN}" \
   "${API_URL}/api/orders?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z"
 ```
 
+## Cuerpo de error
+
+Los `400`, `404` y `500` responden `application/problem+json`. El mensaje legible
+viaja en `detail` (o en `errors` si es validación de campos) y el `traceId`
+permite correlacionar con el log del servidor.
+
+```bash
+# 404 con ProblemDetails
+curl -s -H "Authorization: Bearer ${TOKEN}" "${API_URL}/api/orders/999999"
+```
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+  "title": "Not found",
+  "status": 404,
+  "detail": "Order with ID 999999 not found",
+  "traceId": "00-af7d...-00"
+}
+```
+
+El contrato completo está en [api.md](api.md#6-errores).
+
 ## Códigos HTTP esperados
 
 | Método | Endpoint | Código | Descripción |

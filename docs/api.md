@@ -125,7 +125,7 @@ posterior en el catálogo no altera pedidos ya creados.
 
 Errores de negocio adicionales:
 
-- Producto inexistente: `400` con `{ "message": "Products not found: 7, 9" }`.
+- Producto inexistente: `400` con `detail: "Products not found: 7, 9"`.
 - Identificadores duplicados: se deduplican antes de crear el pedido y no
   devuelven error. `{"productIds":[1,1]}` crea un pedido con una sola línea.
 - Cada línea es una unidad del producto; no hay campo de cantidad.
@@ -143,7 +143,7 @@ diseño y de los planes de consulta está en [docs/persistence.md](persistence.m
 | `to` | fecha | ausente | Límite superior **exclusivo** |
 
 Si `from` y `to` llegan juntos, `from` debe ser anterior a `to`. Cada
-incumplimiento devuelve `400` con `{ "message": ... }`.
+incumplimiento devuelve `400` con `ProblemDetails` y el mensaje en `detail`.
 
 Ejemplo:
 
@@ -170,23 +170,25 @@ decisión de alcance, no un olvido; ver la sección 10.
 
 ## 6. Errores
 
-La API no usa un único formato. Conviene saberlo antes de escribir un cliente.
+Todas las respuestas con cuerpo usan `application/problem+json` (RFC 9457). Los
+códigos sin cuerpo son `401`, `413` y `429`: los emite el framework antes de
+llegar a un controlador.
 
-| Código | Cuándo | Cuerpo | Origen |
+| Código | Cuándo | Forma | `traceId` |
 |---|---|---|---|
-| `400` | Validación de entrada (`DataAnnotations`) | `ValidationProblemDetails` con `errors` y `traceId` | `[ApiController]` + `AddProblemDetails` |
-| `400` | Parámetro de consulta inválido o producto inexistente | `{ "message": "..." }` | Controlador |
-| `400` | Invariante de dominio | `{ "message": "..." }` | `DomainExceptionHandler` (red de seguridad) |
-| `401` | Token ausente, inválido o expirado | Vacío + `WWW-Authenticate` | `JwtBearer` |
+| `400` | Validación de entrada (`DataAnnotations`) | `ValidationProblemDetails` con `errors` | Sí |
+| `400` | Parámetro de consulta inválido, producto inexistente o invariante de dominio | `ProblemDetails` con `detail` | Sí |
+| `401` | Token ausente, inválido o expirado | Vacío + `WWW-Authenticate` | No |
 | `403` | Autenticado sin permiso | No se produce hoy: no hay políticas ni roles | — |
-| `404` | Recurso inexistente o pedido de otro usuario | `{ "message": "..." }` | Controlador |
-| `413` | Cuerpo mayor de 16 KB en `POST` | Vacío | Kestrel, por `[RequestSizeLimit]` |
-| `429` | Más de 120 peticiones por minuto y IP | Vacío | `RateLimiter` |
-| `500` | Excepción no controlada | `application/problem+json` con `title`, `status` y `traceId` | `UseExceptionHandler` |
+| `404` | Recurso inexistente o pedido de otro usuario | `ProblemDetails` con `detail` | Sí |
+| `413` | Cuerpo mayor de 16 KB en `POST` | Vacío | No |
+| `429` | Más de 120 peticiones por minuto y IP | Vacío | No |
+| `500` | Excepción no controlada | `ProblemDetails` sin `detail` ni traza | Sí |
 
-Los dos formatos de `400` se distinguen por `Content-Type`:
-`application/problem+json` para validación y `application/json` para mensajes de
-negocio.
+Los títulos son estables y se pueden usar para ramificar: `Invalid request` en los
+`400` de negocio, `Not found` en los `404` y el genérico del framework en los
+`500`. El `detail` está pensado para el cliente: describe la regla incumplida sin
+exponer detalles internos.
 
 El `400` de dominio es una red de seguridad, no un camino principal: el agregado
 repite los límites que ya valida el transporte y el caso de uso deduplica los
@@ -210,18 +212,37 @@ que una ruta futura que rompa una invariante responda `400` en lugar de `500`.
 El diccionario `errors` usa el nombre de la propiedad en PascalCase y puede traer
 varios mensajes por campo.
 
-### 6.2. Error de negocio
+### 6.2. Regla de negocio
 
 ```json
-{ "message": "Products not found: 7, 9" }
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+  "title": "Invalid request",
+  "status": 400,
+  "detail": "Products not found: 999999",
+  "traceId": "00-e580...-00"
+}
 ```
 
-Es un objeto anónimo, no `ProblemDetails`. El mensaje está pensado para el
-cliente: describe qué regla se incumplió sin exponer detalles internos. Hoy se
-emite para parámetros de consulta inválidos, productos inexistentes y, como red
-de seguridad, para una `DomainException`.
+Se emite para parámetros de consulta inválidos, productos inexistentes y, como
+red de seguridad, para una `DomainException`.
 
-### 6.3. Error no controlado
+### 6.3. Recurso no encontrado
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+  "title": "Not found",
+  "status": 404,
+  "detail": "Order with ID 999999 not found",
+  "traceId": "00-af7d...-00"
+}
+```
+
+Un pedido de otro usuario devuelve el mismo `404` con su propio `detail`, sin
+revelar que el recurso existe.
+
+### 6.4. Error no controlado
 
 ```json
 {
@@ -238,12 +259,13 @@ servidor, a nivel `Error`, con la categoría
 único puente entre la respuesta y el log. En esta fase no hay sink persistente:
 ver [ADR-0005](adr/0005-observabilidad.md).
 
-El contrato está fijado por `tests/EcommerceApi.Tests/ErrorContractTests.cs`, que
-comprueba el código, el `Content-Type`, la presencia de `traceId` y la ausencia
-de mensaje y tipo de excepción.
+El contrato de `400`, `404` y `500` está fijado por
+`tests/EcommerceApi.Tests/ErrorContractTests.cs`: código, `Content-Type`,
+`detail` cuando corresponde, presencia de `traceId` y ausencia de mensaje y tipo
+de excepción en el `500`.
 
-Regla para el cliente: mirar `Content-Type`. Si es `application/problem+json`,
-leer `title` y `traceId`; si es `application/json`, leer `message`.
+Regla para el cliente: leer `detail` si existe; en un `500`, conservar el
+`traceId` para pedir el log al operador.
 
 ## 7. Límites operativos
 
@@ -257,7 +279,9 @@ leer `title` y `traceId`; si es `application/json`, leer `message`.
 | Precio y stock | 0 a 1.000.000 | `Product.MaxPrice`, `Product.MaxStock` |
 
 El rate limit es un control de laboratorio por IP; detrás de un proxy inverso
-todas las peticiones pueden compartir la misma IP de origen.
+todas las peticiones pueden compartir la misma IP de origen. El límite de cuerpo
+lo aplica Kestrel: `TestServer` no lo reproduce, así que el `413` se comprueba de
+forma manual y no tiene prueba de integración.
 
 ## 8. Swagger, health y diagnóstico
 
@@ -310,7 +334,6 @@ Listado para evitar suposiciones al integrar:
 - Idempotencia del consumidor expuesta por HTTP: vive en la Function
   (`ProcessedMessages`), no en la API.
 - Scopes, roles o políticas de autorización granular.
-- Un formato de error único en los `400`.
 
 ## 11. Mapa del código
 

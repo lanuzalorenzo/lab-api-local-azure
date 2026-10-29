@@ -2,7 +2,7 @@
 
 > **Estado:** Validado (reglas activas y push directo rechazado) · Parcial (sin revisor humano).
 > **Última revisión:** 2026-10-29.
-> **Evidencia:** configuración de *branch protection*, rechazo `GH006` de un push directo y PR de prueba #12.
+> **Evidencia:** configuración de *branch protection*, rechazo `GH006` de un push directo y PR de prueba #12 (merge `9b53be6`).
 
 ## 1. Estado actual
 
@@ -49,8 +49,9 @@ To https://github.com/lanuzalorenzo/lab-api-local-azure.git
 
 ### 2.2. Flujo por pull request
 
-PR de prueba #12: este mismo documento. Los siete checks deben estar en
-verde y el merge se hace por *squash*, sin bypass.
+PR de prueba #12: este mismo documento. Los siete checks estuvieron en verde
+(run [40887287486](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/40887287486))
+y el merge se hizo por *squash* como `9b53be6`, sin bypass.
 
 ## 3. Por qué no se exigen aprobaciones
 

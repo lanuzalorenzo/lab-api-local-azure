@@ -92,17 +92,17 @@ están desplegados**: el outbox y la idempotencia se validan contra SQLite en lo
 | Autorización de endpoints | Implementado | `[Authorize]` en controladores |
 | BOLA/IDOR en pedidos | Implementado | Filtrado por `UserId` + pruebas |
 | Mass assignment en productos y pedidos | Implementado | DTOs `CreateProductRequest` / `CreateOrderRequest` |
-| CORS restrictivo | Implementado | Lista vacía = denegar; allowlist por configuración |
-| Rate limiting | Implementado (laboratorio) | 120 req/min por IP |
+| CORS restrictivo | Implementado | Lista vacía = denegar; allowlist por configuración y pruebas de origen permitido y denegado |
+| Rate limiting | Implementado (laboratorio) | 120 req/min por IP; prueba del `429` |
 | Límite de tamaño de petición | Implementado | 16 KB en endpoints de escritura |
-| Validación de entrada y errores de dominio (`400`) | Implementado | `ValidationProblemDetails`, `DomainExceptionHandler` y pruebas de integración |
+| Contrato de error único (`400`, `404`, `500`) | Implementado | `application/problem+json` con `detail` o `errors` y `traceId`; `ErrorContractTests` |
 | Errores no controlados (`500`) | Implementado | `ProblemDetails` con `traceId`, sin detalle; `tests/EcommerceApi.Tests/ErrorContractTests.cs` |
 | Trazas persistentes (Application Insights) | Parcial | Cadena de conexión en Bicep; SDK no registrado; ver [ADR-0005](docs/adr/0005-observabilidad.md) |
 | Cabeceras de seguridad | Implementado | Middleware en `Program.cs` |
 | Regla de dependencias entre capas | Implementado | `tests/EcommerceApi.Architecture.Tests` (7 pruebas) |
 | Pruebas unitarias de dominio y aplicación | Implementado | `tests/EcommerceApi.UnitTests` (45 pruebas) |
 | Pruebas de infraestructura sobre SQLite | Implementado | `tests/EcommerceApi.Infrastructure.Tests` (10 pruebas) |
-| Pruebas de integración | Implementado | `tests/EcommerceApi.Tests` (17 pruebas) |
+| Pruebas de integración | Implementado | `tests/EcommerceApi.Tests` (23 pruebas) |
 | Persistencia transaccional | Implementado (laboratorio) | SQLite + importes en céntimos |
 | Consultas acotadas y paginación | Implementado | `afterId`, límite máximo y pruebas de plan en [docs/persistence.md](docs/persistence.md) |
 | Outbox transaccional y dead-letter | Implementado | `OutboxMessages`, `OutboxPublisher` y pruebas de rollback |
@@ -141,7 +141,7 @@ lab-api-local-azure/
 │   ├── Program.cs              # Pipeline HTTP, auth, CORS, rate limiting
 │   └── appsettings.json        # Configuración sin secretos
 ├── functions/OrderProcessor/   # Function aislada: trigger de Service Bus
-├── tests/EcommerceApi.Tests/   # Pruebas de integración xUnit (17)
+├── tests/EcommerceApi.Tests/   # Pruebas de integración xUnit (23)
 ├── tests/EcommerceApi.UnitTests/           # Dominio y handlers (45)
 ├── tests/EcommerceApi.Infrastructure.Tests/ # SQLite, outbox, consultas y dispatcher (10)
 ├── tests/EcommerceApi.Architecture.Tests/  # Regla de dependencias (7)
@@ -220,9 +220,9 @@ Cuatro suites, cada una con un propósito distinto:
 | `EcommerceApi.UnitTests` | Invariantes del dominio, handlers de aplicación e idempotencia del consumidor | 45 |
 | `EcommerceApi.Architecture.Tests` | Regla de dependencias entre capas y agregados sin setters públicos | 7 |
 | `EcommerceApi.Infrastructure.Tests` | Atomicidad del outbox, rollback, reintentos, dead-letter, dispatcher, paginación por cursor y uso de índice sobre SQLite real | 10 |
-| `EcommerceApi.Tests` | Integración HTTP: 401, validación, *mass assignment*, BOLA, contrato del listado paginado y respuesta `500` | 17 |
+| `EcommerceApi.Tests` | Integración HTTP: 401, validación, *mass assignment*, BOLA, paginación, CORS, *rate limit* y contrato de errores | 23 |
 
-Total: **79 pruebas**. Las de integración usan un esquema de autenticación de test
+Total: **85 pruebas**. Las de integración usan un esquema de autenticación de test
 y no necesitan un tenant real; cada factory crea su propia base SQLite temporal.
 
 ### Docker
