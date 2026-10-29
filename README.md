@@ -35,20 +35,7 @@ API REST en .NET 10 protegida con Microsoft Entra ID y usada como banco de prueb
 
 ## Arquitectura
 
-```mermaid
-flowchart LR
-    C[Cliente / Swagger] -->|HTTPS + Bearer JWT| API[EcommerceApi .NET 10]
-    API -->|Valida firma, issuer, audience y expiración| ENTRA[Microsoft Entra ID]
-    API --> APP[Application: handlers]
-    APP --> DOM[Domain: agregados y eventos]
-    APP --> DB[(SQLite)]
-    APP --> OUT[(Outbox)]
-    OUT --> DISP[OutboxDispatcher]
-    DISP -->|OrderCreatedV1| FN[Function OrderProcessor]
-    FN --> IDEM[(Idempotencia)]
-    API -->|Logs y métricas| OBS[Application Insights / Log Analytics]
-    CI[GitHub Actions] -->|SAST · SCA · Secretos · Contenedor · IaC| API
-```
+![Arquitectura de EcommerceApi: el cliente llama a la API con un JWT que valida Entra ID; Application usa Domain, guarda en SQLite y escribe en el outbox, que publica hacia una Function idempotente; la API envía telemetría a Application Insights y GitHub Actions la construye y analiza](docs/arquitectura.svg)
 
 La API expone dos controladores:
 

@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="640" viewBox="0 0 960 640" role="img" aria-labelledby="titulo descripcion">
+  <title id="titulo">Arquitectura de EcommerceApi: capas, identidad, persistencia y consumidor asíncrono</title>
+  <desc id="descripcion">El cliente llama a la API con un JWT que valida Entra ID. La API usa Application y Domain; Application guarda en SQLite y escribe en el outbox, que publica hacia la Function idempotente. La API envía telemetría a Application Insights y GitHub Actions la construye y analiza.</desc>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    .nodo { fill: #0e2a47; stroke: #38bdf8; stroke-opacity: .55; stroke-width: 1.25; }
+    .titulo { fill: #f8fafc; font-size: 12.5px; font-weight: 600; text-anchor: middle; dominant-baseline: central; }
+    .sub { fill: #a3b8c9; font-size: 9.5px; text-anchor: middle; dominant-baseline: central; }
+    .etiqueta { fill: #a3b8c9; font-size: 9.5px; text-anchor: middle; dominant-baseline: central; }
+    .edge { stroke: #38bdf8; stroke-opacity: .6; stroke-width: 1.25; fill: none; }
+  </style>
+  <defs>
+    <marker id="flecha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10Z" fill="#38bdf8" fill-opacity=".8"/>
+    </marker>
+  </defs>
+  <rect width="960" height="640" rx="16" fill="#07131e"/>
+    <rect class="nodo" x="30" y="52" width="160" height="64" rx="12"/>
+  <text class="titulo" x="110.0" y="84.0">Cliente / Swagger</text>
+  <rect class="nodo" x="30" y="150" width="160" height="64" rx="12"/>
+  <text class="titulo" x="110.0" y="176.0">GitHub Actions</text>
+  <text class="sub" x="110.0" y="194.0">pipeline DevSecOps</text>
+  <rect class="nodo" x="230" y="52" width="220" height="80" rx="12"/>
+  <text class="titulo" x="340.0" y="86.0">EcommerceApi · .NET 10</text>
+  <text class="sub" x="340.0" y="104.0">host HTTP</text>
+  <rect class="nodo" x="690" y="52" width="240" height="64" rx="12"/>
+  <text class="titulo" x="810.0" y="78.0">Microsoft Entra ID</text>
+  <text class="sub" x="810.0" y="96.0">firma · issuer · audiencia</text>
+  <rect class="nodo" x="690" y="140" width="240" height="64" rx="12"/>
+  <text class="titulo" x="810.0" y="166.0">Application Insights</text>
+  <text class="sub" x="810.0" y="184.0">Log Analytics</text>
+  <rect class="nodo" x="230" y="280" width="220" height="64" rx="12"/>
+  <text class="titulo" x="340.0" y="306.0">Application · handlers</text>
+  <text class="sub" x="340.0" y="324.0">casos de uso</text>
+  <rect class="nodo" x="530" y="280" width="190" height="64" rx="12"/>
+  <text class="titulo" x="625.0" y="306.0">Domain · agregados</text>
+  <text class="sub" x="625.0" y="324.0">eventos de dominio</text>
+  <rect class="nodo" x="230" y="420" width="150" height="64" rx="12"/>
+  <text class="titulo" x="305.0" y="446.0">SQLite</text>
+  <text class="sub" x="305.0" y="464.0">estado</text>
+  <rect class="nodo" x="420" y="420" width="150" height="64" rx="12"/>
+  <text class="titulo" x="495.0" y="446.0">Outbox</text>
+  <text class="sub" x="495.0" y="464.0">transaccional</text>
+  <rect class="nodo" x="610" y="420" width="160" height="64" rx="12"/>
+  <text class="titulo" x="690.0" y="446.0">OutboxDispatcher</text>
+  <text class="sub" x="690.0" y="464.0">cada 2 s</text>
+  <rect class="nodo" x="810" y="420" width="140" height="64" rx="12"/>
+  <text class="titulo" x="880.0" y="446.0">Function</text>
+  <text class="sub" x="880.0" y="464.0">OrderProcessor</text>
+  <rect class="nodo" x="780" y="530" width="170" height="64" rx="12"/>
+  <text class="titulo" x="865.0" y="556.0">Idempotencia</text>
+  <text class="sub" x="865.0" y="574.0">OrderCreatedV1</text>
+  <path class="edge" d="M190 84.0L230 84" marker-end="url(#flecha)"/>
+  <path class="edge" d="M190 182.0L230 116" marker-end="url(#flecha)"/>
+  <path class="edge" d="M450 92.0L690 84.0" marker-end="url(#flecha)"/>
+  <text class="etiqueta" x="565" y="74">JWT</text>
+  <path class="edge" d="M450 92.0L690 172.0" marker-end="url(#flecha)"/>
+  <path class="edge" d="M340 132L340.0 280" marker-end="url(#flecha)"/>
+  <path class="edge" d="M450 312.0L530 312.0" marker-end="url(#flecha)"/>
+  <path class="edge" d="M290 344L305.0 420" marker-end="url(#flecha)"/>
+  <text class="etiqueta" x="254" y="386">guarda</text>
+  <path class="edge" d="M400 344L495.0 420" marker-end="url(#flecha)"/>
+  <path class="edge" d="M570 452.0L610 452.0" marker-end="url(#flecha)"/>
+  <path class="edge" d="M770 452.0L810 452.0" marker-end="url(#flecha)"/>
+  <path class="edge" d="M880 484L865.0 530" marker-end="url(#flecha)"/>
+</svg>
