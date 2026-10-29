@@ -4,10 +4,9 @@
 
 API REST en .NET 10 protegida con Microsoft Entra ID y usada como banco de pruebas del portfolio: una tienda mínima donde cada puerta rechaza a quien no debe entrar. La tabla de «Estado de seguridad» separa lo probado de lo solo diseñado.
 
-[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat&logo=dotnet)](https://dotnet.microsoft.com/)
-[![Microsoft Entra ID](https://img.shields.io/badge/Auth-Microsoft%20Entra%20ID-0078D4?style=flat&logo=microsoftazure)](https://learn.microsoft.com/entra/)
+[![.NET](https://img.shields.io/badge/.NET-10.0-512bd4?style=flat-square)](https://dotnet.microsoft.com/)
+[![Microsoft Entra ID](https://img.shields.io/badge/Auth-Microsoft%20Entra%20ID-0078d4?style=flat-square)](https://learn.microsoft.com/entra/)
 [![DevSecOps CI](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/workflows/devsecops-ci.yml/badge.svg)](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/workflows/devsecops-ci.yml)
-[![Licencia](https://img.shields.io/badge/Licencia-MIT-green.svg)](LICENSE)
 
 ---
 
