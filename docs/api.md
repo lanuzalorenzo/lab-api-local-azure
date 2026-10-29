@@ -256,8 +256,9 @@ revelar que el recurso existe.
 No incluye mensaje de la excepción ni traza. El detalle queda en el log del
 servidor, a nivel `Error`, con la categoría
 `Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddleware`. El `traceId` es el
-único puente entre la respuesta y el log. En esta fase no hay sink persistente:
-ver [ADR-0005](adr/0005-observabilidad.md).
+único puente entre la respuesta y el log. App Service captura la consola hacia
+Log Analytics y el SDK envía la excepción a Application Insights; ver
+[ADR-0005](adr/0005-observabilidad.md).
 
 El contrato de `400`, `404` y `500` está fijado por
 `tests/EcommerceApi.Tests/ErrorContractTests.cs`: código, `Content-Type`,
