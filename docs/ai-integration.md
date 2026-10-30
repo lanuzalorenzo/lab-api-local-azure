@@ -120,7 +120,7 @@ Tres reglas para que la comparativa sea honesta:
 | Artefacto | Repositorio |
 |---|---|
 | Función, gateway y tests | `lab-api-local-azure` |
-| Modelo local, configuración de Ollama y bitácora | `ai-agent-local-lab` |
+| Modelo local, configuración de Ollama y bitácora | `lab-ia-aprendizaje` |
 | Narrativa pública y evidencia | `portfolio-ciberseguridad-lorenzo` |
 | Plan y decisiones | notas privadas de trabajo (no publicadas) |
 
