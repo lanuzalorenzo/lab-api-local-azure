@@ -308,6 +308,7 @@ en una suscripción real; se valida con `bicep build` y Trivy config en CI.
 
 - [Referencia de la API](docs/api.md) — endpoints, autenticación, contratos, formatos de error, paginación y límites. **Implementado**: describe el comportamiento actual.
 - [Capacidades y evidencia](docs/capacidades.md) — qué puede afirmarse del repositorio, con qué prueba se comprueba y qué queda fuera. **Implementado**.
+- [Patrones de diseño](docs/patrones.md) — qué patrones están en el código, dónde y con qué prueba; incluye lo que se descartó y por qué. **Implementado**.
 
 ---
 
