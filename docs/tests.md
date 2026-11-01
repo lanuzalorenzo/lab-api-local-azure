@@ -1,6 +1,8 @@
 # Pruebas funcionales de la API
 
-Todas las rutas de negocio requieren un token JWT válido. El endpoint `/health` es anónimo. La URL base de ejemplo es `http://localhost:5080`.
+Una API que acepta peticiones sin comprobar quién llama es como un almacén con la puerta abierta: cualquiera entra y pide lo que hay dentro. Aquí se comprueba que la puerta está cerrada: sin una credencial válida —un token JWT, firmado por el servicio de identidad— el servidor rechaza la petición, y cada cliente solo ve sus propios pedidos. Este documento reúne esas comprobaciones, cada una con su comando y la respuesta que debe devolver.
+
+El endpoint `/health` (la comprobación de que el servicio sigue vivo) es el único anónimo. La URL base de ejemplo es `http://localhost:5080`.
 
 ## Prerrequisitos
 
@@ -69,6 +71,8 @@ curl -i -X POST "${API_URL}/api/products" \
 
 Esperado: `201 Created` con un `id` asignado por el servidor, distinto de `999999`. El DTO de entrada no acepta `id`.
 
+«Mass assignment» es el intento de colar en la petición campos que solo debe fijar el servidor, como el identificador; el DTO (el objeto con los campos que la API acepta) los ignora.
+
 ## Pedidos
 
 ### Crear un pedido
@@ -108,7 +112,7 @@ Esperado: `400 Bad Request` en ambos casos.
 
 ### BOLA: otro usuario no puede leer el pedido
 
-Con dos tokens de usuarios distintos:
+Con dos tokens (credenciales) de usuarios distintos se comprueba que BOLA (acceder al pedido de otro cambiando el identificador) no funciona:
 
 ```bash
 # Usuario A crea un pedido
@@ -172,7 +176,7 @@ curl -s -H "Authorization: Bearer ${TOKEN}" \
 
 ## Cuerpo de error
 
-Los `400`, `404` y `500` responden `application/problem+json`. El mensaje legible
+Los `400`, `404` y `500` responden `application/problem+json` (un formato estándar de error con campos fijos). El mensaje legible
 viaja en `detail` (o en `errors` si es validación de campos) y el `traceId`
 permite correlacionar con el log del servidor.
 

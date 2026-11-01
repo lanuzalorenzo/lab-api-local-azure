@@ -7,13 +7,13 @@
 
 ## 1. Para qué sirve este documento
 
-Fijar qué función añadimos, por qué, con qué garantías y cómo se prueba, antes de escribir código. La regla del repositorio es no introducir una pieza nueva sin una decisión escrita.
+Un pedido no termina cuando el cliente recibe la respuesta: quedan tareas que no deberían hacerle esperar. Ejecutarlas dentro de la misma petición es como cobrar en la caja mientras el dependiente va al almacén a comprobar el stock: la cola crece y, si algo falla, se cae la venta entera. Este documento decide qué trabajo se saca de la petición, con qué garantías se hace y cómo se prueba antes de escribir el código. La regla del repositorio es no introducir una pieza nueva sin una decisión escrita.
 
 ## 2. El caso de uso
 
 Hoy `POST /api/orders` crea el pedido y responde. Todo lo que ocurre después (confirmar stock, notificar, registrar) tendría que ir dentro de la petición, alargándola y acoplándola.
 
-**Caso elegido:** al crear un pedido, la API publica `OrderCreated` en Service Bus. Una Function `ProcessOrder` lo consume, comprueba el pedido y registra el resultado de forma idempotente. Si algo falla, el mensaje se reintenta y, si se agota, va a la cola de mensajes muertos.
+**Caso elegido:** al crear un pedido, la API publica `OrderCreated` en Service Bus (una cola de mensajes gestionada por Azure). Una Function (un programa que Azure ejecuta al llegar un mensaje), `ProcessOrder`, lo consume, comprueba el pedido y registra el resultado de forma idempotente: si el mismo mensaje llega dos veces, el efecto se aplica una sola vez. Si algo falla, el mensaje se reintenta y, si se agota, va a la cola de mensajes muertos (donde quedan los que no se han podido procesar).
 
 ```mermaid
 flowchart LR
@@ -36,7 +36,7 @@ flowchart LR
 | Aislamiento de fallos | Sí | Un fallo puede tumbar la API |
 | Complejidad operativa | Media | Baja |
 
-La Function no sustituye a la API: separa el trabajo que no debe bloquear la respuesta.
+La Function no sustituye a la API: separa el trabajo que no debe bloquear la respuesta. La alternativa era un `BackgroundService`, un proceso en segundo plano dentro de la propia API.
 
 ## 4. Modelo de hosting
 
@@ -69,7 +69,7 @@ Runtime: **.NET 10 con modelo isolated**. El modelo in-process está retirado; n
 
 ## 6. Garantías y errores
 
-Service Bus entrega al menos una vez. No existe «exactamente una vez» gratis; la idempotencia es responsabilidad del consumidor.
+Service Bus entrega al menos una vez (puede repetir un mensaje). No existe «exactamente una vez» gratis; la idempotencia es responsabilidad del consumidor, el programa que recibe el mensaje.
 
 - **Idempotencia:** antes de procesar, se comprueba `messageId` en el almacén. Si ya está, se completa el mensaje sin repetir efectos.
 - **Reintentos:** `maxDeliveryCount` configurado (por ejemplo 5). Cada intento queda en el log con el `deliveryCount`.
@@ -79,7 +79,7 @@ Service Bus entrega al menos una vez. No existe «exactamente una vez» gratis; 
 
 ## 7. Seguridad
 
-- **Sin cadenas de conexión.** Identidad gestionada de la Function con:
+- **Sin cadenas de conexión.** Identidad gestionada de la Function (una cuenta de Azure que no lleva contraseña en el código) con:
   - *Azure Service Bus Data Receiver* sobre la cola.
   - *Storage Table Data Contributor* (o el rol mínimo equivalente) sobre el almacén.
 - Service Bus y Storage con **Private Endpoint** y acceso público deshabilitado; la Function con VNet Integration.
@@ -90,7 +90,7 @@ Service Bus entrega al menos una vez. No existe «exactamente una vez» gratis; 
 
 - Application Insights con trazas distribuidas: la operación del mensaje se correlaciona con la petición que lo originó.
 - Log estructurado con `orderId`, `messageId`, `deliveryCount` y resultado.
-- KQL de referencia:
+- KQL de referencia (el lenguaje de consulta de los registros y la telemetría de Azure):
 
 ```kusto
 // Fallos de procesamiento por tipo de excepción

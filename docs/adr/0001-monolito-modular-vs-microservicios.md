@@ -7,18 +7,20 @@
 
 ## 1. Contexto
 
+Un sistema se puede construir como una sola pieza o como muchas piezas sueltas que se hablan por la red. La primera es más fácil de montar y de arreglar; la segunda reparte el trabajo, pero multiplica el coste de operarla y de observarla. Esta decisión fija cuántas piezas desplegables necesita este laboratorio y por qué.
+
 `EcommerceApi` es la carga de trabajo del laboratorio final de ciberseguridad y, a la vez, una pieza de portfolio para demostrar criterio de arquitectura. El equipo es **una persona**; hay siete repositorios activos, un curso y un laboratorio con fases de Azure pendientes de autorización y presupuesto.
 
-El diseño ya previsto en [`docs/functions.md`](../functions.md) contempla un segundo cómputo: una Function `ProcessOrder` que consume `OrderCreated` desde Service Bus con idempotencia, reintentos y dead-letter. Es decir, la distribución ya tiene un caso de uso concreto, no una motivación estética.
+El diseño ya previsto en [`docs/functions.md`](../functions.md) contempla un segundo cómputo: una Function `ProcessOrder` que consume `OrderCreated` desde Service Bus con idempotencia, reintentos y dead-letter (los mensajes que no se han podido procesar se apartan). Es decir, la distribución ya tiene un caso de uso concreto, no una motivación estética.
 
 La pregunta no es «¿monolito o microservicios?» en abstracto, sino **cuántas unidades desplegables necesita este sistema y por qué**.
 
 ## 2. Decisión
 
 1. **Un repositorio** (`lab-api-local-azure`) contiene todo el código, los tests, la IaC y el pipeline.
-2. **Un despliegue HTTP principal** (`EcommerceApi`), organizado internamente como **monolito modular**: dominio, aplicación e infraestructura separados por proyectos y con la regla de dependencias verificada por pruebas.
+2. **Un despliegue HTTP principal** (`EcommerceApi`), organizado internamente como **monolito modular** (una sola aplicación, dividida por dentro en módulos con reglas de dependencia): dominio, aplicación e infraestructura separados por proyectos y con la regla de dependencias verificada por pruebas.
 3. **Un segundo despliegue asíncrono** cuando llegue la fase de eventos: la Function `OrderProcessor`. No se parte la API en servicios por dominio.
-4. Los **microservicios se obtienen por extracción justificada**, nunca por diseño inicial. Cada extracción exige una ADR nueva que explique qué se gana y qué se paga.
+4. Los **microservicios se obtienen por extracción justificada**, nunca por diseño inicial. Cada extracción exige una ADR nueva (el registro escrito de una decisión) que explique qué se gana y qué se paga.
 
 ```mermaid
 flowchart LR
@@ -81,7 +83,7 @@ Y no se extrae si:
 - Un despliegue HTTP concentra el fallo: si la API cae, el catálogo y los pedidos caen juntos.
 - El escalado es conjunto para todo el monolito; solo la Function escala aparte.
 - No demuestra operación de microservicios reales: multi-equipo, multi-región, versionado independiente en producción ni malla de servicios.
-- No hay Service Bus ni Function desplegados: la fase asíncrona se validará en local (emulador/Azurite) y el estado se declarará como **Diseño** o **Parcial** hasta que exista ejecución evidenciada.
+- No hay Service Bus ni Function desplegados: la fase asíncrona se validará en local (emulador/Azurite, el emulador local de almacenamiento de Azure) y el estado se declarará como **Diseño** o **Parcial** hasta que exista ejecución evidenciada.
 
 ## 6. Cuándo revisar esta decisión
 

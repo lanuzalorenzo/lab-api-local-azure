@@ -2,7 +2,7 @@
 
 # EcommerceApi — API de referencia para AppSec y DevSecOps
 
-API REST en .NET 10 protegida con Microsoft Entra ID y usada como banco de pruebas del portfolio: una tienda de juguete con las puertas de una tienda real. El catálogo y los pedidos son inventados; los controles de acceso, no. Cada puerta rechaza a quien no debe entrar, y la tabla de «Estado de seguridad» separa lo probado de lo solo diseñado.
+Una tienda de juguete con las puertas de una tienda real: así es este repositorio. La API, un servicio web al que se llama por HTTP, está hecha en .NET 10 y protegida con Microsoft Entra ID; sirve de banco de pruebas para AppSec (seguridad de las aplicaciones) y DevSecOps (seguridad integrada en el ciclo de entrega). El catálogo y los pedidos son inventados; los controles de acceso, no: cada puerta rechaza a quien no debe entrar, y la tabla de «Estado de seguridad» separa lo probado de lo solo diseñado.
 
 [![.NET](https://img.shields.io/badge/.NET-10.0-512bd4?style=flat-square)](https://dotnet.microsoft.com/)
 [![Microsoft Entra ID](https://img.shields.io/badge/Auth-Microsoft%20Entra%20ID-0078d4?style=flat-square)](https://learn.microsoft.com/entra/)
@@ -29,7 +29,7 @@ API REST en .NET 10 protegida con Microsoft Entra ID y usada como banco de prueb
 | Pruebas | Unitarias, de arquitectura, de infraestructura y de integración |
 | Pipeline DevSecOps | SAST, SCA, secretos, contenedor e IaC |
 
-**No es** un sistema listo para producción ni una implementación de microservicios: es un monolito modular con un segundo despliegue asíncrono (ver [ADR-0001](docs/adr/0001-monolito-modular-vs-microservicios.md)). Las limitaciones concretas están al final, en [Limitaciones conocidas](#limitaciones-conocidas). El estado de cada control está en [Estado de seguridad](#estado-de-seguridad).
+**No es** un sistema listo para producción ni una implementación de microservicios: es un monolito modular (una sola aplicación, separada por dentro en piezas con reglas de dependencia) con un segundo despliegue asíncrono (ver [ADR-0001](docs/adr/0001-monolito-modular-vs-microservicios.md)). Las limitaciones concretas están al final, en [Limitaciones conocidas](#limitaciones-conocidas). El estado de cada control está en [Estado de seguridad](#estado-de-seguridad).
 
 ---
 
@@ -42,7 +42,7 @@ La API expone dos controladores:
 - `ProductsController`: catálogo de productos.
 - `OrdersController`: pedidos ligados al usuario autenticado (`oid`/`sub`).
 
-El código se organiza en cinco proyectos con una única dirección de dependencias: `Domain` ← `Application` ← `Infrastructure` ← host `EcommerceApi`, más `Contracts`, que no depende de nadie y comparten productor y consumidor. Los controladores solo conocen handlers de `Application`; los adaptadores viven en `Infrastructure`. La Function es un segundo desplegable dentro del mismo repo.
+El código se organiza en cinco proyectos con una única dirección de dependencias: `Domain` ← `Application` ← `Infrastructure` ← host `EcommerceApi`, más `Contracts`, que no depende de nadie y comparten productor y consumidor. Los controladores solo conocen handlers (las clases que ejecutan cada caso de uso) de `Application`; los adaptadores viven en `Infrastructure`. La Function es un segundo desplegable dentro del mismo repo.
 
 ### Capas, patrones y decisiones
 
@@ -60,11 +60,12 @@ El código se organiza en cinco proyectos con una única dirección de dependenc
 ### Eventos, outbox y consumidor
 
 1. `POST /api/orders` abre una transacción y escribe el pedido, sus líneas y el
-   mensaje `OrderCreatedV1` en la tabla de outbox.
+   mensaje `OrderCreatedV1` en la tabla de outbox (la bandeja de salida que se
+   confirma junto al pedido).
 2. La transacción confirma: o existen los tres, o no existe ninguno.
 3. `OutboxDispatcher` publica los pendientes cada 2 segundos. Si el publicador
    falla, incrementa el contador de intentos y deja el mensaje para el siguiente
-   ciclo; tras 5 fallos lo marca como *dead-letter*.
+   ciclo; tras 5 fallos lo marca como *dead-letter* (lo aparta para revisarlo).
 4. La Function `OrderProcessor` consume el mensaje, valida el contrato y consulta
    `ProcessedMessages` por `messageId` antes de registrar el efecto.
 5. Un mensaje repetido se reconoce sin repetir el efecto; uno inválido se lanza
@@ -78,7 +79,7 @@ están desplegados**: el outbox y la idempotencia se validan contra SQLite en lo
 ### Flujo de autorización
 
 1. El cliente obtiene un token de Entra ID.
-2. `JwtBearer` valida firma, emisor, audiencia, expiración y *clock skew*.
+2. `JwtBearer` valida firma, emisor, audiencia, expiración y *clock skew* (el margen de desfase entre relojes).
 3. `OrdersController` resuelve la identidad del usuario y solo devuelve sus pedidos.
 4. Un pedido de otro usuario responde `404` para evitar enumeración de objetos.
 
@@ -253,6 +254,8 @@ por scopes/roles está documentada como trabajo pendiente; hoy todos los endpoin
 requieren un usuario autenticado y los pedidos se filtran por identidad.
 
 ### CORS
+
+CORS es la regla que decide qué webs pueden llamar a la API desde un navegador.
 
 - `Cors:AllowedOrigins` vacío → se deniega cualquier origen cruzado.
 - Para un frontend local, añade su origen exacto en `AllowedOrigins`.
