@@ -4,6 +4,11 @@
 > **Alcance:** código de la API, pruebas, plantilla Bicep y documentación del lote.
 > **Estado:** Parcial. La compilación, las pruebas y la plantilla se han ejecutado en local; no hay despliegue en Azure.
 
+Este documento es el acta de una revisión: qué se miró, qué estaba mal, qué se
+corrigió y qué sigue sin comprobar. Está escrito para que otra persona pueda
+comprobar las conclusiones sin repetir el trabajo, y para que la diferencia entre
+lo probado y lo solo leído quede a la vista.
+
 ## 1. Resumen
 
 La revisión encontró una discrepancia real entre lo que prometía el ADR y lo que hacía el código, un bloque de configuración de logs que no aplica a Linux y varias referencias desactualizadas. También descartó dos hallazgos que no se sostenían al comprobarlos.

@@ -7,7 +7,9 @@
 
 ## 1. Para qué sirve este documento
 
-Explicar cómo se ejecuta la API en Azure, qué decisiones hay detrás y qué se debe comprobar antes de desplegar. No es un tutorial: es el plano que se estudia en T2 y que se corrige si algo no cuadra.
+La API no se queda encendida en un ordenador de la oficina: vive en un servicio de Azure que la mantiene en marcha, la reinicia si se cae y guarda sus registros. Este documento es el plano de ese alojamiento: cuánta capacidad tiene, quién puede entrar y salir, qué se guarda y cuánto cuesta.
+
+No es un tutorial: es el plano que se estudia en T2 y que se corrige si algo no cuadra.
 
 Incluye una separación explícita entre Bicep, el pipeline YAML y el artefacto (§3) y un desglose de qué define exactamente la plantilla (§4), porque es la confusión más habitual al leer `infra/main.bicep`.
 

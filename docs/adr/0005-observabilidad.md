@@ -5,6 +5,11 @@
 > **Evidencia:** [`EcommerceApi/Program.cs`](../../EcommerceApi/Program.cs), [`EcommerceApi/appsettings.json`](../../EcommerceApi/appsettings.json), [`infra/main.bicep`](../../infra/main.bicep) y [`tests/EcommerceApi.Tests/ObservabilityTests.cs`](../../tests/EcommerceApi.Tests/ObservabilityTests.cs).
 > **Relacionada con:** [ADR-0001](0001-monolito-modular-vs-microservicios.md).
 
+Cuando algo falla, la pregunta útil no es qué ha pasado, sino dónde quedó el rastro
+que lo cuenta. Este documento decide qué rastro guarda la API, dónde se guarda,
+cuánto tiempo, a qué coste y qué se puede deducir de él cuando alguien llama
+diciendo que su pedido no aparece.
+
 ## 1. Contexto
 
 El host registra por los proveedores por defecto de ASP.NET Core (consola, Debug y

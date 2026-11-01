@@ -5,6 +5,16 @@
 > **Evidencia:** `EcommerceApi/Controllers`, `EcommerceApi/Models`, `EcommerceApi.Application` y `tests/EcommerceApi.Tests`.
 > **Relacionada con:** [Pruebas funcionales](tests.md), [Persistencia y paginación](persistence.md), [Configuración de Entra ID](azure-ad-config.md), [ADR-0005](adr/0005-observabilidad.md).
 
+Imagina el mostrador de una tienda: un portero comprueba la identificación, cada
+cliente solo ve sus propios pedidos y, cuando algo falla, se entrega un número de
+reclamación con el que rastrear qué pasó. La API funciona así. Este documento es el
+manual del mostrador: qué se puede pedir, con qué credencial, qué se devuelve y qué
+se rechaza.
+
+Quien vaya a escribir código encontrará el contrato exacto en la tabla de
+convenciones y en los contratos; quien solo quiera saber qué permite el sistema
+puede leer las convenciones y las limitaciones del final.
+
 Este documento describe lo que la API hace hoy, no lo que debería hacer. Los
 comportamientos no implementados se listan al final para que no se confundan con
 el contrato vigente.

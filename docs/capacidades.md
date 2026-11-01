@@ -5,10 +5,13 @@
 > **Evidencia:** `dotnet test`, `.github/workflows/devsecops-ci.yml`, `infra/main.bicep` y `docs/`.
 > **Relacionada con:** [Referencia de la API](api.md), [Estado de seguridad](../README.md#estado-de-seguridad), [ADR](adr/README.md).
 
-Este documento responde a una pregunta concreta: si alguien revisa el repositorio
-o pregunta en una entrevista, ¿qué afirmaciones sostiene el código y cuáles no?
-Cada fila de la matriz tiene una comprobación ejecutable; cuando no la tiene, se
-indica en el estado y no se presenta como validado.
+Cualquier repositorio puede decir que «hace seguridad». Este documento hace la
+pregunta incómoda: de todo lo que este repositorio afirma, qué se puede comprobar
+hoy, con qué prueba y qué no está demostrado. Si alguien revisa el repositorio o
+pregunta en una entrevista, ¿qué afirmaciones sostiene el código y cuáles no?
+
+Cada fila de la matriz apunta a algo ejecutable; cuando no lo hay, el estado lo
+reconoce y no se presenta como validado.
 
 ## 1. Verificación en un bloque
 
