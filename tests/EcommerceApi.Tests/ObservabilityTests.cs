@@ -7,6 +7,7 @@ using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Options;
 using Xunit;
 
@@ -62,6 +63,17 @@ public sealed class ObservabilityTests
             .GetRequiredService<IOptions<ApplicationInsightsServiceOptions>>()
             .Value;
         Assert.Equal(ConnectionString, options.ConnectionString);
+
+        var loggerFactoryOptions = host.Services
+            .GetRequiredService<IOptions<LoggerFactoryOptions>>()
+            .Value;
+        Assert.True(loggerFactoryOptions.ActivityTrackingOptions.HasFlag(ActivityTrackingOptions.TraceId));
+        Assert.True(loggerFactoryOptions.ActivityTrackingOptions.HasFlag(ActivityTrackingOptions.SpanId));
+
+        var consoleOptions = host.Services
+            .GetRequiredService<IOptionsMonitor<SimpleConsoleFormatterOptions>>()
+            .CurrentValue;
+        Assert.True(consoleOptions.IncludeScopes);
     }
 
     private sealed record LogRecord(

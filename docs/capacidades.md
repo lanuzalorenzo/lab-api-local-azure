@@ -56,7 +56,7 @@ El contrato completo, incluido el formato de error, está en
 
 | Capacidad | Dónde | Cómo se comprueba | Estado |
 |---|---|---|---|
-| Validación JWT: firma, `iss`, `aud`, `exp`, `nbf` y *clock skew* | `Program.cs:114-129` | Requiere tenant real; ver [azure-ad-tests.md](azure-ad-tests.md) | Implementado; fuera de CI |
+| Validación JWT: firma, `iss`, `aud`, `exp`, `nbf` y *clock skew* | `Program.cs:133-148` | Requiere tenant real; ver [azure-ad-tests.md](azure-ad-tests.md) | Implementado; fuera de CI |
 | Autorización por propietario (BOLA/IDOR) | `OrdersController`, `GetOrderByIdHandler` | `UserCannotReadAnotherUsersOrder` y `CreateOrder_ReturnsOnlyOwnOrders` | Implementado |
 | `404` en lugar de `403` para pedidos ajenos | `OrdersController.GetOrderById` | La misma prueba | Implementado |
 | DTOs de entrada contra *mass assignment* | `Models/Create*Request.cs` | Revisión de código; `Id` no es asignable | Implementado |
@@ -106,7 +106,7 @@ importante y está en el threat model como `Parcial` en *Information Disclosure*
 | IaC Bicep con VNet, NSG, Key Vault, Private Endpoints y diagnóstico | `infra/main.bicep` | `bicep build` + Trivy config | Implementado (plantilla) |
 | Despliegue en Azure | — | — | Pendiente |
 | OIDC de GitHub Actions a Azure | [infra/README.md](../infra/README.md) | — | Documentado, no activo |
-| Captura persistente de logs | `Microsoft.Web/sites/config` (`logs`) + diagnóstico a Log Analytics | `bicep build` + `bicep lint`; ver [ADR-0005](adr/0005-observabilidad.md) | Implementado (plantilla) |
+| Captura persistente de logs | `Microsoft.Web/sites/config` (`logs`) + diagnóstico a Log Analytics | `bicep build` (incluye linter); ver [ADR-0005](adr/0005-observabilidad.md) | Implementado (plantilla) |
 | Telemetría de aplicación | `AddApplicationInsightsTelemetry()` condicionado a la cadena | `ObservabilityTests` | Implementado (código) |
 
 ## 3. Lo que este repositorio no demuestra

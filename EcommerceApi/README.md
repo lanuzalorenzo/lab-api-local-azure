@@ -64,7 +64,7 @@ dotnet test ../EcommerceApi.sln
 
 ## Alcance
 
-Incluye autenticación, autorización por usuario, validación de entrada, CORS, rate limiting, DDD táctico, CQRS ligero en pedidos, persistencia SQLite, outbox transaccional y consumidor idempotente. No incluye Service Bus ni Function desplegados, roles/scopes granulares, observabilidad persistente, microservicios ni despliegue real en Azure.
+Incluye autenticación, autorización por usuario, validación de entrada, CORS, rate limiting, DDD táctico, CQRS ligero en pedidos, persistencia SQLite, outbox transaccional y consumidor idempotente. No incluye Service Bus ni Function desplegados, roles/scopes granulares, observabilidad persistente desplegada, microservicios ni despliegue real en Azure. La captura de logs y la telemetría están declaradas en la plantilla y el código, sin despliegue.
 
 ## Licencia
 
