@@ -1,6 +1,6 @@
 # Dependencias: dueño, plazo y evidencia
 
-> **Estado:** Validado (política aplicada y lote cerrado el 2026-11-01) · Parcial (informe semanal manual y agrupación pendiente).
+> **Estado:** Validado (política aplicada y lote cerrado el 2026-11-01) · Parcial (informe semanal manual; agrupación configurada, sin lote agrupado todavía).
 > **Última revisión:** 2026-11-01.
 > **Evidencia:** 8 pull requests de Dependabot resueltas (5 fusionadas y 3 cerradas por duplicadas), checks del pipeline en verde y `dotnet list package --vulnerable --include-transitive` sin paquetes vulnerables.
 
@@ -28,7 +28,7 @@ El plazo se cuenta desde que se publica la alerta, no desde que alguien la ve. U
 - `.github/dependabot.yml` revisa NuGet y GitHub Actions cada lunes, con un límite de 5 pull requests abiertas y etiquetas `dependencies` y `security`.
 - El pipeline exige siete checks obligatorios, rama actualizada antes de fusionar e historial lineal. La fusión es siempre con squash: una pull request, un commit.
 - El límite de 5 reduce ruido, pero puede retrasar avisos: el informe semanal mira también `dotnet list package --outdated` para ver lo que Dependabot aún no ha abierto.
-- **Diseño, no aplicado:** agrupar los parches por ecosistema para que una semana produzca una pull request en vez de cinco.
+- **Agrupación:** dos grupos por ecosistema. Parche y minor van juntos; major va aparte y sigue necesitando revisión. El primer lote agrupado llegará en la revisión semanal.
 
 ## 4. Qué se automatiza y qué no
 
@@ -93,5 +93,5 @@ El plazo real fue de tres a seis días, dentro del límite de 30 días que fija 
 ## 9. Estado y límites
 
 - **Validado:** la política se aplicó a un lote real, con checks obligatorios, rama actualizada y squash; el escaneo de dependencias queda limpio.
-- **Parcial:** el informe semanal es manual y la agrupación de parches está diseñada, no configurada.
+- **Parcial:** el informe semanal es manual y la agrupación está configurada, pero aún no ha producido un lote.
 - **Fuera de alcance:** el SDK de .NET se fija en el pipeline (`10.0.x`) y no tiene `global.json`; las dependencias npm del laboratorio PKCE viven en otro repositorio y siguen el mismo criterio con `npm audit`.
