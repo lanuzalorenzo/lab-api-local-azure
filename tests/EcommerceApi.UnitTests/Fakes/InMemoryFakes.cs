@@ -52,6 +52,8 @@ internal sealed class FakeOrderReadModel : IOrderReadModel
 {
     private readonly Dictionary<string, List<OrderSummary>> _byUser = new(StringComparer.Ordinal);
 
+    public OrderQuery? LastQuery { get; private set; }
+
     public void Add(string userId, OrderSummary summary)
     {
         if (!_byUser.TryGetValue(userId, out var summaries))
@@ -63,11 +65,30 @@ internal sealed class FakeOrderReadModel : IOrderReadModel
         summaries.Add(summary);
     }
 
-    public Task<IReadOnlyList<OrderSummary>> GetByUserAsync(
+    public Task<OrderPage> GetByUserAsync(
         string userId,
-        CancellationToken cancellationToken = default) =>
-        Task.FromResult<IReadOnlyList<OrderSummary>>(
-            _byUser.GetValueOrDefault(userId)?.OrderBy(order => order.Id).ToList() ?? []);
+        OrderQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        LastQuery = query;
+
+        var page = (_byUser.GetValueOrDefault(userId) ?? [])
+            .Where(order => query.AfterId is null || order.Id > query.AfterId)
+            .Where(order => query.From is null || order.CreatedAt >= query.From.Value.UtcDateTime)
+            .Where(order => query.To is null || order.CreatedAt < query.To.Value.UtcDateTime)
+            .OrderBy(order => order.Id)
+            .Take(query.Limit + 1)
+            .ToList();
+
+        int? nextCursor = null;
+        if (page.Count > query.Limit)
+        {
+            page.RemoveAt(page.Count - 1);
+            nextCursor = page[^1].Id;
+        }
+
+        return Task.FromResult(new OrderPage(page, nextCursor));
+    }
 
     public Task<OrderSummary?> FindAsync(
         int id,

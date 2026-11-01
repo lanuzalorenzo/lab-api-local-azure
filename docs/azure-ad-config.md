@@ -1,15 +1,17 @@
 # Configuración de Microsoft Entra ID en la API
 
+Para que la API sepa quién llama no basta con recibir una credencial: hay que comprobar que la emitió el directorio de la organización y que sirve para esta API y no para otra. Es la diferencia entre aceptar un carné y comprobar que es auténtico, que no ha caducado y que es de este club. Este documento explica qué se configura, qué se valida en el código y qué queda sin implementar.
+
 Esta guía describe la configuración real del código actual. Los valores sensibles no se guardan en el repositorio: usa `appsettings.Development.json` (ignorado por Git), user-secrets o variables de entorno.
 
 ## Conceptos clave
 
-- **Tenant ID**: identificador del directorio de Entra ID.
-- **Client ID**: identificador público del App Registration de la API.
+- **Tenant ID**: identificador del directorio de Entra ID (el espacio donde viven las cuentas y las aplicaciones).
+- **Client ID**: identificador público del App Registration de la API (su ficha en ese directorio).
 - **Audience**: Application ID URI, por ejemplo `api://<client-id>`.
 - **Authority**: `https://login.microsoftonline.com/<tenant-id>/v2.0`.
 - **Scope**: permiso granular que expone la API. La API actual no aplica autorización por scopes; solo valida el token.
-- **JWT**: token firmado con claims `iss`, `aud`, `exp`, `oid`/`sub`, `scp` y `roles`.
+- **JWT**: token firmado; los `claims` son los datos que lleva dentro (`iss`, `aud`, `exp`, `oid`/`sub`, `scp` y `roles`).
 
 ## 1. Opciones de configuración
 
@@ -49,7 +51,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 ```
 
-La firma se valida con las claves públicas (JWKS) que publica Entra ID en el documento de metadatos de la autoridad configurada.
+La firma se valida con las claves públicas (JWKS, el juego de claves que Entra ID publica para comprobarla) del documento de metadatos de la autoridad configurada.
 
 ## 3. Orden del pipeline
 
@@ -66,7 +68,7 @@ app.MapControllers();
 app.MapHealthChecks("/health").AllowAnonymous();
 ```
 
-`UseAuthentication()` debe ejecutarse antes de `UseAuthorization()`. `UseCors()` se ejecuta antes de autenticación para que las respuestas de preflight no requieran token.
+`UseAuthentication()` debe ejecutarse antes de `UseAuthorization()`. `UseCors()` se ejecuta antes de autenticación para que las respuestas de preflight (la consulta que hace el navegador antes de una petición cruzada) no requieran token.
 
 ## 4. CORS
 

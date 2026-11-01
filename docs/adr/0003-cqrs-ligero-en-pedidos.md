@@ -7,16 +7,16 @@
 
 ## 1. Contexto
 
-Pedidos y productos no se parecen:
+Pedidos y productos se parecen tanto como un contrato firmado y la etiqueta de un precio: el contrato tiene condiciones que hay que respetar, la etiqueta solo se lee. Tratarlos con el mismo molde obliga a proteger reglas donde no las hay y añade trabajo sin beneficio. Por eso el código que escribe y el que lee un pedido se separan, y el catálogo se queda como una lista simple.
 
-- **Pedidos** son transaccionales: validan un agregado, capturan el precio en el momento de la compra, calculan un total y pertenecen a un usuario. La escritura necesita invariantes; la lectura necesita una proyección plana y segura.
+- **Pedidos** son transaccionales: validan un agregado (el objeto que agrupa el pedido y sus líneas y protege sus reglas), capturan el precio en el momento de la compra, calculan un total y pertenecen a un usuario. La escritura necesita invariantes; la lectura necesita una proyección plana y segura.
 - **Productos** son un catálogo CRUD: lo que se lee es prácticamente lo que se escribe. Separar modelos ahí solo añade mapeo.
 
 Aplicar CQRS «a todo» porque suena bien es el mismo error que aplicar microservicios por moda (ADR-0001).
 
 ## 2. Decisión
 
-**CQRS ligero solo en pedidos.** Sin event sourcing, sin base de datos de lectura
+**CQRS ligero solo en pedidos.** Sin event sourcing (guardar cada cambio como un historial del que se reconstruye el estado), sin base de datos de lectura
 separada y sin bus de mensajes en esta fase.
 
 | Lado | Tipo | Entrada / salida |
@@ -41,7 +41,7 @@ Decisiones concretas:
 
 - **Los fallos esperados son valores, no excepciones.** `CreateOrderResult` distingue producto inexistente de entrada inválida; el controlador los mapea a `400` sin `try/catch`.
 - **El cliente no envía precios.** El handler toma el precio del catálogo en el momento de crear el pedido; el total lo calcula el agregado.
-- **La autorización por objeto vive en el puerto.** `IOrderRepository.Find(id, userId)` no puede devolver un pedido ajeno, así que ningún handler puede filtrar mal por descuido.
+- **La autorización por objeto vive en el puerto.** `IOrderRepository.Find(id, userId)` (el puerto es la interfaz que dice qué necesita la aplicación, sin decir cómo se hace) no puede devolver un pedido ajeno, así que ningún handler puede filtrar mal por descuido.
 - **`OrderSummary` no expone `UserId`**: el identificador interno no viaja al cliente.
 - **`Product` no se convierte en un agregado con CQRS.** Sería ceremonia sin beneficio.
 
@@ -74,7 +74,7 @@ Llamarlo «CQRS ligero» no es una excusa: es la descripción exacta de lo que h
 
 - Dos caminos para pedidos: más código que un CRUD.
 - La lectura comparte almacén con la escritura, así que no hay escalado independiente ni consistencia eventual.
-- Si más adelante se añade un read model desnormalizado, habrá que decidir cómo se actualiza (proyección síncrona o consumidor de eventos).
+- Si más adelante se añade un read model desnormalizado (una copia de lectura preparada y duplicada a propósito), habrá que decidir cómo se actualiza (proyección síncrona o consumidor de eventos).
 
 ## 5. Cuándo revisar esta decisión
 

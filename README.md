@@ -1,11 +1,12 @@
+<img src="assets/iconos/api.svg" width="64" alt="Icono de la API de referencia">
+
 # EcommerceApi — API de referencia para AppSec y DevSecOps
 
-API REST en .NET 10 protegida con Microsoft Entra ID y usada como banco de pruebas del portfolio: una tienda mínima donde cada puerta rechaza a quien no debe entrar. La tabla de «Estado de seguridad» separa lo probado de lo solo diseñado.
+Una tienda de juguete con las puertas de una tienda real: así es este repositorio. La API, un servicio web al que se llama por HTTP, está hecha en .NET 10 y protegida con Microsoft Entra ID; sirve de banco de pruebas para AppSec (seguridad de las aplicaciones) y DevSecOps (seguridad integrada en el ciclo de entrega). El catálogo y los pedidos son inventados; los controles de acceso, no: cada puerta rechaza a quien no debe entrar, y la tabla de «Estado de seguridad» separa lo probado de lo solo diseñado.
 
-[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat&logo=dotnet)](https://dotnet.microsoft.com/)
-[![Microsoft Entra ID](https://img.shields.io/badge/Auth-Microsoft%20Entra%20ID-0078D4?style=flat&logo=microsoftazure)](https://learn.microsoft.com/entra/)
+[![.NET](https://img.shields.io/badge/.NET-10.0-512bd4?style=flat-square)](https://dotnet.microsoft.com/)
+[![Microsoft Entra ID](https://img.shields.io/badge/Auth-Microsoft%20Entra%20ID-0078d4?style=flat-square)](https://learn.microsoft.com/entra/)
 [![DevSecOps CI](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/workflows/devsecops-ci.yml/badge.svg)](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/workflows/devsecops-ci.yml)
-[![Licencia](https://img.shields.io/badge/Licencia-MIT-green.svg)](LICENSE)
 
 ---
 
@@ -28,33 +29,20 @@ API REST en .NET 10 protegida con Microsoft Entra ID y usada como banco de prueb
 | Pruebas | Unitarias, de arquitectura, de infraestructura y de integración |
 | Pipeline DevSecOps | SAST, SCA, secretos, contenedor e IaC |
 
-**No es** un sistema listo para producción ni una implementación de microservicios: es un monolito modular con un segundo despliegue asíncrono (ver [ADR-0001](docs/adr/0001-monolito-modular-vs-microservicios.md)). Las limitaciones concretas están al final, en [Limitaciones conocidas](#limitaciones-conocidas). El estado de cada control está en [Estado de seguridad](#estado-de-seguridad).
+**No es** un sistema listo para producción ni una implementación de microservicios: es un monolito modular (una sola aplicación, separada por dentro en piezas con reglas de dependencia) con un segundo despliegue asíncrono (ver [ADR-0001](docs/adr/0001-monolito-modular-vs-microservicios.md)). Las limitaciones concretas están al final, en [Limitaciones conocidas](#limitaciones-conocidas). El estado de cada control está en [Estado de seguridad](#estado-de-seguridad).
 
 ---
 
 ## Arquitectura
 
-```mermaid
-flowchart LR
-    C[Cliente / Swagger] -->|HTTPS + Bearer JWT| API[EcommerceApi .NET 10]
-    API -->|Valida firma, issuer, audience y expiración| ENTRA[Microsoft Entra ID]
-    API --> APP[Application: handlers]
-    APP --> DOM[Domain: agregados y eventos]
-    APP --> DB[(SQLite)]
-    APP --> OUT[(Outbox)]
-    OUT --> DISP[OutboxDispatcher]
-    DISP -->|OrderCreatedV1| FN[Function OrderProcessor]
-    FN --> IDEM[(Idempotencia)]
-    API -->|Logs y métricas| OBS[Application Insights / Log Analytics]
-    CI[GitHub Actions] -->|SAST · SCA · Secretos · Contenedor · IaC| API
-```
+![Arquitectura de EcommerceApi: el cliente llama a la API con un JWT que valida Entra ID; Application usa Domain, guarda en SQLite y escribe en el outbox, que publica hacia una Function idempotente; la API envía telemetría a Application Insights y GitHub Actions la construye y analiza](docs/arquitectura.svg)
 
 La API expone dos controladores:
 
 - `ProductsController`: catálogo de productos.
 - `OrdersController`: pedidos ligados al usuario autenticado (`oid`/`sub`).
 
-El código se organiza en cinco proyectos con una única dirección de dependencias: `Domain` ← `Application` ← `Infrastructure` ← host `EcommerceApi`, más `Contracts`, que no depende de nadie y comparten productor y consumidor. Los controladores solo conocen handlers de `Application`; los adaptadores viven en `Infrastructure`. La Function es un segundo desplegable dentro del mismo repo.
+El código se organiza en cinco proyectos con una única dirección de dependencias: `Domain` ← `Application` ← `Infrastructure` ← host `EcommerceApi`, más `Contracts`, que no depende de nadie y comparten productor y consumidor. Los controladores solo conocen handlers (las clases que ejecutan cada caso de uso) de `Application`; los adaptadores viven en `Infrastructure`. La Function es un segundo desplegable dentro del mismo repo.
 
 ### Capas, patrones y decisiones
 
@@ -66,16 +54,18 @@ El código se organiza en cinco proyectos con una única dirección de dependenc
 | Agregado `Order` con invariantes y evento `OrderPlaced` | [ADR-0002](docs/adr/0002-capas-y-regla-de-dependencias.md) | `EcommerceApi.Domain/Orders` |
 | Puertos y adaptadores (DIP) | [ADR-0002](docs/adr/0002-capas-y-regla-de-dependencias.md) | `IOrderRepository` + `SqliteOrderRepository` |
 | Persistencia SQLite y outbox transaccional | [ADR-0004](docs/adr/0004-persistencia-sqlite-y-outbox.md) | `EcommerceApi.Infrastructure/Outbox` + pruebas de infraestructura |
+| Consultas de lectura y paginación | [docs/persistence.md](docs/persistence.md) | `SqliteOrderReadModel` + pruebas de cursor y rango |
 | Contrato versionado y consumidor idempotente | [ADR-0004](docs/adr/0004-persistencia-sqlite-y-outbox.md) | `EcommerceApi.Contracts` + `functions/OrderProcessor` |
 
 ### Eventos, outbox y consumidor
 
 1. `POST /api/orders` abre una transacción y escribe el pedido, sus líneas y el
-   mensaje `OrderCreatedV1` en la tabla de outbox.
+   mensaje `OrderCreatedV1` en la tabla de outbox (la bandeja de salida que se
+   confirma junto al pedido).
 2. La transacción confirma: o existen los tres, o no existe ninguno.
 3. `OutboxDispatcher` publica los pendientes cada 2 segundos. Si el publicador
    falla, incrementa el contador de intentos y deja el mensaje para el siguiente
-   ciclo; tras 5 fallos lo marca como *dead-letter*.
+   ciclo; tras 5 fallos lo marca como *dead-letter* (lo aparta para revisarlo).
 4. La Function `OrderProcessor` consume el mensaje, valida el contrato y consulta
    `ProcessedMessages` por `messageId` antes de registrar el efecto.
 5. Un mensaje repetido se reconoce sin repetir el efecto; uno inválido se lanza
@@ -89,7 +79,7 @@ están desplegados**: el outbox y la idempotencia se validan contra SQLite en lo
 ### Flujo de autorización
 
 1. El cliente obtiene un token de Entra ID.
-2. `JwtBearer` valida firma, emisor, audiencia, expiración y *clock skew*.
+2. `JwtBearer` valida firma, emisor, audiencia, expiración y *clock skew* (el margen de desfase entre relojes).
 3. `OrdersController` resuelve la identidad del usuario y solo devuelve sus pedidos.
 4. Un pedido de otro usuario responde `404` para evitar enumeración de objetos.
 
@@ -103,15 +93,20 @@ están desplegados**: el outbox y la idempotencia se validan contra SQLite en lo
 | Autorización de endpoints | Implementado | `[Authorize]` en controladores |
 | BOLA/IDOR en pedidos | Implementado | Filtrado por `UserId` + pruebas |
 | Mass assignment en productos y pedidos | Implementado | DTOs `CreateProductRequest` / `CreateOrderRequest` |
-| CORS restrictivo | Implementado | Lista vacía = denegar; allowlist por configuración |
-| Rate limiting | Implementado (laboratorio) | 120 req/min por IP |
+| CORS restrictivo | Implementado | Lista vacía = denegar; allowlist por configuración y pruebas de origen permitido y denegado |
+| Rate limiting | Implementado (laboratorio) | 120 req/min por IP; prueba del `429` |
 | Límite de tamaño de petición | Implementado | 16 KB en endpoints de escritura |
-| `Problem Details` y cabeceras de seguridad | Implementado | `AddProblemDetails`, middleware |
+| Contrato de error único (`400`, `404`, `500`) | Implementado | `application/problem+json` con `detail` o `errors` y `traceId`; `ErrorContractTests` |
+| Sin fuga de detalles en `500` | Implementado | Título genérico, sin mensaje ni traza; `UnhandledException_ReturnsProblemDetailsWithoutInternalDetails` |
+| Captura persistente de logs (Log Analytics) | Implementado (plantilla) | `logs` de App Service + diagnóstico; ver [ADR-0005](docs/adr/0005-observabilidad.md) |
+| Telemetría de aplicación (Application Insights) | Implementado (código) | SDK condicionado a la cadena; `ObservabilityTests` |
+| Cabeceras de seguridad | Implementado | Middleware en `Program.cs` |
 | Regla de dependencias entre capas | Implementado | `tests/EcommerceApi.Architecture.Tests` (7 pruebas) |
-| Pruebas unitarias de dominio y aplicación | Implementado | `tests/EcommerceApi.UnitTests` (43 pruebas) |
-| Pruebas de infraestructura sobre SQLite | Implementado | `tests/EcommerceApi.Infrastructure.Tests` (7 pruebas) |
-| Pruebas de integración | Implementado | `tests/EcommerceApi.Tests` (10 pruebas) |
+| Pruebas unitarias de dominio y aplicación | Implementado | `tests/EcommerceApi.UnitTests` (45 pruebas) |
+| Pruebas de infraestructura sobre SQLite | Implementado | `tests/EcommerceApi.Infrastructure.Tests` (10 pruebas) |
+| Pruebas de integración | Implementado | `tests/EcommerceApi.Tests` (25 pruebas) |
 | Persistencia transaccional | Implementado (laboratorio) | SQLite + importes en céntimos |
+| Consultas acotadas y paginación | Implementado | `afterId`, límite máximo y pruebas de plan en [docs/persistence.md](docs/persistence.md) |
 | Outbox transaccional y dead-letter | Implementado | `OutboxMessages`, `OutboxPublisher` y pruebas de rollback |
 | Consumidor idempotente | Implementado (local) | `ProcessOrderHandler` + `ProcessedMessages` |
 | Publicación en Service Bus | Diseño | `ServiceBusEventPublisher`, sin namespace desplegado |
@@ -148,15 +143,15 @@ lab-api-local-azure/
 │   ├── Program.cs              # Pipeline HTTP, auth, CORS, rate limiting
 │   └── appsettings.json        # Configuración sin secretos
 ├── functions/OrderProcessor/   # Function aislada: trigger de Service Bus
-├── tests/EcommerceApi.Tests/   # Pruebas de integración xUnit (10)
-├── tests/EcommerceApi.UnitTests/           # Dominio y handlers (43)
-├── tests/EcommerceApi.Infrastructure.Tests/ # SQLite, outbox y dispatcher (7)
+├── tests/EcommerceApi.Tests/   # Pruebas de integración xUnit (25)
+├── tests/EcommerceApi.UnitTests/           # Dominio y handlers (45)
+├── tests/EcommerceApi.Infrastructure.Tests/ # SQLite, outbox, consultas y dispatcher (10)
 ├── tests/EcommerceApi.Architecture.Tests/  # Regla de dependencias (7)
 ├── EcommerceApi.sln            # Solución única para build, formato y pruebas
 ├── data/                       # Base SQLite local (ignorada por Git)
 ├── infra/                      # Bicep: VNet, NSG, Key Vault, App Service, PE
 ├── docs/adr/                   # Decisiones de arquitectura
-├── docs/                       # Autenticación, pruebas y threat model
+├── docs/                       # Referencia de API, capacidades, autenticación, persistencia y threat model
 ├── .github/workflows/          # Pipeline DevSecOps
 ├── Dockerfile                  # Multi-stage, usuario no-root
 └── README.md
@@ -211,6 +206,8 @@ dotnet run --project EcommerceApi --urls http://localhost:5080
 - Base de datos: `data/ecommerce.db`, creada al arrancar y **no versionada**. El
   esquema se inicializa con `CREATE TABLE IF NOT EXISTS` y se siembra el catálogo
   solo si está vacío.
+- Pedidos: `GET /api/orders?limit=20&afterId=42`. Devuelve `items` y `nextCursor`;
+  las reglas de paginación y filtrado están en [docs/persistence.md](docs/persistence.md).
 
 ### Pruebas
 
@@ -222,12 +219,12 @@ Cuatro suites, cada una con un propósito distinto:
 
 | Suite | Qué verifica | Pruebas |
 |---|---|---|
-| `EcommerceApi.UnitTests` | Invariantes del dominio, handlers de aplicación e idempotencia del consumidor | 43 |
+| `EcommerceApi.UnitTests` | Invariantes del dominio, handlers de aplicación e idempotencia del consumidor | 45 |
 | `EcommerceApi.Architecture.Tests` | Regla de dependencias entre capas y agregados sin setters públicos | 7 |
-| `EcommerceApi.Infrastructure.Tests` | Atomicidad del outbox, rollback, reintentos, dead-letter, dispatcher e idempotencia sobre SQLite real | 7 |
-| `EcommerceApi.Tests` | Integración HTTP: 401, validación, *mass assignment* y BOLA entre dos usuarios | 10 |
+| `EcommerceApi.Infrastructure.Tests` | Atomicidad del outbox, rollback, reintentos, dead-letter, dispatcher, paginación por cursor y uso de índice sobre SQLite real | 10 |
+| `EcommerceApi.Tests` | Integración HTTP: 401, validación, *mass assignment*, BOLA, paginación, CORS, *rate limit*, errores y observabilidad | 25 |
 
-Total: **67 pruebas**. Las de integración usan un esquema de autenticación de test
+Total: **87 pruebas**. Las de integración usan un esquema de autenticación de test
 y no necesitan un tenant real; cada factory crea su propia base SQLite temporal.
 
 ### Docker
@@ -257,6 +254,8 @@ por scopes/roles está documentada como trabajo pendiente; hoy todos los endpoin
 requieren un usuario autenticado y los pedidos se filtran por identidad.
 
 ### CORS
+
+CORS es la regla que decide qué webs pueden llamar a la API desde un navegador.
 
 - `Cors:AllowedOrigins` vacío → se deniega cualquier origen cruzado.
 - Para un frontend local, añade su origen exacto en `AllowedOrigins`.
@@ -305,6 +304,15 @@ amplía esa cobertura con pruebas unitarias, de arquitectura y de infraestructur
 
 Consulta [`infra/README.md`](infra/README.md). **La plantilla no se ha desplegado**
 en una suscripción real; se valida con `bicep build` y Trivy config en CI.
+
+---
+
+## Referencia y evidencia
+
+- [Referencia de la API](docs/api.md) — endpoints, autenticación, contratos, formatos de error, paginación y límites. **Implementado**: describe el comportamiento actual.
+- [Capacidades y evidencia](docs/capacidades.md) — qué puede afirmarse del repositorio, con qué prueba se comprueba y qué queda fuera. **Implementado**.
+- [Patrones de diseño](docs/patrones.md) — qué patrones están en el código, dónde y con qué prueba; incluye lo que se descartó y por qué. **Implementado**.
+- [Revisión del lote de observabilidad](docs/revision-observabilidad.md) — **Parcial**: hallazgos, correcciones y evidencia estática del commit `c09d4a2`; la validación en Azure sigue pendiente.
 
 ---
 

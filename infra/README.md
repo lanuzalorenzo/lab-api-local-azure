@@ -1,6 +1,6 @@
 # Infraestructura de referencia — EcommerceApi
 
-Plantilla Bicep que describe un despliegue de referencia para la API. **No se ha desplegado en una suscripción real**: se valida con `bicep build` y con Trivy config en el pipeline. No contiene secretos ni identificadores reales.
+Levantar la infraestructura a mano en un portal es como amueblar una casa sin plano: sale, pero nadie sabe reproducirla igual mañana. Este directorio contiene el plano en Bicep (el lenguaje con el que Azure describe su infraestructura como texto) para desplegar la API: red, identidad, secretos y registros. **No se ha desplegado en una suscripción real**: se valida con `bicep build` y con Trivy config en el pipeline, y no contiene secretos ni identificadores reales.
 
 ## Arquitectura
 
@@ -57,7 +57,7 @@ Antes de desplegar, sustituye los placeholders de `main.parameters.example.json`
 
 El repositorio no incluye un workflow de despliegue. Para añadirlo de forma segura:
 
-1. Crea una identidad federada en Entra ID para el repositorio.
+1. Crea una identidad federada en Entra ID para el repositorio (una cuenta de Azure que confía en GitHub sin contraseña guardada).
 2. Asigna permisos mínimos sobre el grupo de recursos.
 3. Guarda `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` y `AZURE_SUBSCRIPTION_ID` como variables del repositorio (no secretos de larga duración).
 4. Usa `azure/login@v2` con `permissions: id-token: write`:
@@ -80,7 +80,7 @@ No se incluye este workflow porque el repositorio no tiene una suscripción de A
 
 ## Limitaciones
 
-- La plantilla usa una SKU `P1v3`; el coste no se ha estimado.
+- La plantilla usa una SKU `P1v3` (el tamaño del plan de App Service); el coste no se ha estimado.
 - No incluye WAF, API Management, base de datos ni backup.
-- La integración VNet de App Service requiere que la subred esté delegada y que el plan sea compatible (PremiumV3).
+- La integración VNet de App Service requiere que la subred esté delegada (reservada para ese servicio) y que el plan sea compatible (PremiumV3).
 - El Private Endpoint de App Service y el acceso público deshabilitado deben probarse en un despliegue real.

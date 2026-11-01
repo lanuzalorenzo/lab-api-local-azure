@@ -1,6 +1,8 @@
 # Pruebas funcionales de la API
 
-Todas las rutas de negocio requieren un token JWT válido. El endpoint `/health` es anónimo. La URL base de ejemplo es `http://localhost:5080`.
+Una API que acepta peticiones sin comprobar quién llama es como un almacén con la puerta abierta: cualquiera entra y pide lo que hay dentro. Aquí se comprueba que la puerta está cerrada: sin una credencial válida —un token JWT, firmado por el servicio de identidad— el servidor rechaza la petición, y cada cliente solo ve sus propios pedidos. Este documento reúne esas comprobaciones, cada una con su comando y la respuesta que debe devolver.
+
+El endpoint `/health` (la comprobación de que el servicio sigue vivo) es el único anónimo. La URL base de ejemplo es `http://localhost:5080`.
 
 ## Prerrequisitos
 
@@ -69,6 +71,8 @@ curl -i -X POST "${API_URL}/api/products" \
 
 Esperado: `201 Created` con un `id` asignado por el servidor, distinto de `999999`. El DTO de entrada no acepta `id`.
 
+«Mass assignment» es el intento de colar en la petición campos que solo debe fijar el servidor, como el identificador; el DTO (el objeto con los campos que la API acepta) los ignora.
+
 ## Pedidos
 
 ### Crear un pedido
@@ -108,7 +112,7 @@ Esperado: `400 Bad Request` en ambos casos.
 
 ### BOLA: otro usuario no puede leer el pedido
 
-Con dos tokens de usuarios distintos:
+Con dos tokens (credenciales) de usuarios distintos se comprueba que BOLA (acceder al pedido de otro cambiando el identificador) no funciona:
 
 ```bash
 # Usuario A crea un pedido
@@ -134,15 +138,15 @@ dotnet test EcommerceApi.sln
 |---|---|
 | `tests/EcommerceApi.UnitTests` | Invariantes de `Order`, `OrderLine`, `Money` y `Product`; handlers de comando y query; idempotencia del consumidor |
 | `tests/EcommerceApi.Architecture.Tests` | Regla de dependencias entre capas y agregados sin setters públicos |
-| `tests/EcommerceApi.Infrastructure.Tests` | Atomicidad del outbox, rollback, reintentos, dead-letter, dispatcher (scope asíncrono) e idempotencia sobre SQLite real |
-| `tests/EcommerceApi.Tests` | Comportamiento HTTP completo |
+| `tests/EcommerceApi.Infrastructure.Tests` | Atomicidad del outbox, rollback, reintentos, dead-letter, dispatcher (scope asíncrono), idempotencia, paginación por cursor, rango de fechas y uso del índice sobre SQLite real |
+| `tests/EcommerceApi.Tests` | Comportamiento HTTP completo, incluido el contrato paginado del listado |
 
 ### Ciclo TDD: rojo → verde
 
 Las pruebas describen el comportamiento antes de la implementación. El ejemplo reproducible que queda en el repositorio es el del dispatcher del outbox:
 
 1. **Rojo:** se añadió `Dispatcher_ProcessesPendingMessages_WithoutDisposalErrors`, que arranca el `OutboxDispatcher` con un `IServiceScopeFactory` real y exige que no se registre ningún error. Con `CreateScope()` falla: `'SqliteSession' type only implements IAsyncDisposable. Use DisposeAsync`.
-2. **Verde:** el dispatcher pasa a `CreateAsyncScope()` y la prueba deja de fallar; la suite completa queda en **67 pruebas**.
+2. **Verde:** el dispatcher pasa a `CreateAsyncScope()` y la prueba deja de fallar; la suite completa queda en verde.
 3. La prueba se conserva como regresión: si alguien vuelve al scope síncrono, el fallo reaparece en CI.
 
 El mismo orden se siguió en el dominio: primero las pruebas de invariantes (`Order`, `OrderLine`, `Money`), después el agregado que las satisface.
@@ -154,6 +158,44 @@ Las pruebas de integración usan `X-Test-User` para simular identidades y cubren
 - *Mass assignment* ignorado.
 - Aislamiento de pedidos entre usuarios (BOLA).
 - `health` anónimo.
+- Contrato paginado: `limit`, `afterId` y rango de fechas.
+
+### Listado paginado
+
+```bash
+# Primera página
+curl -s -H "Authorization: Bearer ${TOKEN}" "${API_URL}/api/orders?limit=2"
+
+# Siguiente página con el nextCursor devuelto
+curl -s -H "Authorization: Bearer ${TOKEN}" "${API_URL}/api/orders?limit=2&afterId=42"
+
+# Rango de fechas: from inclusivo, to exclusivo
+curl -s -H "Authorization: Bearer ${TOKEN}" \
+  "${API_URL}/api/orders?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z"
+```
+
+## Cuerpo de error
+
+Los `400`, `404` y `500` responden `application/problem+json` (un formato estándar de error con campos fijos). El mensaje legible
+viaja en `detail` (o en `errors` si es validación de campos) y el `traceId`
+permite correlacionar con el log del servidor.
+
+```bash
+# 404 con ProblemDetails
+curl -s -H "Authorization: Bearer ${TOKEN}" "${API_URL}/api/orders/999999"
+```
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+  "title": "Not found",
+  "status": 404,
+  "detail": "Order with ID 999999 not found",
+  "traceId": "00-af7d...-00"
+}
+```
+
+El contrato completo está en [api.md](api.md#6-errores).
 
 ## Códigos HTTP esperados
 
@@ -163,7 +205,7 @@ Las pruebas de integración usan `X-Test-User` para simular identidades y cubren
 | GET | `/api/products` | 200 / 401 | Lista / sin token |
 | GET | `/api/products/{id}` | 200 / 404 | Producto / inexistente |
 | POST | `/api/products` | 201 / 400 | Creado / validación |
-| GET | `/api/orders` | 200 / 401 | Pedidos propios / sin token |
+| GET | `/api/orders` | 200 / 400 / 401 | Página de pedidos propios / parámetros inválidos / sin token |
 | GET | `/api/orders/{id}` | 200 / 404 | Propio / ajeno o inexistente |
 | POST | `/api/orders` | 201 / 400 | Creado / validación |
 | Cualquiera | Cualquiera | 429 | Rate limit excedido |

@@ -7,11 +7,11 @@
 
 ## 1. Para qué sirve este documento
 
-Convertir la IA en una pieza de arquitectura demostrable, no en una demo. La pregunta que responde es: *¿cómo se integra un modelo en un sistema empresarial sin abrir un agujero de seguridad, de datos o de coste?*
+Un modelo de lenguaje dentro de un sistema empresarial se parece a un becario rápido al que se le dan instrucciones por escrito: resuelve bien una tarea acotada, pero no se le deja la caja fuerte ni se le cuenta lo que no necesita saber. La pregunta que responde este documento no es qué puede hacer la IA, sino qué se le permite ver, qué se hace con lo que devuelve y cuánto puede costar. Es un diseño: no hay código, evaluación ni despliegue.
 
 ## 2. El caso de uso
 
-Sobre el flujo de pedidos, una Function genera un resumen operativo del pedido (texto corto y estructurado) para el equipo de soporte. Es una tarea acotada, verificable y con un dato claro de entrada y salida. No es un chatbot ni un agente autónomo.
+Sobre el flujo de pedidos, una Function (un programa que Azure ejecuta al llegar un mensaje) genera un resumen operativo del pedido (texto corto y estructurado) para el equipo de soporte. Es una tarea acotada, verificable y con un dato claro de entrada y salida. No es un chatbot ni un agente autónomo.
 
 ```mermaid
 flowchart LR
@@ -32,7 +32,7 @@ flowchart LR
 | **Gateway** | Autenticación, cuotas, límites de tokens, filtrado, trazas | Función intermedia o APIM AI Gateway |
 | **Modelo** | Inferencia | Ollama local en desarrollo; proveedor cloud solo con autorización |
 
-Regla: la aplicación **nunca** habla directamente con el proveedor. Siempre pasa por el gateway. Así el control y el coste están en un solo punto.
+Regla: la aplicación **nunca** habla directamente con el proveedor. Siempre pasa por el gateway (el intermediario que pone límites, filtra lo que sale y anota el coste). Así el control y el coste están en un solo punto.
 
 ## 4. Decisiones
 
@@ -45,6 +45,8 @@ Regla: la aplicación **nunca** habla directamente con el proveedor. Siempre pas
 | Identidad gestionada | Claves de API | Sin secretos que rotar |
 
 ## 5. Riesgos y controles
+
+«Prompt injection» es el intento de que el modelo obedezca instrucciones escondidas en los datos que recibe, en lugar de las que le dio el sistema; puede venir de la persona que escribe o de un campo guardado. La tabla separa cada riesgo del control que lo cubre.
 
 | Riesgo | Ejemplo | Control |
 |---|---|---|
@@ -120,9 +122,9 @@ Tres reglas para que la comparativa sea honesta:
 | Artefacto | Repositorio |
 |---|---|
 | Función, gateway y tests | `lab-api-local-azure` |
-| Modelo local, configuración de Ollama y bitácora | `ai-agent-local-lab` |
+| Modelo local, configuración de Ollama y bitácora | `lab-ia-aprendizaje` |
 | Narrativa pública y evidencia | `portfolio-ciberseguridad-lorenzo` |
-| Plan y decisiones | notas privadas de trabajo (no publicadas) |
+| Planificación de sesiones | Fuera de los repositorios públicos |
 
 No se crea un quinto repositorio. La integración es una Function más del workload.
 
@@ -140,7 +142,7 @@ No se crea un quinto repositorio. La integración es una Function más del workl
 
 - **Desarrollo:** 0 € (Ollama local).
 - **Producción de laboratorio:** depende del proveedor; se fija un tope mensual y una alerta antes de T11.
-- El gateway registra tokens por petición para poder estimar coste real, no teórico.
+- El gateway registra tokens (las unidades con las que se mide el texto que entra y sale del modelo) por petición para poder estimar coste real, no teórico.
 
 ## 12. Decisiones abiertas para T10
 

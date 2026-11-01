@@ -14,19 +14,32 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Include the W3C trace and span identifiers in every log scope. The simple
+// console formatter prints them when Logging:Console:FormatterOptions:IncludeScopes
+// is enabled, so the traceId returned in a 500 can be matched with the server log.
+builder.Logging.Configure(options =>
+{
+    options.ActivityTrackingOptions = ActivityTrackingOptions.TraceId | ActivityTrackingOptions.SpanId;
+});
+
 var azureAdOptions = builder.Configuration
     .GetSection(AzureAdOptions.SectionName)
     .Get<AzureAdOptions>() ?? new AzureAdOptions();
-
-var allowedOrigins = builder.Configuration
-    .GetSection("Cors:AllowedOrigins")
-    .Get<string[]>() ?? Array.Empty<string>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<DomainExceptionHandler>();
+
+// Telemetry is opt-in: without a connection string the SDK is not registered,
+// because the Azure Monitor exporter throws on startup when it is missing. The
+// deployment sets APPLICATIONINSIGHTS_CONNECTION_STRING in infra/main.bicep.
+var appInsightsConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
+{
+    builder.Services.AddApplicationInsightsTelemetry();
+}
 builder.Services.AddHealthChecks();
 
 // Composition root: the host is the only place that knows about concrete adapters.
@@ -83,6 +96,12 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("ApiCors", policy =>
     {
+        // Read at policy-resolution time, not before Build: configuration providers
+        // added by the test host are only applied when the host is built.
+        var allowedOrigins = builder.Configuration
+            .GetSection("Cors:AllowedOrigins")
+            .Get<string[]>() ?? Array.Empty<string>();
+
         if (allowedOrigins.Length == 0)
         {
             policy.SetIsOriginAllowed(_ => false);

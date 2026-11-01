@@ -1,5 +1,7 @@
 # EcommerceApi — proyecto .NET 10
 
+Es la tienda del laboratorio: catálogo y pedidos de mentira, con los mismos controles de acceso que se pondrían en una tienda real. Este archivo es la guía rápida de quien va a ejecutar y tocar el proyecto; el contrato de la API y las decisiones están en la documentación principal.
+
 API REST de laboratorio con autenticación Microsoft Entra ID, autorización por usuario, DTOs de entrada y arquitectura por capas. La documentación principal está en el [README raíz](../README.md); este archivo resume el proyecto y evita duplicar guías desactualizadas.
 
 ## Estructura
@@ -12,7 +14,7 @@ EcommerceApi/
 │   ├── ProductsController.cs
 │   └── OrdersController.cs
 ├── ErrorHandling/
-│   └── DomainExceptionHandler.cs
+│   └── DomainExceptionHandler.cs   # DomainException -> 400 ProblemDetails
 ├── Models/
 │   ├── CreateProductRequest.cs
 │   └── CreateOrderRequest.cs
@@ -54,6 +56,7 @@ dotnet test ../EcommerceApi.sln
 
 ## Documentación
 
+- [Referencia de la API](../docs/api.md)
 - [Decisiones de arquitectura](../docs/adr/README.md)
 - [Configuración de Entra ID](../docs/azure-ad-config.md)
 - [Registro de la aplicación](../docs/azure-ad-register.md)
@@ -63,7 +66,7 @@ dotnet test ../EcommerceApi.sln
 
 ## Alcance
 
-Incluye autenticación, autorización por usuario, validación de entrada, CORS, rate limiting, DDD táctico, CQRS ligero en pedidos, persistencia SQLite, outbox transaccional y consumidor idempotente. No incluye Service Bus ni Function desplegados, roles/scopes granulares, observabilidad persistente, microservicios ni despliegue real en Azure.
+Incluye autenticación, autorización por usuario, validación de entrada, CORS, rate limiting, DDD táctico, CQRS ligero en pedidos, persistencia SQLite, outbox transaccional y consumidor idempotente. No incluye Service Bus ni Function desplegados, roles/scopes granulares, observabilidad persistente desplegada, microservicios ni despliegue real en Azure. La captura de logs y la telemetría están declaradas en la plantilla y el código, sin despliegue.
 
 ## Licencia
 

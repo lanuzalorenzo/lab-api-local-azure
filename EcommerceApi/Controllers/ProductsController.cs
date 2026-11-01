@@ -52,7 +52,10 @@ public class ProductsController : ControllerBase
         var product = await _getProductById.HandleAsync(id, cancellationToken);
         if (product is null)
         {
-            return NotFound(new { message = $"Product with ID {id} not found" });
+            return Problem(
+                detail: $"Product with ID {id} not found",
+                statusCode: StatusCodes.Status404NotFound,
+                title: "Not found");
         }
 
         return Ok(product);

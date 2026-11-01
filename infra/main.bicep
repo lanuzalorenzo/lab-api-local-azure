@@ -246,6 +246,21 @@ resource apiApp 'Microsoft.Web/sites@2023-12-01' = {
   }
 }
 
+// Linux App Service keeps a file-system copy of application logs for Kudu and
+// streaming. Console and HTTP logs reach Log Analytics through the platform
+// diagnostic categories below; the Windows-only httpLogs block is not declared.
+resource apiAppLogs 'Microsoft.Web/sites/config@2023-12-01' = {
+  parent: apiApp
+  name: 'logs'
+  properties: {
+    applicationLogs: {
+      fileSystem: {
+        level: 'Information'
+      }
+    }
+  }
+}
+
 resource apiAppDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   scope: apiApp
   name: '${appName}-diag'

@@ -7,6 +7,8 @@
 
 ## 1. Contexto
 
+Si el pedido y el aviso de ese pedido se guardan en sitios distintos, un corte de luz entre uno y otro deja el pedido sin avisar o el aviso sin pedido. La solución se llama outbox: el aviso se apunta en la misma libreta que el pedido, en la misma operación, y alguien lo envía después. Esta decisión elige ese mecanismo para que la entrega sea verificable y no una promesa.
+
 Con el almacén en memoria no se puede demostrar el patrón outbox: si el proceso cae entre la escritura del pedido y la publicación del evento, no hay nada que recuperar. Tampoco hay transacción que abarque ambas operaciones.
 
 El diseño de [`docs/functions.md`](../functions.md) ya exigía una publicación fiable de `OrderCreated`, idempotencia en el consumidor y dead-letter. Para que eso sea verificable y no una maqueta, hace falta persistencia real.
@@ -16,12 +18,13 @@ El diseño de [`docs/functions.md`](../functions.md) ya exigía una publicación
 1. **SQLite** como almacén del laboratorio, mediante `Microsoft.Data.Sqlite` y SQL explícito. Sin ORM.
 2. **Importes en céntimos enteros** (`INTEGER`). SQLite no tiene `DECIMAL` y `REAL` perdería precisión en totales.
 3. **Outbox transaccional**: el pedido y su mensaje se escriben en la misma transacción (`Orders`, `OrderLines`, `OutboxMessages`).
-4. **Despachador en background** (`OutboxDispatcher`) que publica pendientes cada 2 segundos, con contador de intentos y *dead-letter* tras 5 fallos.
+4. **Despachador en background** (`OutboxDispatcher`) que publica pendientes cada 2 segundos, con contador de intentos y *dead-letter* (se aparta tras 5 fallos para revisarlo).
 5. **Contrato versionado** `OrderCreatedV1` en `EcommerceApi.Contracts`, compartido por productor y consumidor. `MessageId = "<orderId>:v1"`.
 6. **Consumidor idempotente**: la Function delega en `ProcessOrderHandler`, que valida el mensaje y consulta `ProcessedMessages` por `messageId` antes de registrar el efecto.
 7. **Publicador conmutable**:
    - `Publisher:Mode=Log` (por defecto): registra el mensaje en el log local.
    - `Publisher:Mode=ServiceBus`: publica en Azure Service Bus (requiere conexión real; no se ejecuta en este laboratorio).
+8. **Consultas de lectura acotadas**: el listado de pedidos usa un cursor (`afterId`), un límite máximo y rangos SARGables (comparaciones que aprovechan el índice) sobre `CreatedAt`; la página de pedidos y sus líneas se cargan en dos consultas. Las reglas y su verificación están en [`docs/persistence.md`](../persistence.md).
 
 ```mermaid
 sequenceDiagram
@@ -88,7 +91,7 @@ sequenceDiagram
 
 - SQLite es de un solo escritor y no sirve para producción con concurrencia real.
 - En Azure, la Function **no comparte** el fichero SQLite de la API: el adaptador de idempotencia debe ser Table Storage o SQL. El contrato `IProcessedMessageStore` permite ese cambio sin tocar el caso de uso.
-- El despachador es *at-least-once*: la ventana entre publicar y marcar como procesado puede duplicar un mensaje. El consumidor lo absorbe.
+- El despachador es *at-least-once* (puede entregar el mismo mensaje más de una vez): la ventana entre publicar y marcar como procesado puede duplicar un mensaje. El consumidor lo absorbe.
 - No hay migraciones versionadas: el esquema se crea con `CREATE TABLE IF NOT EXISTS`. Un cambio de esquema exigirá una estrategia de migración.
 - El cifrado en reposo y la copia de seguridad no están resueltos.
 
@@ -97,10 +100,11 @@ sequenceDiagram
 - Antes de cualquier despliegue con más de un escritor: migrar a SQL Server o PostgreSQL.
 - Si aparece un segundo consumidor: pasar de cola a tema y revisar el contrato.
 - Si el volumen de outbox crece: añadir purga de mensajes procesados y métricas de antigüedad.
-- Si se necesita trazabilidad regulatoria: valorar log append-only o event store, no reutilizar el outbox.
+- Si se necesita trazabilidad regulatoria: valorar log append-only (un registro al que solo se añade, sin reescribir) o event store, no reutilizar el outbox.
 
 ## 7. Referencias
 
 - Chris Richardson, *Transactional Outbox* y *Idempotent Consumer*.
 - [`docs/functions.md`](../functions.md): hosting, reintentos y dead-letter.
+- [`docs/persistence.md`](../persistence.md): reglas de consulta, paginación por cursor y verificación del plan.
 - [`docs/adr/0001`](0001-monolito-modular-vs-microservicios.md): por qué un segundo despliegue y no microservicios.
