@@ -124,7 +124,7 @@ Tres reglas para que la comparativa sea honesta:
 | Función, gateway y tests | `lab-api-local-azure` |
 | Modelo local, configuración de Ollama y bitácora | `lab-ia-aprendizaje` |
 | Narrativa pública y evidencia | `portfolio-ciberseguridad-lorenzo` |
-| Plan y decisiones | notas privadas de trabajo (no publicadas) |
+| Planificación de sesiones | Fuera de los repositorios públicos |
 
 No se crea un quinto repositorio. La integración es una Function más del workload.
 
