@@ -88,7 +88,7 @@ Entre el 26 y el 29 de octubre Dependabot abrió ocho pull requests de NuGet. El
 - **Resultado:** `dotnet list package --vulnerable --include-transitive` no encuentra paquetes vulnerables.
 - **Pendiente de revisión:** `dotnet list package --outdated` muestra `Microsoft.Extensions.DependencyInjection` y `Microsoft.Extensions.Hosting` 10.0.11 → 10.0.14 (parche), `Microsoft.NET.Test.Sdk` 17.14.1 → 18.11.0 y `xunit.runner.visualstudio` 3.1.4 → 4.0.1 (major). Los dos últimos no se automatizan.
 
-El plazo real fue de tres a seis días, dentro del límite de 30 días para severidad alta. Este repositorio no tuvo avisos críticos en el lote.
+El plazo real fue de tres a seis días, dentro del límite de 30 días que fija la política para los avisos que no son críticos.
 
 ## 9. Estado y límites
 
