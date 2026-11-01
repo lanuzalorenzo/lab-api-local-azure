@@ -7,7 +7,9 @@
 
 ## 1. Para qué sirve este documento
 
-Explicar cómo se ejecuta la API en Azure, qué decisiones hay detrás y qué se debe comprobar antes de desplegar. No es un tutorial: es el plano que se estudia en T2 y que se corrige si algo no cuadra.
+La API no se queda encendida en un ordenador de la oficina: vive en un servicio de Azure que la mantiene en marcha, la reinicia si se cae y guarda sus registros. Este documento es el plano de ese alojamiento: cuánta capacidad tiene, quién puede entrar y salir, qué se guarda y cuánto cuesta.
+
+No es un tutorial: es el plano que se estudia en T2 y que se corrige si algo no cuadra.
 
 Incluye una separación explícita entre Bicep, el pipeline YAML y el artefacto (§3) y un desglose de qué define exactamente la plantilla (§4), porque es la confusión más habitual al leer `infra/main.bicep`.
 
@@ -279,13 +281,20 @@ Decisión provisional: **B para T4**, documentando la apertura y el cierre en la
 
 ## 9. Observabilidad
 
-- Diagnóstico ya definido: `AppServiceHTTPLogs`, `AppServiceConsoleLogs`, `AppServiceAppLogs`, `AppServiceAuditLogs`, `AppServicePlatformLogs`.
-- Captura de logs declarada en Bicep: `Microsoft.Web/sites/config` con `applicationLogs` y `httpLogs`; sin ella, las categorías de diagnóstico no tendrían contenido.
+- Diagnóstico declarado: `AppServiceHTTPLogs`, `AppServiceConsoleLogs`, `AppServiceAppLogs`, `AppServiceAuditLogs` y `AppServicePlatformLogs` se envían al workspace de Log Analytics.
+- En Linux, los logs de la aplicación .NET llegan a `AppServiceConsoleLogs`; `AppServiceAppLogs` cubre Java/Tomcat. `AppServiceHTTPLogs` lo genera la plataforma y no depende del bloque `httpLogs`, que es de Windows y no se declara en este sitio Linux.
+- `applicationLogs` a sistema de ficheros se mantiene para Kudu y el streaming; no es lo que alimenta las categorías de diagnóstico.
 - Application Insights para trazas y dependencias, con el SDK condicionado a la cadena de conexión ([ADR-0005](adr/0005-observabilidad.md)).
 - **Estado:** la plantilla compila y se escanea en CI; la consulta de un `500` desplegado por su `traceId` sigue pendiente de un despliegue real.
 - Consultas de referencia:
 
 ```kusto
+// Salida de consola de la aplicación en la última hora
+AppServiceConsoleLogs
+| where TimeGenerated > ago(1h)
+| project TimeGenerated, ResultDescription
+| order by TimeGenerated desc
+
 // Peticiones por código de estado en la última hora
 AppServiceHTTPLogs
 | where TimeGenerated > ago(1h)

@@ -5,6 +5,16 @@
 > **Evidencia:** `EcommerceApi/Controllers`, `EcommerceApi/Models`, `EcommerceApi.Application` y `tests/EcommerceApi.Tests`.
 > **Relacionada con:** [Pruebas funcionales](tests.md), [Persistencia y paginación](persistence.md), [Configuración de Entra ID](azure-ad-config.md), [ADR-0005](adr/0005-observabilidad.md).
 
+Imagina el mostrador de una tienda: un portero comprueba la identificación, cada
+cliente solo ve sus propios pedidos y, cuando algo falla, se entrega un número de
+reclamación con el que rastrear qué pasó. La API funciona así. Este documento es el
+manual del mostrador: qué se puede pedir, con qué credencial, qué se devuelve y qué
+se rechaza.
+
+Quien vaya a escribir código encontrará el contrato exacto en la tabla de
+convenciones y en los contratos; quien solo quiera saber qué permite el sistema
+puede leer las convenciones y las limitaciones del final.
+
 Este documento describe lo que la API hace hoy, no lo que debería hacer. Los
 comportamientos no implementados se listan al final para que no se confundan con
 el contrato vigente.
@@ -26,7 +36,7 @@ el contrato vigente.
 ## 2. Autenticación y autorización
 
 El host actúa como *resource server*: no emite tokens, los valida. La configuración
-está en `EcommerceApi/Program.cs:114-129`.
+está en `EcommerceApi/Program.cs:133-148`.
 
 | Comprobación | Detalle |
 |---|---|
@@ -255,10 +265,11 @@ revelar que el recurso existe.
 
 No incluye mensaje de la excepción ni traza. El detalle queda en el log del
 servidor, a nivel `Error`, con la categoría
-`Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddleware`. El `traceId` es el
-único puente entre la respuesta y el log. App Service captura la consola hacia
-Log Analytics y el SDK envía la excepción a Application Insights; ver
-[ADR-0005](adr/0005-observabilidad.md).
+`Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddleware`. El `traceId` de la
+respuesta contiene el `TraceId` W3C que la configuración de logging añade al
+scope; el logger de consola imprime scopes (`IncludeScopes`) y App Service envía
+la consola a Log Analytics. La correlación en un despliegue real sigue pendiente
+de validar; ver [ADR-0005](adr/0005-observabilidad.md).
 
 El contrato de `400`, `404` y `500` está fijado por
 `tests/EcommerceApi.Tests/ErrorContractTests.cs`: código, `Content-Type`,
@@ -272,7 +283,7 @@ Regla para el cliente: leer `detail` si existe; en un `500`, conservar el
 
 | Límite | Valor | Dónde |
 |---|---|---|
-| Peticiones por IP | 120 por minuto, ventana fija, sin cola | `Program.cs:100-112` |
+| Peticiones por IP | 120 por minuto, ventana fija, sin cola | `Program.cs:119-131` |
 | Cuerpo en `POST` | 16 KB | `OrdersController`, `ProductsController` |
 | Líneas por pedido | 20 | `Order.MaxLines` |
 | Tamaño de página | 100 | `OrderQuery.MaxLimit` |
@@ -287,10 +298,10 @@ forma manual y no tiene prueba de integración.
 ## 8. Swagger, health y diagnóstico
 
 - Swagger UI y el documento OpenAPI solo se exponen en `Development`
-  (`Program.cs:141-145`); en `Production` no hay endpoint de documentación.
+  (`Program.cs:160-164`); en `Production` no hay endpoint de documentación.
 - `GET /health` es anónimo y devuelve `200` con el texto `Healthy`.
 - Cabeceras de seguridad en todas las respuestas: `X-Content-Type-Options`,
-  `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` (`Program.cs:159-166`).
+  `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` (`Program.cs:178-185`).
 - CORS: lista vacía deniega cualquier origen; solo se permite lo declarado en
   `Cors:AllowedOrigins`.
 

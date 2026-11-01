@@ -4,6 +4,8 @@
 > **Decisión:** [ADR-0004](adr/0004-persistencia-sqlite-y-outbox.md).
 > **Estado:** Implementado. Las reglas de paginación, rango y uso de índice se prueban en `tests/EcommerceApi.Infrastructure.Tests/SqliteOrderReadModelTests.cs` y en `tests/EcommerceApi.Tests/OrdersEndpointsTests.cs`.
 
+Una base de datos es el almacén del negocio: si guarda mal o se consulta a ciegas, el sistema se vuelve lento y los números dejan de cuadrar. Este documento explica cómo guarda la API los pedidos y los productos en SQLite (una base de datos que vive en un solo archivo), por qué los importes se guardan en céntimos y cómo se piden las páginas de pedidos sin recorrer la tabla entera. El SQL está escrito a mano, sin ORM (la capa que traduce objetos del código a tablas).
+
 ## Esquema
 
 | Tabla | Clave primaria | Índices | Uso |
@@ -14,7 +16,7 @@
 | `OutboxMessages` | `Id` | `IX_OutboxMessages_Pending` parcial | Despacho de pendientes |
 | `ProcessedMessages` | `MessageId` | Clave primaria implícita | Idempotencia del consumidor |
 
-`Orders.CreatedAt` se guarda como texto ISO-8601 en UTC (`DateTime.ToString("O")`), no como tipo fecha nativo. SQLite no tiene un tipo `datetime` con semántica de zona horaria; el formato elegido ordena lexicográficamente y permite comparar rangos.
+`Orders.CreatedAt` se guarda como texto ISO-8601 en UTC (`DateTime.ToString("O")`), no como tipo fecha nativo. SQLite no tiene un tipo `datetime` con semántica de zona horaria; el formato elegido ordena alfabéticamente, igual que una fecha, y permite comparar rangos.
 
 El índice anterior `IX_Orders_UserId` se sustituye por `IX_Orders_UserId_Id`. El prefijo `UserId` mantiene cubiertas las consultas que solo filtran por propietario y la segunda columna resuelve el cursor.
 
@@ -26,7 +28,7 @@ Las consultas enumeran las columnas que necesitan. No se usa `SELECT *`: evita l
 
 ### 2. Rangos SARGables
 
-`CreatedAt` se filtra con comparaciones directas sobre la columna:
+«SARGable» significa que la comparación puede resolverse con un índice, sin examinar fila a fila. `CreatedAt` se filtra con comparaciones directas sobre la columna:
 
 ```sql
 WHERE UserId = $userId
@@ -69,7 +71,7 @@ Un índice compuesto se usa por su prefijo izquierdo:
 
 ### 5. Sin N+1
 
-El listado ejecuta dos consultas, independientemente del número de pedidos de la página:
+Llamar «N+1» es el error de lanzar una consulta por cada fila que ya se ha leído: mil pedidos acaban en mil y una consultas. El listado ejecuta dos consultas, independientemente del número de pedidos de la página:
 
 1. La página de `Orders`.
 2. Las líneas de esos pedidos con `WHERE OrderId IN (...)`.
@@ -112,7 +114,7 @@ El plan esperado busca en `Orders` usando `IX_Orders_UserId_Id` para resolver `U
 - SQLite es de un solo escritor y no sustituye a un motor gestionado. No hay copias de seguridad ni alta disponibilidad.
 - El esquema se crea con `CREATE TABLE IF NOT EXISTS`; no hay migraciones versionadas.
 - No hay el mismo modelo de estadísticas ni caché de planes que SQL Server, y no se usan Extended Events. Si el laboratorio migra a SQL Server, los índices y las consultas deben revisarse con planes reales; las reglas de esta página siguen siendo válidas, pero `CreatedAt` pasaría a `datetime2`.
-- El cursor es por `Id`, no una instantánea. Un pedido insertado entre dos páginas puede aparecer en una página posterior; el listado no promete consistencia de snapshot.
+- El cursor es por `Id`, no una instantánea. Un pedido insertado entre dos páginas puede aparecer en una página posterior; el listado no promete consistencia de snapshot (que todas las páginas vean la misma foto del momento).
 
 ## Referencias
 

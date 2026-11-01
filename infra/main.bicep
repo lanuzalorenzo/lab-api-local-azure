@@ -246,9 +246,9 @@ resource apiApp 'Microsoft.Web/sites@2023-12-01' = {
   }
 }
 
-// App Service writes console output to the instance filesystem and the platform
-// forwards it to AppServiceConsoleLogs. Combined with the diagnostic setting below,
-// this is what makes the traceId of a 500 retrievable in Log Analytics.
+// Linux App Service keeps a file-system copy of application logs for Kudu and
+// streaming. Console and HTTP logs reach Log Analytics through the platform
+// diagnostic categories below; the Windows-only httpLogs block is not declared.
 resource apiAppLogs 'Microsoft.Web/sites/config@2023-12-01' = {
   parent: apiApp
   name: 'logs'
@@ -256,12 +256,6 @@ resource apiAppLogs 'Microsoft.Web/sites/config@2023-12-01' = {
     applicationLogs: {
       fileSystem: {
         level: 'Information'
-      }
-    }
-    httpLogs: {
-      fileSystem: {
-        enabled: true
-        retentionInDays: 7
       }
     }
   }

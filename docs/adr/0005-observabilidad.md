@@ -1,9 +1,14 @@
 # ADR-0005 — Observabilidad: logs de plataforma y telemetría de aplicación
 
-> **Estado:** Aceptada · actualizada el 2026-10-29
+> **Estado:** Aceptada · actualizada el 2026-11-01
 > **Ámbito:** host HTTP `EcommerceApi` y Function `OrderProcessor`.
-> **Evidencia:** [`EcommerceApi/Program.cs`](../../EcommerceApi/Program.cs), [`infra/main.bicep`](../../infra/main.bicep) y [`tests/EcommerceApi.Tests/ObservabilityTests.cs`](../../tests/EcommerceApi.Tests/ObservabilityTests.cs).
+> **Evidencia:** [`EcommerceApi/Program.cs`](../../EcommerceApi/Program.cs), [`EcommerceApi/appsettings.json`](../../EcommerceApi/appsettings.json), [`infra/main.bicep`](../../infra/main.bicep) y [`tests/EcommerceApi.Tests/ObservabilityTests.cs`](../../tests/EcommerceApi.Tests/ObservabilityTests.cs).
 > **Relacionada con:** [ADR-0001](0001-monolito-modular-vs-microservicios.md).
+
+Cuando algo falla, la pregunta útil no es qué ha pasado, sino dónde quedó el rastro
+que lo cuenta. Este documento decide qué rastro guarda la API, dónde se guarda,
+cuánto tiempo, a qué coste y qué se puede deducir de él cuando alguien llama
+diciendo que su pedido no aparece.
 
 ## 1. Contexto
 
@@ -27,19 +32,21 @@ destino garantizado.
 
 ## 2. Decisión
 
-1. **Dos capas de persistencia.** App Service escribe la consola y las peticiones
-   HTTP en el sistema de ficheros de la instancia y el diagnóstico las envía a Log
-   Analytics; Application Insights recibe además peticiones, excepciones y
-   dependencias.
+1. **Dos capas de persistencia.** App Service envía la consola y las peticiones
+   HTTP a Log Analytics mediante las categorías de diagnóstico; `applicationLogs`
+   mantiene además una copia en el sistema de ficheros para Kudu y streaming.
+   Application Insights recibe peticiones, excepciones y dependencias.
 2. **El SDK se registra solo si existe la cadena de conexión.** El exportador de
    Azure Monitor lanza al arrancar cuando falta, así que la ausencia de
    `APPLICATIONINSIGHTS_CONNECTION_STRING` deja la aplicación sin SDK en lugar de
    romperla.
 3. **Niveles estables:** `Error` para `500`, `Warning` para violación de invariante
    de dominio, `Information` para el flujo normal.
-4. **Correlación:** el `traceId` W3C de la respuesta es el identificador de la
-   operación en Application Insights. Los logs de consola llevan `RequestId`, que
-   es el `TraceIdentifier` del contexto.
+4. **Correlación:** el `traceId` W3C de la respuesta contiene el `TraceId` de la
+   operación en Application Insights. La configuración de logging añade `TraceId`
+   y `SpanId` a los scopes y el logger de consola imprime scopes; el `RequestId`
+   (`TraceIdentifier`) sigue disponible. La correlación se hace por el `TraceId`,
+   no por el `traceId` completo de la respuesta.
 5. **Sin fichero propio ni colector OTLP.** No se añade Serilog ni un *collector*
    externo; la retención la fija el *workspace* de Log Analytics.
 6. **Disparador de revisión:** el primer despliegue real o la primera alerta `5xx`.
@@ -60,8 +67,9 @@ destino garantizado.
 
 - La consola deja de ser un sumidero: queda retenida en Log Analytics.
 - El SDK aporta peticiones, excepciones y dependencias sin código propio.
-- La correlación está probada: el `500` lleva `traceId` W3C y se registra a nivel
-  `Error` con la excepción.
+- La configuración de correlación está cubierta por prueba: el `500` lleva
+  `traceId` W3C, el log de error se registra a nivel `Error` con la excepción y
+  las opciones de logging incluyen `TraceId`/`SpanId` y scopes de consola.
 - El arranque local y las pruebas no dependen de Azure.
 
 ### Negativas y límites
@@ -70,13 +78,15 @@ destino garantizado.
   OpenTelemetry.
 - La exportación a Azure no se puede validar sin un recurso real: el código se
   prueba, el destino no.
+- La correlación en Log Analytics no se puede validar sin un recurso real: el
+  formato de consola y la consulta por `TraceId` quedan para el primer despliegue.
 - La misma excepción viaja a dos destinos (log y telemetría); el volumen debe
   revisarse con el primer tráfico.
 - Los logs de la Function dependen del host de Functions, fuera de este control.
 
 **Riesgo aceptado:** la primera validación de extremo a extremo ocurre en el
-primer despliegue, no antes. El contrato de correlación y el registro ya están
-cubiertos por pruebas locales.
+primer despliegue, no antes. El contrato de respuesta y la configuración de
+logging están cubiertos por pruebas locales; la correlación en Log Analytics no.
 
 ## 5. Cuándo revisar esta decisión
 
@@ -95,3 +105,7 @@ por su `traceId` en Log Analytics.
 - [`tests/EcommerceApi.Tests/ObservabilityTests.cs`](../../tests/EcommerceApi.Tests/ObservabilityTests.cs) — traza, log y configuración del SDK.
 - [App Service](../app-service.md) — sección 9, observabilidad.
 - [`infra/README.md`](../../infra/README.md) — estado real de la plantilla.
+- [Diagnóstico de App Service](https://learn.microsoft.com/azure/app-service/troubleshoot-diagnostic-logs) — tipos de log y soporte por plataforma.
+- [Categorías de Microsoft.Web/sites](https://learn.microsoft.com/azure/app-service/monitor-app-service-reference#supported-resource-logs-for-microsoftweb) — soporte Linux de `AppServiceHTTPLogs`.
+- [ActivityTrackingOptions](https://learn.microsoft.com/dotnet/api/microsoft.extensions.logging.activitytrackingoptions) — `TraceId` y `SpanId` en los scopes.
+- [Revisión del lote de observabilidad](../revision-observabilidad.md) — hallazgos y evidencia de la revisión.

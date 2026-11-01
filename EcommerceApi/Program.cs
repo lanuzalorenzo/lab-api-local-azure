@@ -14,6 +14,14 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Include the W3C trace and span identifiers in every log scope. The simple
+// console formatter prints them when Logging:Console:FormatterOptions:IncludeScopes
+// is enabled, so the traceId returned in a 500 can be matched with the server log.
+builder.Logging.Configure(options =>
+{
+    options.ActivityTrackingOptions = ActivityTrackingOptions.TraceId | ActivityTrackingOptions.SpanId;
+});
+
 var azureAdOptions = builder.Configuration
     .GetSection(AzureAdOptions.SectionName)
     .Get<AzureAdOptions>() ?? new AzureAdOptions();
