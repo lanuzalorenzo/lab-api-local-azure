@@ -7,7 +7,9 @@
 
 ## 1. Contexto
 
-Antes de esta decisión, `EcommerceApi` era un único proyecto: los controladores dependían de una clase concreta (`InMemoryStore`), los modelos eran anémicos y las reglas de negocio vivían mezcladas con el transporte HTTP. Eso impide cambiar el almacenamiento sin tocar los controladores y hace imposible probar las reglas sin levantar la API.
+Mezclar el transporte HTTP, las reglas de negocio y el acceso a datos en el mismo sitio es como tener la cocina, la caja y el almacén en una sola habitación: funciona mientras hay una persona, y estorba en cuanto hay que cambiar algo. Separarlos en proyectos no basta si nada impide saltarse la frontera; por eso aquí la separación se comprueba con pruebas.
+
+Antes de esta decisión, `EcommerceApi` era un único proyecto: los controladores dependían de una clase concreta (`InMemoryStore`), los modelos eran anémicos (clases que solo guardan datos, sin reglas) y las reglas de negocio vivían mezcladas con el transporte HTTP. Eso impide cambiar el almacenamiento sin tocar los controladores y hace imposible probar las reglas sin levantar la API.
 
 El objetivo es que el **dominio no sepa cómo se persiste ni cómo se expone**, y que esa separación no dependa de la disciplina de quien edita el código.
 
@@ -39,7 +41,7 @@ Reglas adicionales:
 - Los controladores solo conocen handlers de `Application`, nunca tipos de `Infrastructure`.
 - Los agregados no exponen `set` públicos: el estado se cambia con métodos que validan invariantes.
 - El dominio no usa `DataAnnotations`: la validación de entrada es un asunto del transporte, no del modelo.
-- No se introducen `MediatR`, `AutoMapper` ni un contenedor adicional para algo que se resuelve con interfaces explícitas y el contenedor de ASP.NET Core.
+- No se introducen `MediatR`, `AutoMapper` ni un contenedor adicional (bibliotecas que añaden mediación y mapeo automático) para algo que se resuelve con interfaces explícitas y el contenedor de ASP.NET Core.
 
 ## 3. Verificación automática
 
@@ -76,7 +78,7 @@ La regla no se documenta y se olvida: se comprueba en cada ejecución de pruebas
 
 - Más proyectos y `using` que un CRUD de un solo archivo.
 - Para un dominio de dos agregados, la separación es deliberadamente desproporcionada: aquí se justifica por el objetivo docente y de portfolio.
-- Las pruebas de arquitectura validan referencias de ensamblado, no la semántica: un `using` dentro del mismo ensamblado no se detecta por capas si algún día se fusionan proyectos.
+- Las pruebas de arquitectura validan referencias de ensamblado (qué proyecto compilado usa a cuál), no la semántica: un `using` dentro del mismo ensamblado no se detecta por capas si algún día se fusionan proyectos.
 
 ## 6. Cuándo revisar esta decisión
 

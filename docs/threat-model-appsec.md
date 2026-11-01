@@ -1,6 +1,6 @@
 # Modelado de amenazas y AppSec — EcommerceApi
 
-Análisis STRIDE y contraste con OWASP API Security Top 10 (2023) sobre el código actual. Cada control incluye su estado real: **implementado**, **parcial** o **pendiente**. No se presentan controles documentados como si estuvieran desplegados en producción.
+Antes de defender una casa conviene dibujar por dónde se puede entrar: puertas, ventanas y tejado. Este documento hace eso con la API —qué se puede falsificar, leer, alterar o tumbar— y contrasta el resultado con la lista de fallos más comunes en APIs (OWASP API Security Top 10, 2023). Cada control lleva su estado real: implementado, parcial o pendiente, y no se presenta como desplegado lo que solo está documentado.
 
 ## 1. Alcance
 
@@ -10,7 +10,7 @@ Análisis STRIDE y contraste con OWASP API Security Top 10 (2023) sobre el códi
 - `GET/POST /api/orders`
 - `GET /health` (anónimo)
 
-Autenticación con JWT de Microsoft Entra ID. Persistencia en **SQLite local** con **outbox transaccional** (`SqliteOrderRepository`, `SqliteProductRepository` y `SqliteOutboxStore`), sin alta disponibilidad ni backups. La lógica de aplicación vive en `EcommerceApi.Application` y el dominio en `EcommerceApi.Domain`; los controladores solo orquestan handlers. El consumidor idempotente (`ProcessOrderHandler` + `ProcessedMessages`) se ejecuta en local; la Function y Service Bus están diseñados pero no desplegados.
+Autenticación con JWT de Microsoft Entra ID. Persistencia en **SQLite local** con **outbox transaccional** (el pedido y su aviso se guardan en la misma operación; `SqliteOrderRepository`, `SqliteProductRepository` y `SqliteOutboxStore`), sin alta disponibilidad ni backups. La lógica de aplicación vive en `EcommerceApi.Application` y el dominio en `EcommerceApi.Domain`; los controladores solo orquestan handlers (las clases que ejecutan cada caso de uso). El consumidor idempotente (`ProcessOrderHandler` + `ProcessedMessages`) se ejecuta en local: si el mismo mensaje llega dos veces, el efecto se aplica una sola vez; la Function y Service Bus están diseñados pero no desplegados.
 
 ### Diagrama de flujo
 
@@ -29,6 +29,8 @@ graph TD
 ```
 
 ## 2. STRIDE
+
+STRIDE agrupa las amenazas en seis familias: suplantación de identidad, manipulación de datos, repudio, fuga de información, denegación de servicio y elevación de privilegios. La tabla recorre cada una sobre este código.
 
 | Categoría | Amenaza | Control actual | Estado |
 |---|---|---|---|
@@ -59,7 +61,7 @@ graph TD
 ## 4. Controles implementados en código
 
 - Autenticación JWT con validación de firma, issuer, audience y lifetime.
-- Autorización por identidad y aislamiento de pedidos (BOLA).
+- Autorización por identidad y aislamiento de pedidos (BOLA: acceder a los datos de otro cambiando el identificador).
 - DTOs para evitar mass assignment.
 - Validación de entrada con DataAnnotations.
 - CORS con allowlist y denegación por defecto.

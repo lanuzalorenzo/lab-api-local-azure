@@ -1,6 +1,8 @@
 # Pruebas de autenticación con Microsoft Entra ID
 
-Guía para validar la API con **tokens reales de Entra ID**. Usa un tenant de laboratorio y tokens desechables. No pegues tokens de producción en sitios externos como jwt.io.
+Validar la autenticación es comprobar que la API solo abre la puerta a quien trae una credencial emitida por el servicio de identidad de Microsoft (Entra ID) y que rechaza la falsificada. Es lo que se hace al probar un lector de tarjetas: primero una tarjeta buena, después una de plástico. Estas pruebas se hacen con un directorio de laboratorio (el tenant: el espacio donde viven las cuentas y las aplicaciones) y credenciales desechables.
+
+No pegues tokens de producción en sitios externos como jwt.io.
 
 Las pruebas funcionales de la API con el esquema de test (`X-Test-User`) están en [`tests.md`](tests.md).
 
@@ -14,7 +16,7 @@ export AUDIENCE="api://11111111-1111-1111-1111-111111111111"
 export API_URL="http://localhost:5080"
 ```
 
-El `CLIENT_SECRET` debe obtenerse de un almacén seguro (Key Vault, user-secrets o variable de entorno). Nunca se commitea.
+El `CLIENT_SECRET` (la contraseña de la aplicación) debe obtenerse de un almacén seguro (Key Vault, user-secrets o variable de entorno). Nunca se commitea.
 
 ## 2. Obtener un token (client credentials)
 
@@ -33,6 +35,8 @@ test -n "${TOKEN}" && test "${TOKEN}" != "null" || {
   exit 1
 }
 ```
+
+`client_credentials` es el flujo en el que la propia aplicación se identifica con su secreto, sin que haya una persona detrás.
 
 ## 3. Validar que el token funciona
 
@@ -70,7 +74,7 @@ Esperado: `200 OK`.
 
 ## 4. Prueba de BOLA con dos identidades (client credentials)
 
-Para demostrar la separación por identidad de cliente necesitas dos App Registrations con credenciales distintas. Con dos client credentials:
+Para demostrar la separación por identidad de cliente necesitas dos App Registrations (dos fichas de aplicación en el directorio) con credenciales distintas. Con dos client credentials:
 
 ```bash
 # Token del cliente A
@@ -106,7 +110,7 @@ curl -i -H "Authorization: Bearer ${TOKEN_B}" "${API_URL}/api/orders/${ORDER_ID}
 
 Resultado esperado: `200` para A y `404` para B.
 
-> Con client credentials, el claim `sub` identifica a la aplicación cliente, no a una persona. Para pruebas de usuario final usa flujos delegados (authorization code + PKCE) y dos usuarios de laboratorio.
+> Con client credentials, el claim `sub` (el campo del token que identifica a quien llama) identifica a la aplicación cliente, no a una persona. Para pruebas de usuario final usa flujos delegados (authorization code + PKCE, donde una persona inicia sesión) y dos usuarios de laboratorio.
 
 ## 5. Swagger con token real
 
