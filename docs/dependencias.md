@@ -1,8 +1,8 @@
 # Dependencias: dueño, plazo y evidencia
 
-> **Estado:** Validado (política aplicada y lote cerrado el 2026-11-01) · Parcial (informe semanal manual; agrupación configurada, sin lote agrupado todavía).
+> **Estado:** Validado (política aplicada y lote cerrado el 2026-11-01) · Parcial (informe semanal manual; agrupación validada con un lote de 8 actualizaciones).
 > **Última revisión:** 2026-11-01.
-> **Evidencia:** 8 pull requests de Dependabot resueltas (5 fusionadas y 3 cerradas por duplicadas), checks del pipeline en verde y `dotnet list package --vulnerable --include-transitive` sin paquetes vulnerables.
+> **Evidencia:** 8 pull requests de Dependabot resueltas (5 fusionadas y 3 cerradas por duplicadas), una pull request agrupada con 8 actualizaciones, checks del pipeline en verde y `dotnet list package --vulnerable --include-transitive` sin paquetes vulnerables.
 
 Una dependencia es una pieza de software que mantiene otra persona y de la que este proyecto se fía para funcionar. Un aviso de seguridad se parece a la luz de avería del coche: no arregla el motor, solo dice que hay que mirarlo. Lo que evita el problema no es el aviso, sino que alguien sea dueño del coche, lo lleve al taller y apunte la fecha.
 
@@ -28,7 +28,7 @@ El plazo se cuenta desde que se publica la alerta, no desde que alguien la ve. U
 - `.github/dependabot.yml` revisa NuGet y GitHub Actions cada lunes, con un límite de 5 pull requests abiertas y etiquetas `dependencies` y `security`.
 - El pipeline exige siete checks obligatorios, rama actualizada antes de fusionar e historial lineal. La fusión es siempre con squash: una pull request, un commit.
 - El límite de 5 reduce ruido, pero puede retrasar avisos: el informe semanal mira también `dotnet list package --outdated` para ver lo que Dependabot aún no ha abierto.
-- **Agrupación:** dos grupos por ecosistema. Parche y minor van juntos; major va aparte y sigue necesitando revisión. El primer lote agrupado llegará en la revisión semanal.
+- **Agrupación:** dos grupos por ecosistema. Parche y minor van juntos; major va aparte y sigue necesitando revisión. El primer lote agrupado llegó el mismo 2026-11-01: una sola pull request con 8 actualizaciones.
 
 ## 4. Qué se automatiza y qué no
 
@@ -86,12 +86,14 @@ Entre el 26 y el 29 de octubre Dependabot abrió ocho pull requests de NuGet. El
 - **3 cerradas por duplicadas:** las pull requests 16, 17 y 18 subían por separado el mismo `coverlet.collector` que ya incluía la 7.
 - **Verificación:** nueve checks en verde en cada pull request, rama actualizada y un conflicto resuelto por el propio bot antes de fusionar.
 - **Resultado:** `dotnet list package --vulnerable --include-transitive` no encuentra paquetes vulnerables.
-- **Pendiente de revisión:** `dotnet list package --outdated` muestra `Microsoft.Extensions.DependencyInjection` y `Microsoft.Extensions.Hosting` 10.0.11 → 10.0.14 (parche), `Microsoft.NET.Test.Sdk` 17.14.1 → 18.11.0 y `xunit.runner.visualstudio` 3.1.4 → 4.0.1 (major). Los dos últimos no se automatizan.
+- **Pendiente de revisión:** `dotnet list package --outdated` deja dos actualizaciones mayor: `Microsoft.NET.Test.Sdk` 17.14.1 → 18.11.0 y `xunit.runner.visualstudio` 3.1.5 → 4.0.1. Ninguna se automatiza.
 
 El plazo real fue de tres a seis días, dentro del límite de 30 días que fija la política para los avisos que no son críticos.
+
+La agrupación configurada ese mismo día produjo una segunda pull request con 8 actualizaciones de parche y minor. Pasó los nueve checks y se fusionó con squash: una revisión en lugar de ocho.
 
 ## 9. Estado y límites
 
 - **Validado:** la política se aplicó a un lote real, con checks obligatorios, rama actualizada y squash; el escaneo de dependencias queda limpio.
-- **Parcial:** el informe semanal es manual y la agrupación está configurada, pero aún no ha producido un lote.
+- **Parcial:** el informe semanal es manual; la agrupación ya produjo un lote y el primer major sigue pendiente de revisión.
 - **Fuera de alcance:** el SDK de .NET se fija en el pipeline (`10.0.x`) y no tiene `global.json`; las dependencias npm del laboratorio PKCE viven en otro repositorio y siguen el mismo criterio con `npm audit`.
