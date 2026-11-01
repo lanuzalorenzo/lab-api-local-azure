@@ -20,7 +20,7 @@ API empresarial en .NET 10 y workload de referencia del portfolio público. Este
 
 ## Contrato editorial
 
-Español claro y directo, sin rótulos de registro. Estados explícitos (Validado · Parcial · Runbook preparado · Diseño · Pendiente). Separa lo ejecutado de lo diseñado y no presentes un hallazgo como PASS. El contrato completo está en [portfolio-ciberseguridad-lorenzo](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/blob/main/AGENTS.md).
+Español claro y directo, sin rótulos de registro. Estados explícitos (Validado · Parcial · Runbook preparado · Diseño · Pendiente). Separa lo ejecutado de lo diseñado y no presentes un hallazgo como PASS. **Apertura llana:** todo documento de más de 80 líneas abre con dos o tres frases sin jerga y una comparación cotidiana, y aclara cada término en su primera aparición; si no cabe en una frase, va al glosario de la guía de lectura. La claridad no cambia lo que el documento afirma. El contrato completo está en [portfolio-ciberseguridad-lorenzo](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/blob/main/AGENTS.md).
 
 ## Verificación
 
