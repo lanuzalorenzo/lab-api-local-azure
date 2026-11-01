@@ -2,7 +2,7 @@
 
 # EcommerceApi — API de referencia para AppSec y DevSecOps
 
-API REST en .NET 10 protegida con Microsoft Entra ID y usada como banco de pruebas del portfolio: una tienda mínima donde cada puerta rechaza a quien no debe entrar. La tabla de «Estado de seguridad» separa lo probado de lo solo diseñado.
+API REST en .NET 10 protegida con Microsoft Entra ID y usada como banco de pruebas del portfolio: una tienda de juguete con las puertas de una tienda real. El catálogo y los pedidos son inventados; los controles de acceso, no. Cada puerta rechaza a quien no debe entrar, y la tabla de «Estado de seguridad» separa lo probado de lo solo diseñado.
 
 [![.NET](https://img.shields.io/badge/.NET-10.0-512bd4?style=flat-square)](https://dotnet.microsoft.com/)
 [![Microsoft Entra ID](https://img.shields.io/badge/Auth-Microsoft%20Entra%20ID-0078d4?style=flat-square)](https://learn.microsoft.com/entra/)
@@ -309,6 +309,7 @@ en una suscripción real; se valida con `bicep build` y Trivy config en CI.
 - [Referencia de la API](docs/api.md) — endpoints, autenticación, contratos, formatos de error, paginación y límites. **Implementado**: describe el comportamiento actual.
 - [Capacidades y evidencia](docs/capacidades.md) — qué puede afirmarse del repositorio, con qué prueba se comprueba y qué queda fuera. **Implementado**.
 - [Patrones de diseño](docs/patrones.md) — qué patrones están en el código, dónde y con qué prueba; incluye lo que se descartó y por qué. **Implementado**.
+- [Revisión del lote de observabilidad](docs/revision-observabilidad.md) — **Parcial**: hallazgos, correcciones y evidencia estática del commit `c09d4a2`; la validación en Azure sigue pendiente.
 
 ---
 
