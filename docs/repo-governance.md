@@ -1,22 +1,22 @@
-# Gobernanza del repositorio — PR y checks obligatorios
+# Gobernanza del repositorio — PR, checks y aprobación
 
-> **Estado:** Validado (reglas activas y push directo rechazado) · Parcial (sin revisor humano).
-> **Última revisión:** 2026-10-29.
-> **Evidencia:** configuración de *branch protection*, rechazo `GH006` de un push directo y PR de prueba #12 (merge `9b53be6`).
+> **Estado:** Validado (ruleset activo, PR y siete checks obligatorios) · Parcial (sin revisor humano; el bypass es del propietario).
+> **Última revisión:** 2026-11-02.
+> **Evidencia:** ruleset `main`, PR de prueba y rechazo de push directo de la configuración anterior.
 
 ## 1. Estado actual
 
-Reglas activas en `main`, verificadas por API el 2026-10-29:
+Reglas activas en `main`:
 
 | Regla | Valor | Estado |
 |---|---|---|
 | Pull request obligatorio | Activo | Validado |
 | Checks obligatorios | 7 | Validado |
-| Rama actualizada antes del merge | Activo (`strict`) | Validado |
-| Historial lineal | Activo | Configurado |
-| Force push y borrado de `main` | Bloqueados | Configurado |
-| `enforce_admins` | Activo | Validado por el rechazo `GH006` |
-| Aprobaciones humanas | 0 | Parcial, con límite declarado en la sección 3 |
+| Rama actualizada antes del merge | Activo | Validado |
+| Historial lineal y squash | Activo | Validado |
+| Force push y borrado de `main` | Bloqueados | Validado |
+| Aprobaciones humanas | 1 | Configurado |
+| Bypass | Solo `lanuzalorenzo` | Configurado |
 
 Los siete checks exigidos son:
 
@@ -31,9 +31,26 @@ Los siete checks exigidos son:
 El último solo se ejecuta en pull requests; por eso el requisito se evalúa ahí y no
 en los push a `main`, donde aparece como `skipped`.
 
-## 2. Verificación
+## 2. Flujo
 
-### 2.1. Push directo rechazado
+Todo cambio va por rama y PR. El PR necesita los siete checks, rama actualizada y
+una aprobación. El propietario puede fusionar con bypass cuando no haya un segundo
+revisor; el resto de colaboradores necesita aprobación.
+
+El bypass no es el flujo normal: existe para no bloquear al mantenedor único, no
+para saltar un check rojo. Si se añade un segundo revisor, se retira el bypass y
+se mantiene la aprobación.
+
+## 3. Por qué 1 aprobación y bypass
+
+GitHub no permite aprobar el propio pull request. Un repositorio con un solo
+mantenedor y una aprobación obligatoria quedaría bloqueado. El ruleset resuelve el
+caso con un bypass explícito para la cuenta del propietario; el resto de cuentas
+sigue necesitando aprobación.
+
+## 4. Verificación
+
+### 4.1. Push directo rechazado
 
 Ejecutado el 2026-10-29 sobre un commit vacío en una rama temporal. No llegó nada
 a `main`:
@@ -47,37 +64,11 @@ To https://github.com/lanuzalorenzo/lab-api-local-azure.git
  ! [remote rejected] tmp/protection-check -> main (protected branch hook declined)
 ```
 
-### 2.2. Flujo por pull request
+### 4.2. Flujo por pull request
 
 PR de prueba #12: este mismo documento. Los siete checks estuvieron en verde
 (run [40887287486](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/40887287486))
 y el merge se hizo por *squash* como `9b53be6`, sin bypass.
-
-## 3. Por qué no se exigen aprobaciones
-
-GitHub no permite aprobar el propio pull request. Con `enforce_admins` activo y
-una aprobación obligatoria, un repositorio con un solo mantenedor quedaría
-bloqueado: ningún PR podría fusionarse nunca.
-
-Se elige **PR + checks sin aprobación** antes que una regla que se salta siempre.
-
-Límite declarado: no hay una segunda persona revisando. La barrera es automática,
-no humana. Para cerrarlo, añade un colaborador y sube
-`required_approving_review_count` a 1 manteniendo `enforce_admins`.
-
-## 4. Break-glass
-
-Solo con motivo escrito y restauración el mismo día:
-
-```bash
-# Desactivar temporalmente la obligación para administradores
-gh api -X DELETE repos/lanuzalorenzo/lab-api-local-azure/branches/main/protection/enforce_admins
-
-# Restaurar
-gh api -X PUT repos/lanuzalorenzo/lab-api-local-azure/branches/main/protection/enforce_admins
-```
-
-No se usa para evitar un check rojo. Si un check falla, se corrige el cambio.
 
 ## 5. Por qué importa
 
@@ -89,4 +80,4 @@ existen, pero no son obligatorios. Con las reglas activas, el pipeline pasa de
 ## 6. Referencias
 
 - Pipeline: [`.github/workflows/devsecops-ci.yml`](../.github/workflows/devsecops-ci.yml)
-- Configuración: `gh api repos/lanuzalorenzo/lab-api-local-azure/branches/main/protection`
+- Ruleset: `gh api repos/lanuzalorenzo/lab-api-local-azure/rulesets`
