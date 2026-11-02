@@ -3,7 +3,7 @@
 > **Estado:** Implementado · verificado el 2026-10-29 contra `main`.
 > **Ámbito:** qué puede afirmarse sobre este repositorio, con qué se comprueba y qué queda fuera.
 > **Evidencia:** `dotnet test`, `.github/workflows/devsecops-ci.yml`, `infra/main.bicep` y `docs/`.
-> **Relacionada con:** [Referencia de la API](api.md), [Estado de seguridad](../README.md#estado-de-seguridad), [ADR](adr/README.md).
+> **Relacionada con:** [Referencia de la API](api.md), [resumen de estado](../README.md#estado-de-seguridad), [ADR](adr/README.md).
 
 Cualquier repositorio puede decir que «hace seguridad». Este documento hace la
 pregunta incómoda: de todo lo que este repositorio afirma, qué se puede comprobar
@@ -166,9 +166,6 @@ suena a folleto y no se sostiene en una pregunta de seguimiento.
 
 ## 6. Mantenimiento
 
-- La fuente de verdad del estado es la tabla [Estado de seguridad](../README.md#estado-de-seguridad);
-  esta matriz la desarrolla, no la sustituye.
-- Si una capacidad cambia de estado, actualiza las dos tablas y la fecha de este
-  documento en el mismo lote.
-- No añadas una fila sin una comprobación asociada. Si no existe, escribe
-  `Diseño` o `Pendiente` y explica qué falta.
+- Esta matriz es la fuente de verdad del estado; el [resumen del README](../README.md#estado-de-seguridad) no la sustituye.
+- Si una capacidad cambia de estado, actualiza la matriz y el resumen del README en el mismo lote.
+- No añadas una fila sin una comprobación asociada. Si no existe, escribe `Diseño` o `Pendiente` y explica qué falta.

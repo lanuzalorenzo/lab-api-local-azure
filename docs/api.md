@@ -3,7 +3,7 @@
 > **Estado:** Implementado · verificado el 2026-10-29 contra `main`.
 > **Ámbito:** contrato HTTP de `EcommerceApi` (endpoints, autenticación, cuerpos, errores y límites).
 > **Evidencia:** `EcommerceApi/Controllers`, `EcommerceApi/Models`, `EcommerceApi.Application` y `tests/EcommerceApi.Tests`.
-> **Relacionada con:** [Pruebas funcionales](tests.md), [Persistencia y paginación](persistence.md), [Configuración de Entra ID](azure-ad-config.md), [ADR-0005](adr/0005-observabilidad.md).
+> **Relacionada con:** [Persistencia y paginación](persistence.md), [Entra ID](entra-id.md), [ADR-0005](adr/0005-observabilidad.md).
 
 Imagina el mostrador de una tienda: un portero comprueba la identificación, cada
 cliente solo ve sus propios pedidos y, cuando algo falla, se entrega un número de
@@ -347,15 +347,52 @@ Listado para evitar suposiciones al integrar:
   (`ProcessedMessages`), no en la API.
 - Scopes, roles o políticas de autorización granular.
 
-## 11. Mapa del código
+## 11. Pruebas manuales
 
-| Elemento | Fichero |
-|---|---|
-| Pipeline, auth, CORS, rate limit | `EcommerceApi/Program.cs` |
-| Endpoints de catálogo | `EcommerceApi/Controllers/ProductsController.cs` |
-| Endpoints de pedidos | `EcommerceApi/Controllers/OrdersController.cs` |
-| DTOs de entrada | `EcommerceApi/Models` |
-| Contratos de lectura y paginación | `EcommerceApi.Application/Orders/OrderContracts.cs` |
-| 400 de dominio | `EcommerceApi/ErrorHandling/DomainExceptionHandler.cs` |
-| Invariantes | `EcommerceApi.Domain/Orders`, `EcommerceApi.Domain/Products` |
-| Pruebas de contrato HTTP | `tests/EcommerceApi.Tests` |
+Con la API en marcha y un token de laboratorio ([`azure-ad-tests.md`](azure-ad-tests.md)):
+
+```bash
+export API_URL="http://localhost:5080"
+export TOKEN="<token-de-laboratorio>"
+```
+
+### 11.1. Mass assignment
+
+«Mass assignment» es el intento de colar en la petición campos que solo debe fijar el servidor, como el identificador. El DTO de entrada los ignora:
+
+```bash
+curl -i -X POST "${API_URL}/api/products" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"id":999999,"name":"Intento","price":10,"stock":1}'
+```
+
+Esperado: `201` con un `id` asignado por el servidor, distinto de `999999`.
+
+### 11.2. BOLA con dos identidades
+
+Con dos tokens de usuarios distintos se comprueba que cambiar el identificador no da acceso al pedido de otro:
+
+```bash
+# Usuario A crea un pedido
+ORDER_ID=$(curl -s -X POST "${API_URL}/api/orders" \
+  -H "Authorization: Bearer ${TOKEN_A}" \
+  -H "Content-Type: application/json" \
+  -d '{"productIds":[1]}' | jq -r '.id')
+
+# Usuario A: 200
+curl -i -H "Authorization: Bearer ${TOKEN_A}" "${API_URL}/api/orders/${ORDER_ID}"
+
+# Usuario B: 404
+curl -i -H "Authorization: Bearer ${TOKEN_B}" "${API_URL}/api/orders/${ORDER_ID}"
+```
+
+### 11.3. Comprobaciones automatizadas
+
+```bash
+dotnet test EcommerceApi.sln
+```
+
+Las cuatro suites cubren dominio y handlers, regla de dependencias, SQLite y outbox, y contrato HTTP. El recuento y la cobertura de cada una están en [`capacidades.md`](capacidades.md#1-verificación-en-un-bloque).
+
+El `413` por cuerpo mayor de 16 KB se comprueba a mano: lo aplica Kestrel y `TestServer` no lo reproduce.

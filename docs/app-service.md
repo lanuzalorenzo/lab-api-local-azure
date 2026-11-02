@@ -3,13 +3,13 @@
 > **Estado:** Diseño. La plantilla existe y se valida estáticamente, pero **no se ha desplegado**.
 > **Ámbito:** plataforma de ejecución de `EcommerceApi`. No sustituye a `infra/README.md` ni al Bicep.
 > **Última revisión:** 2026-10-22.
-> **Sesión asociada:** T2 (estudio y preguntas) → T3 (IaC) → T4 (despliegue) → T5 (slots).
+> **Fases:** estudio → IaC → despliegue → slots.
 
 ## 1. Para qué sirve este documento
 
 La API no se queda encendida en un ordenador de la oficina: vive en un servicio de Azure que la mantiene en marcha, la reinicia si se cae y guarda sus registros. Este documento es el plano de ese alojamiento: cuánta capacidad tiene, quién puede entrar y salir, qué se guarda y cuánto cuesta.
 
-No es un tutorial: es el plano que se estudia en T2 y que se corrige si algo no cuadra.
+No es un tutorial: es el plano que se estudia antes de escribir la IaC y que se corrige si algo no cuadra.
 
 Incluye una separación explícita entre Bicep, el pipeline YAML y el artefacto (§3) y un desglose de qué define exactamente la plantilla (§4), porque es la confusión más habitual al leer `infra/main.bicep`.
 
@@ -58,7 +58,7 @@ push / PR
    ├── YAML: bicep build infra/main.bicep  →  ARM JSON
    │            └── Trivy config (validación estática, sin desplegar)
    │
-   └── (T4, autorizado) az deployment group what-if / create
+   └── (con autorización) az deployment group what-if / create
                 │
                 └── existen el plan y el site con su configuración
                           │
@@ -151,7 +151,7 @@ resource apiApp 'Microsoft.Web/sites@2023-12-01' = {
 | `P2v3` | 4 | 16 GB | Más carga |
 | `P3v3` | 8 | 32 GB | Carga alta |
 
-> Los valores exactos dependen de la región y de la tabla oficial de SKUs; confírmalos antes de T4. `capacity: 1` significa **una instancia**, no «un núcleo».
+> Los valores exactos dependen de la región y de la tabla oficial de SKUs; confírmalos antes de desplegar. `capacity: 1` significa **una instancia**, no «un núcleo».
 
 Escalar tiene dos direcciones:
 
@@ -204,8 +204,8 @@ Pero **no llega a Azure**. El Bicep define código, no contenedor.
 | Elemento | Dónde se resuelve |
 |---|---|
 | Código o imagen publicada | `dotnet publish` / `docker push` + despliegue |
-| Slot `staging` y swap | No está en la plantilla; se diseña en T5 |
-| Autoscale | No está en la plantilla; se decide en T3/T4 |
+| Slot `staging` y swap | No está en la plantilla; se diseña para una fase posterior |
+| Autoscale | No está en la plantilla; se decide al escribir la IaC y al desplegar |
 | Base de datos SQLite | Fichero local del laboratorio; no es un recurso de Azure |
 | Secretos reales | Key Vault; el Bicep solo asigna el rol |
 | Certificado y dominio personalizado | Fuera del alcance actual |
@@ -243,7 +243,7 @@ Recursos ya definidos en `infra/main.bicep`:
 - Key Vault con RBAC, sin acceso público, y rol *Key Vault Secrets User* para la identidad.
 - Diagnóstico a Log Analytics y Application Insights.
 
-## 6. La confusión que hay que resolver en T2
+## 6. La confusión que hay que resolver antes de desplegar
 
 **Entrada y salida son cosas distintas:**
 
@@ -254,13 +254,13 @@ Recursos ya definidos en `infra/main.bicep`:
 
 Un Private Endpoint **no** da salida a la VNet. Una VNet Integration **no** bloquea la entrada pública. Se necesitan las dos, y por eso el Bicep tiene dos subredes.
 
-**Consecuencia práctica:** con `publicNetworkAccess: 'Disabled'`, desde tu portátil **no vas a llegar** a la API ni al SCM. Antes de T4 hay que elegir modelo de acceso:
+**Consecuencia práctica:** con `publicNetworkAccess: 'Disabled'`, desde tu portátil **no vas a llegar** a la API ni al SCM. Antes de desplegar hay que elegir modelo de acceso:
 
 - **A. VPN punto a sitio** o máquina dentro de la VNet (lo más fiel).
 - **B. Acceso público temporal restringido a tu IP** durante el laboratorio, y volver a cerrarlo después (lo más barato).
 - **C. Solo desde GitHub Actions**, sin acceso interactivo (lo más seguro, pero difícil de depurar).
 
-Decisión provisional: **B para T4**, documentando la apertura y el cierre en la evidencia. A para T5 si se quiere probar el swap con tráfico real.
+Decisión provisional: **B para el primer despliegue**, documentando la apertura y el cierre en la evidencia. A si se quiere probar el swap con tráfico real.
 
 ## 7. Identidad y configuración
 
@@ -268,7 +268,7 @@ Decisión provisional: **B para T4**, documentando la apertura y el cierre en la
 - Los secretos reales (si algún día hay) se referencian con **Key Vault references**:
   `@Microsoft.KeyVault(VaultName=<kv>;SecretName=<nombre>)`, sin versión fija.
 - Los identificadores de Entra ID (`TenantId`, `ClientId`, `Audience`) **no son secretos**: son configuración y pueden ir en app settings.
-- `APPLICATIONINSIGHTS_CONNECTION_STRING` contiene una clave de ingesta: trátala como secreto y muévela a Key Vault reference en T3.
+- `APPLICATIONINSIGHTS_CONNECTION_STRING` contiene una clave de ingesta: trátala como secreto y muévela a Key Vault reference al escribir la IaC.
 - Límite a recordar: App Service tiene un máximo de referencias a Key Vault por aplicación; no conviene convertir toda la configuración en referencia.
 
 ## 8. Despliegue y slots
@@ -310,7 +310,7 @@ AppServiceHTTPLogs
 ## 10. Escalado y coste
 
 - El escalado automático exige **Standard o superior**; en B1 se escala a mano (o no se escala).
-- Regla de laboratorio: 1 instancia, sin autoscale. El autoscale se **diseña** en T3 y se **prueba** solo si hay presupuesto.
+- Regla de laboratorio: 1 instancia, sin autoscale. El autoscale se **diseña** al escribir la IaC y se **prueba** solo si hay presupuesto.
 
 | SKU | Uso | Coste aproximado |
 |---|---|---|
@@ -318,7 +318,7 @@ AppServiceHTTPLogs
 | **S1** Linux | Slots y autoscale | ~70 €/mes |
 | **P1v3** Linux | Diseño actual (red privada completa) | ~130–150 €/mes |
 
-> Precios orientativos; confirma en la calculadora de Azure antes de T4. Un laboratorio de una tarde con B1 cuesta céntimos si se destruye el mismo día.
+> Precios orientativos; confirma en la calculadora de Azure antes de desplegar. Un laboratorio de una tarde con B1 cuesta céntimos si se destruye el mismo día.
 
 ## 11. Decisiones (ADR corto)
 
@@ -329,7 +329,7 @@ AppServiceHTTPLogs
 | Identidad gestionada + Key Vault | Secretos en app settings | Elimina credenciales; encaja con el discurso de seguridad |
 | SKU parametrizada | P1v3 fija | El coste del laboratorio no debe impedir ejecutarlo |
 
-## 12. Plan de validación (T4)
+## 12. Plan de validación del despliegue
 
 Pruebas positivas:
 
@@ -347,7 +347,7 @@ Pruebas negativas:
 
 Cada prueba se registra en la evidencia con comando, salida redactada y resultado.
 
-## 13. Preguntas abiertas para T2
+## 13. Preguntas abiertas
 
 1. ¿Qué características pierdes exactamente al bajar de P1v3 a B1?
 2. ¿Por qué la subred de integración necesita delegación y la de Private Endpoint no?
@@ -359,7 +359,7 @@ Cada prueba se registra en la evidencia con comando, salida redactada y resultad
 ## 14. Limitaciones
 
 - No hay base de datos gestionada ni alta disponibilidad: la API usa SQLite local, que en App Service no es almacenamiento duradero ni compartido entre instancias.
-- El diseño no cubre WAF ni API Management; eso es T9.
+- El diseño no cubre WAF ni API Management; queda fuera de este diseño.
 - La SKU y el coste deben confirmarse antes de desplegar.
 - La decisión **código vs contenedor** sigue abierta (§4.3); el Bicep actual refleja zip deploy.
 - Nada de este documento está validado en Azure todavía.

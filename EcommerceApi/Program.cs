@@ -154,7 +154,7 @@ var app = builder.Build();
 if (!azureAdOptions.IsConfigured)
 {
     app.Logger.LogWarning(
-        "AzureAd is using placeholder values. Configure a real tenant before validating tokens. See docs/azure-ad-config.md.");
+        "AzureAd is using placeholder values. Configure a real tenant before validating tokens. See docs/entra-id.md.");
 }
 
 if (app.Environment.IsDevelopment())

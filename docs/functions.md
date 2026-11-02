@@ -3,7 +3,7 @@
 > **Estado:** Parcial. Proyecto de Function, contrato versionado, outbox transaccional e idempotencia implementados y probados en local. Sin Service Bus real ni despliegue en Azure.
 > **Ámbito:** procesamiento asíncrono del workload `EcommerceApi`.
 > **Última revisión:** 2026-10-22.
-> **Sesión asociada:** T6 (estudio y decisiones) → T7 (implementación local) → T8 (despliegue y observación).
+> **Fases:** estudio → implementación local → despliegue y observación.
 
 ## 1. Para qué sirve este documento
 
@@ -47,7 +47,7 @@ La Function no sustituye a la API: separa el trabajo que no debe bloquear la res
 | Consumption clásico | Sí | No | Alto | Solo si no hay red privada |
 | Dedicated (App Service) | No | Sí | Ninguno | Si se comparte plan con la API |
 
-Decisión provisional: **Flex Consumption**, porque permite red privada y escala a cero. Se confirma en T6 tras revisar límites y regiones disponibles.
+Decisión provisional: **Flex Consumption**, porque permite red privada y escala a cero. Se confirma al revisar límites y regiones disponibles.
 
 Runtime: **.NET 10 con modelo isolated**. El modelo in-process está retirado; no se usa.
 
@@ -153,9 +153,9 @@ La API publica el mensaje mediante un `IEventPublisher` con dos adaptadores: `Lo
 | Service Bus Standard | ~9–10 €/mes (necesario para temas y DLQ avanzada) |
 | Storage | Céntimos |
 
-Confirmar antes de T8. El laboratorio se destruye el mismo día.
+Confirmar antes de desplegar. El laboratorio se destruye el mismo día.
 
-## 13. Plan de validación (T8)
+## 13. Plan de validación del despliegue
 
 1. Pedido válido → mensaje consumido una vez → registro creado.
 2. **Reenvío del mismo `messageId`** → no se duplica el efecto.
@@ -163,7 +163,7 @@ Confirmar antes de T8. El laboratorio se destruye el mismo día.
 4. Mensaje corrupto → rechazo controlado, sin excepción sin capturar.
 5. Sin identidad válida → el consumo falla y se ve en el log (prueba negativa).
 
-## 14. Decisiones abiertas para T6
+## 14. Decisiones abiertas
 
 1. ¿Flex Consumption o Premium en esta suscripción y región?
 2. ¿Cola o tema? (Una cola basta si hay un solo consumidor; un tema si habrá varios.)

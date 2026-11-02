@@ -20,7 +20,7 @@ API empresarial en .NET 10 y workload de referencia del portfolio público. Este
 
 ## Contrato editorial
 
-Español claro y directo, sin rótulos de registro. Estados explícitos (Validado · Parcial · Runbook preparado · Diseño · Pendiente). Separa lo ejecutado de lo diseñado y no presentes un hallazgo como PASS. **Apertura llana:** todo documento de más de 80 líneas abre con dos o tres frases sin jerga y una comparación cotidiana, y aclara cada término en su primera aparición; si no cabe en una frase, va al glosario de la guía de lectura. La claridad no cambia lo que el documento afirma. El contrato completo está en [portfolio-ciberseguridad-lorenzo](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/blob/main/AGENTS.md).
+El contrato completo —apertura llana, jerga, estados, evidencias y claridad que no cambia lo que se afirma— está en [portfolio-ciberseguridad-lorenzo](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/blob/main/AGENTS.md). En este repo: español claro, estados explícitos (Validado · Parcial · Runbook preparado · Diseño · Pendiente) y lo ejecutado separado de lo diseñado; un hallazgo no es un PASS.
 
 ## Verificación
 
@@ -33,7 +33,7 @@ bicep build infra/main.bicep --outfile /tmp/main.json
 gitleaks detect --source . --redact --verbose --exit-code 2
 ```
 
-Son los mismos pasos de `.github/workflows/devsecops-ci.yml`. La gobernanza de `main` y los checks obligatorios están en `docs/repo-governance.md`; no presentes un bypass como flujo válido.
+Son los mismos pasos de `.github/workflows/devsecops-ci.yml`. **Definición de cambio listo:** los seis comandos anteriores sin fallos y los siete checks del pipeline en verde, sin bypass. La gobernanza de `main` y los checks obligatorios están en `docs/repo-governance.md`; no presentes un bypass como flujo válido.
 
 ## Commits
 
