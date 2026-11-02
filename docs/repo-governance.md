@@ -1,8 +1,8 @@
-# Gobernanza del repositorio — PR, checks y aprobación
+# Gobernanza del repositorio — PR y checks obligatorios
 
-> **Estado:** Validado (ruleset activo, PR y siete checks obligatorios) · Parcial (sin revisor humano; el bypass es del propietario).
+> **Estado:** Validado (ruleset activo, PR y siete checks obligatorios) · Parcial (sin revisor humano).
 > **Última revisión:** 2026-11-02.
-> **Evidencia:** ruleset `main`, PR de prueba y rechazo de push directo de la configuración anterior.
+> **Evidencia:** ruleset `main`, PR de prueba y rechazo de push directo.
 
 ## 1. Estado actual
 
@@ -15,8 +15,8 @@ Reglas activas en `main`:
 | Rama actualizada antes del merge | Activo | Validado |
 | Historial lineal y squash | Activo | Validado |
 | Force push y borrado de `main` | Bloqueados | Validado |
-| Aprobaciones humanas | 1 | Configurado |
-| Bypass | Solo `lanuzalorenzo` | Configurado |
+| Aprobaciones humanas | 0 | Configurado |
+| Permiso de merge | Solo el propietario | Configurado |
 
 Los siete checks exigidos son:
 
@@ -33,20 +33,15 @@ en los push a `main`, donde aparece como `skipped`.
 
 ## 2. Flujo
 
-Todo cambio va por rama y PR. El PR necesita los siete checks, rama actualizada y
-una aprobación. El propietario puede fusionar con bypass cuando no haya un segundo
-revisor; el resto de colaboradores necesita aprobación.
+Todo cambio va por rama y PR. El PR necesita los siete checks y rama actualizada.
+Solo el propietario fusiona; cualquier cambio externo pasa por su merge.
 
-El bypass no es el flujo normal: existe para no bloquear al mantenedor único, no
-para saltar un check rojo. Si se añade un segundo revisor, se retira el bypass y
-se mantiene la aprobación.
+## 3. Por qué no se exigen aprobaciones
 
-## 3. Por qué 1 aprobación y bypass
-
-GitHub no permite aprobar el propio pull request. Un repositorio con un solo
-mantenedor y una aprobación obligatoria quedaría bloqueado. El ruleset resuelve el
-caso con un bypass explícito para la cuenta del propietario; el resto de cuentas
-sigue necesitando aprobación.
+GitHub no permite aprobar el propio pull request. Con un solo mantenedor y una
+aprobación obligatoria, el repositorio quedaría bloqueado. La barrera es PR, siete
+checks y permiso de merge del propietario. Si se añade un segundo revisor, se sube
+`required_approving_review_count` a 1.
 
 ## 4. Verificación
 
