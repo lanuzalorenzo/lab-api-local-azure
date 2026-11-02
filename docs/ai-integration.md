@@ -3,7 +3,7 @@
 > **Estado:** Diseño. No hay código, evaluación ni despliegue.
 > **Ámbito:** capacidad de IA del workload, con el laboratorio local como entorno de desarrollo.
 > **Última revisión:** 2026-10-22.
-> **Sesión asociada:** T10 (estudio, implementación local y evaluación) → T11 (despliegue opcional).
+> **Fases:** estudio, implementación local y evaluación → despliegue opcional.
 
 ## 1. Para qué sirve este documento
 
@@ -128,7 +128,7 @@ Tres reglas para que la comparativa sea honesta:
 
 No se crea un quinto repositorio. La integración es una Function más del workload.
 
-## 10. Plan de validación (T10)
+## 10. Plan de validación
 
 1. Caso válido → resumen con esquema correcto.
 2. Entrada con datos personales → se redactan antes de enviar.
@@ -141,10 +141,10 @@ No se crea un quinto repositorio. La integración es una Function más del workl
 ## 11. Coste
 
 - **Desarrollo:** 0 € (Ollama local).
-- **Producción de laboratorio:** depende del proveedor; se fija un tope mensual y una alerta antes de T11.
+- **Producción de laboratorio:** depende del proveedor; se fija un tope mensual y una alerta antes de desplegar.
 - El gateway registra tokens (las unidades con las que se mide el texto que entra y sale del modelo) por petición para poder estimar coste real, no teórico.
 
-## 12. Decisiones abiertas para T10
+## 12. Decisiones abiertas
 
 1. ¿Modelo local para todo el flujo o solo para desarrollo?
 2. ¿Gateway propio (Function) o APIM AI Gateway?

@@ -58,10 +58,8 @@ dotnet test ../EcommerceApi.sln
 
 - [Referencia de la API](../docs/api.md)
 - [Decisiones de arquitectura](../docs/adr/README.md)
-- [Configuración de Entra ID](../docs/azure-ad-config.md)
-- [Registro de la aplicación](../docs/azure-ad-register.md)
+- [Entra ID: registro y configuración](../docs/entra-id.md)
 - [Pruebas con tokens](../docs/azure-ad-tests.md)
-- [Pruebas funcionales](../docs/tests.md)
 - [Threat model](../docs/threat-model-appsec.md)
 
 ## Alcance

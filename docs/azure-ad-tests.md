@@ -4,7 +4,7 @@ Validar la autenticación es comprobar que la API solo abre la puerta a quien tr
 
 No pegues tokens de producción en sitios externos como jwt.io.
 
-Las pruebas funcionales de la API con el esquema de test (`X-Test-User`) están en [`tests.md`](tests.md).
+Las pruebas funcionales de la API con el esquema de test (`X-Test-User`) están en [`api.md`](api.md#11-pruebas-manuales).
 
 ## 1. Variables de entorno
 

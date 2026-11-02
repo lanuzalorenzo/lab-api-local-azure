@@ -60,24 +60,18 @@ STRIDE agrupa las amenazas en seis familias: suplantación de identidad, manipul
 
 ## 4. Controles implementados en código
 
-- Autenticación JWT con validación de firma, issuer, audience y lifetime.
-- Autorización por identidad y aislamiento de pedidos (BOLA: acceder a los datos de otro cambiando el identificador).
-- DTOs para evitar mass assignment.
-- Validación de entrada con DataAnnotations.
-- CORS con allowlist y denegación por defecto.
-- Rate limiting global por IP.
-- Límite de tamaño de petición en escrituras.
-- `ProblemDetails` y cabeceras `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` y `Permissions-Policy`.
-- Swagger confinado a `Development`.
-- Contenedor multi-stage con usuario no-root.
-- Pruebas de integración de autenticación, validación y BOLA.
-- Pruebas unitarias de invariantes y handlers; regla de dependencias entre capas verificada en `tests/EcommerceApi.Architecture.Tests`.
-- Invariantes de dominio (agregados `Order` y `Product`) que impiden persistir estados inconsistentes aunque la validación de transporte se relaje.
-- Persistencia SQLite con importes en céntimos y transacción explícita.
-- Listados acotados: límite máximo y paginación por cursor para evitar lecturas sin límite.
-- Outbox transaccional: el pedido y el mensaje `OrderCreatedV1` se confirman juntos o no se confirma ninguno.
-- Consumidor idempotente por `messageId`; los mensajes inválidos fallan para que el broker los reintente y los mueva a la DLQ.
-- Pruebas de infraestructura sobre SQLite real: atomicidad, rollback, reintentos, dead-letter e idempotencia.
+La lista completa, con el archivo y la prueba de cada control, está en
+[`capacidades.md`](capacidades.md#22-seguridad). Los que cambian este modelo de
+amenaza son: validación JWT con `JwtBearer` (firma, emisor, audiencia y vigencia),
+autorización por identidad con `404` para pedidos ajenos, DTOs de entrada contra
+*mass assignment*, CORS denegado por defecto, *rate limit* global por IP, límite de
+cuerpo en escrituras, `ProblemDetails` sin detalles internos en el `500`,
+cabeceras de seguridad, Swagger solo en `Development`, contenedor no-root y
+pruebas de integración de autenticación, validación y BOLA.
+
+En profundidad: invariantes de dominio que impiden persistir estados
+inconsistentes, importes en céntimos, paginación por cursor, outbox transaccional
+y consumidor idempotente por `messageId`.
 
 ## 5. Riesgos residuales
 

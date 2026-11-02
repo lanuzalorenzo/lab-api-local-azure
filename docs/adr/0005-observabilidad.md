@@ -35,7 +35,10 @@ destino garantizado.
 1. **Dos capas de persistencia.** App Service envía la consola y las peticiones
    HTTP a Log Analytics mediante las categorías de diagnóstico; `applicationLogs`
    mantiene además una copia en el sistema de ficheros para Kudu y streaming.
-   Application Insights recibe peticiones, excepciones y dependencias.
+   Application Insights recibe peticiones, excepciones y dependencias. En un sitio
+   Linux, el bloque `httpLogs` no aplica (es de Windows); la categoría
+   `AppServiceHTTPLogs` sí está soportada y los logs de .NET llegan a
+   `AppServiceConsoleLogs`.
 2. **El SDK se registra solo si existe la cadena de conexión.** El exportador de
    Azure Monitor lanza al arrancar cuando falta, así que la ausencia de
    `APPLICATIONINSIGHTS_CONNECTION_STRING` deja la aplicación sin SDK en lugar de
@@ -108,4 +111,3 @@ por su `traceId` en Log Analytics.
 - [Diagnóstico de App Service](https://learn.microsoft.com/azure/app-service/troubleshoot-diagnostic-logs) — tipos de log y soporte por plataforma.
 - [Categorías de Microsoft.Web/sites](https://learn.microsoft.com/azure/app-service/monitor-app-service-reference#supported-resource-logs-for-microsoftweb) — soporte Linux de `AppServiceHTTPLogs`.
 - [ActivityTrackingOptions](https://learn.microsoft.com/dotnet/api/microsoft.extensions.logging.activitytrackingoptions) — `TraceId` y `SpanId` en los scopes.
-- [Revisión del lote de observabilidad](../revision-observabilidad.md) — hallazgos y evidencia de la revisión.
