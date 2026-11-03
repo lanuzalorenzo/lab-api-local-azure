@@ -39,4 +39,4 @@ Son los mismos pasos de `.github/workflows/devsecops-ci.yml`. El hook local de s
 
 Formato: `type(scope): imperative summary in English`. Scopes: `api`, `auth`, `docker`, `ci`, `tests`, `infra`, `docs`, `repo`. Tipos: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`. Asunto imperativo, conciso y en inglés.
 
-Los cambios entran por rama y pull request: `main` exige PR, los siete checks del pipeline y rama actualizada; solo el propietario fusiona. No empujes directamente.
+Los cambios entran por rama y pull request: `main` exige PR, los siete checks del pipeline y rama actualizada; solo el propietario fusiona, salvo las PRs de Dependabot de parche y minor, que fusiona el flujo automático si pasan los checks. No empujes directamente.

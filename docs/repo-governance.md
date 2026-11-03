@@ -16,7 +16,7 @@ Reglas activas en `main`:
 | Historial lineal y squash | Activo | Validado |
 | Force push y borrado de `main` | Bloqueados | Validado |
 | Aprobaciones humanas | 0 | Configurado |
-| Permiso de merge | Solo el propietario | Configurado |
+| Permiso de merge | Solo el propietario, salvo PRs de Dependabot de parche y minor | Configurado |
 
 Los siete checks exigidos son:
 
@@ -34,7 +34,7 @@ en los push a `main`, donde aparece como `skipped`.
 ## 2. Flujo
 
 Todo cambio va por rama y PR. El PR necesita los siete checks y rama actualizada.
-Solo el propietario fusiona; cualquier cambio externo pasa por su merge.
+Solo el propietario fusiona; cualquier cambio externo pasa por su merge. La excepción son las PRs de Dependabot de parche y minor, que fusiona el flujo automático cuando pasan los siete checks.
 
 ## 3. Por qué no se exigen aprobaciones
 
