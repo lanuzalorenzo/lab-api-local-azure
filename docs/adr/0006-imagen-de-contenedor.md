@@ -1,0 +1,113 @@
+# ADR-0006 — Imagen de contenedor: dos fases, sin root y sin SDK en ejecución
+
+> **Estado:** Aceptada · actualizada el 2026-11-03
+> **Ámbito:** `Dockerfile`, composición local y trabajo de imagen en CI.
+> **Evidencia:** [`Dockerfile`](../../Dockerfile), [`.github/workflows/devsecops-ci.yml`](../../.github/workflows/devsecops-ci.yml) (construcción y comprobación de UID), [`EcommerceApi/Program.cs`](../../EcommerceApi/Program.cs) (`/health`) y [`EcommerceApi/appsettings.json`](../../EcommerceApi/appsettings.json) (`Storage`).
+> **Relacionada con:** [ADR-0005](0005-observabilidad.md) y [ADR-0004](0004-persistencia-sqlite-y-outbox.md).
+
+La API se entrega como una imagen de contenedor, y esa imagen es lo que se escanea,
+se firma y se despliega más adelante. Este documento fija qué lleva dentro, con qué
+usuario arranca y qué se deja fuera, para que la imagen no cambie por costumbre.
+Es como una mudanza: se empaqueta en una habitación de trabajo y se entrega solo lo
+que hace falta para vivir, no las cajas, las herramientas ni el andamio.
+
+## 1. Contexto
+
+El `Dockerfile` existe desde el 2026-10-22 (`5b480d1` y `dc36437`) y el pipeline lo
+construye en cada cambio (`devsecops-ci.yml`, trabajo de imagen). Comprueba además
+que el proceso no corre como root. Sin embargo, la decisión no estaba escrita y el
+arranque local no tenía un camino corto: se documentaba `docker run` con parámetros
+sueltos, difíciles de reproducir.
+
+La imagen es la unidad que consumirán los pasos pendientes: el análisis dinámico de
+la API, el inventario de componentes y la firma de la imagen. Cambiar su forma
+después obliga a rehacer esos artefactos.
+
+Datos medidos el 2026-11-03 en el host de trabajo:
+
+- `mcr.microsoft.com/dotnet/aspnet:10.0` ocupa 95 934 226 bytes (unos 92 MB) y **no
+  incluye `curl`**: `docker run --rm --entrypoint curl … --version` falla con
+  «executable file not found in $PATH».
+
+## 2. Decisión
+
+1. **Dos fases.** `sdk:10.0` compila y publica; `aspnet:10.0` ejecuta. La imagen
+   final no lleva SDK, `obj/`, `.csproj` ni código fuente.
+2. **Se copia `publish`, no `build`.** `publish` deja una carpeta autocontenida con
+   sus `runtimeconfig.json` y `deps.json` coherentes, sin activos de compilación.
+   Con `-c Release` y `/p:UseAppHost=false`, porque el `ENTRYPOINT` arranca con
+   `dotnet EcommerceApi.dll` y el lanzador nativo no se usaría.
+3. **Caché de capas ordenada.** Primero los cinco `.csproj`, después `restore`, y
+   solo al final `COPY . .`. Cambiar un controlador no invalida la restauración.
+4. **Usuario no root.** `USER $APP_UID` (UID 1654 en las imágenes oficiales). CI lo
+   verifica con `id -u` distinto de `0`.
+5. **Puerto no privilegiado.** `ASPNETCORE_URLS=http://+:8080` y `EXPOSE 8080`.
+6. **Datos fuera de la imagen.** `/app/data` se crea en la construcción y pertenece
+   al usuario de aplicación. En local se monta un volumen nombrado; la imagen no
+   guarda estado.
+7. **Composición local explícita.** Un `docker-compose.yml` con `build: .`, puerto
+   `8080:8080`, volumen sobre `/app/data` y `restart: unless-stopped`. **Sin
+   `healthcheck` en el contenedor**: la imagen no trae `curl` y añadir un cliente
+   HTTP solo para sondear aumenta la superficie; la comprobación se hace desde el
+   host contra `/health`, que es anónimo.
+
+## 3. Alternativas descartadas
+
+| Alternativa | Por qué no |
+|---|---|
+| Una sola fase con `sdk` | Duplica el tamaño, deja compilador y MSBuild en ejecución y amplía la superficie sin necesidad |
+| Copiar la salida de `build` | Arrastra artefactos de compilación y no está pensada para copiarse como despliegue |
+| Reutilizar el artefacto de CI en la imagen | Ataría la imagen a la salida de un trabajo concreto y rompería la construcción reproducible desde el repositorio |
+| Ejecutar como root | Un compromiso de la aplicación sería un compromiso del contenedor entero; CI ya lo prohíbe |
+| Servir en el puerto 80 | Requiere privilegios o redirección; 8080 evita ambas |
+| Imagen Alpine | Cambia glibc por musl y obliga a revisar cada dependencia nativa; se valora si el escaneo lo justifica |
+| Imagen *chiseled* | Sin shell ni gestor de paquetes: menos superficie, pero no se puede depurar dentro del contenedor |
+| `docker run` como camino principal | Muchos parámetros que se desincronizan; queda como alternativa documentada, no como entrada |
+
+## 4. Consecuencias
+
+### Positivas
+
+- La imagen final no contiene herramientas de compilación ni código fuente: menos
+  componentes que puedan tener una vulnerabilidad explotable.
+- El arranque local es reproducible y no depende de recordar parámetros.
+- La compilación en la imagen es independiente de la de CI: cualquiera puede
+  reconstruirla desde el repositorio.
+
+### Negativas y límites
+
+- El código se compila dos veces en cada cambio: una para verificar y otra para la
+  imagen. Es el precio de que la imagen se construya sola.
+- La caché depende de que el `.dockerignore` excluya lo que no debe entrar; un
+  cambio en un fichero no ignorado rehace capas.
+- Sin `healthcheck` en el contenedor, el orquestador no sabe si está sano. En local
+  se acepta porque la comprobación es manual; antes de desplegar hay que decidirlo.
+- La imagen todavía no genera inventario de componentes ni se firma; el escaneo de
+  vulnerabilidades de la imagen ya lo hace el pipeline.
+
+**Comprobado en ejecución:** el 2026-11-03, con Docker 29.1.3 y Compose 2.40.3,
+`docker compose up --build -d` levanta la API desde una imagen borrada y
+`curl -i localhost:8080/health` devuelve `200 OK`; el proceso corre como UID 1654.
+La base (`/app/data/ecommerce.db`, 49 152 bytes) conserva tamaño y fecha tras
+`docker compose down` y `up -d`. Lo que sigue sin probarse es el despliegue en un
+orquestador, que decide el `healthcheck`.
+
+## 5. Cuándo revisar esta decisión
+
+- Al primer despliegue en un orquestador: si el contenedor necesita sonda, la
+  decisión cambia con la causa.
+- Cuando entren inventario de componentes y firma: el escaneo puede pedir otra base.
+- Antes del primer despliegue: decidir `healthcheck` y usuario en la plataforma.
+- Si el tamaño de la imagen o sus CVE obligan a Alpine o *chiseled*.
+
+**Criterio de cierre:** un orquestador decide el `healthcheck` y la base sigue
+disponible en ese despliegue.
+
+## 6. Referencias
+
+- [`Dockerfile`](../../Dockerfile) — construcción y ejecución.
+- [`devsecops-ci.yml`](../../.github/workflows/devsecops-ci.yml) — construcción de la imagen y comprobación de UID.
+- [Persistencia SQLite y outbox](0004-persistencia-sqlite-y-outbox.md) — por qué hay una base y por qué es local.
+- [Referencia de la API](../api.md) — contrato y `/health`.
+- [Multi-stage builds](https://docs.docker.com/build/building/multi-stage/) — fases y copia entre imágenes.
+- [Imágenes oficiales de .NET](https://learn.microsoft.com/dotnet/core/docker/container-images) — contenido de `aspnet` frente a `sdk`.

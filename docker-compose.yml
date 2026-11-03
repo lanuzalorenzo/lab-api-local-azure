@@ -1,0 +1,20 @@
+# Composición local de EcommerceApi.
+# La imagen se construye con el Dockerfile del repositorio (dos fases, sin root).
+# No se sobrescribe nada de la imagen: sin build.args ni environment.
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ecommerce-api:local
+    ports:
+      - "8080:8080"
+    volumes:
+      # La base SQLite vive en el volumen, no en la capa de la imagen.
+      - api-data:/app/data
+    restart: unless-stopped
+    # Sin healthcheck: la imagen no trae cliente HTTP. Se comprueba desde el
+    # host contra /health, que es anónimo (ADR-0006).
+
+volumes:
+  api-data:
