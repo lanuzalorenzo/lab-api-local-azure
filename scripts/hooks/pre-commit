@@ -5,13 +5,13 @@
 # repository has a .gitleaks.toml, its configuration applies. Requires Gitleaks
 # 8.19 or later, the first version with the `git` subcommand.
 #
-# This hook is a fast local echo of the CI job, not the barrier: CI scans the
-# whole history on every push to main and on every pull request. That is why it
-# warns and lets the commit through when gitleaks is not installed, instead of
-# blocking work on a missing local dependency.
+# The hook is a fast local echo, not the barrier: the full-history scan belongs
+# to CI where the repository has it. That is why it warns and lets the commit
+# through when gitleaks is not installed, instead of blocking work on a missing
+# local dependency.
 #
-# Install with scripts/install-git-hooks.sh. Bypass: git commit --no-verify,
-# which leaves the commit unscanned locally.
+# Install it with the repository's hook installer. Bypass: git commit
+# --no-verify, which leaves the commit unscanned locally.
 
 set -u
 
@@ -20,7 +20,7 @@ GITLEAKS="$(command -v gitleaks 2>/dev/null || true)"
 
 if [[ ! -x "$GITLEAKS" ]]; then
   echo "Aviso: Gitleaks no está instalado; este commit no se escanea en local."
-  echo "El CI sí escanea el historial completo. Ver scripts/install-git-hooks.sh."
+  echo "Instálalo antes de publicar, o revisa los cambios a mano."
   exit 0
 fi
 
