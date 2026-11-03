@@ -1,6 +1,6 @@
 # Dependencias: dueño, plazo y evidencia
 
-> **Estado:** Validado (política aplicada y lote cerrado) · Parcial (informe semanal manual; agrupación validada con un lote de 8 actualizaciones).
+> **Estado:** Validado (política aplicada y lote cerrado) · Parcial (informe semanal manual; agrupación validada con un lote de 8 actualizaciones) · Diseño (fusión automática de Dependabot, pendiente de su primera ejecución).
 > **Última revisión:** 2026-11-01.
 > **Evidencia:** lote de 8 actualizaciones resuelto con squash y checks en verde; `dotnet list package --vulnerable --include-transitive` sin paquetes vulnerables.
 
@@ -27,6 +27,7 @@ El plazo se cuenta desde que se publica la alerta, no desde que alguien la ve. U
 
 - `.github/dependabot.yml` revisa NuGet y GitHub Actions cada lunes, con un límite de 5 pull requests abiertas y etiquetas `dependencies` y `security`.
 - El pipeline exige siete checks obligatorios, rama actualizada antes de fusionar e historial lineal. La fusión es siempre con squash: una pull request, un commit.
+- `.github/workflows/dependabot-auto-merge.yml` fusiona solo las PRs de Dependabot de parche y minor cuando pasan los siete checks; las major siguen necesitando una persona.
 - El límite de 5 reduce ruido, pero puede retrasar avisos: el informe semanal mira también `dotnet list package --outdated` para ver lo que Dependabot aún no ha abierto.
 - **Agrupación:** dos grupos por ecosistema. Parche y minor van juntos; major va aparte y sigue necesitando revisión. La agrupación está validada con un lote real de 8 actualizaciones en una sola pull request.
 
@@ -35,10 +36,12 @@ El plazo se cuenta desde que se publica la alerta, no desde que alguien la ve. U
 | Cambio | Automatizable | Quién firma |
 |---|---|---|
 | Parche `x.y.z`, tests verdes, sin CVE | Sí, squash automático con aviso | Máquina |
-| Minor dentro del mismo major, changelog sin ruptura | Sí, en ventana y con revisión muestral | Máquina con muestreo |
+| Minor dentro del mismo major, changelog sin ruptura | Sí, squash automático con aviso | Máquina |
 | Major, SDK o cambio de framework | No | Persona, con rama y canario |
-| CVE crítica o explotada | Preparar sí; fusionar no | Persona, con plazo corto |
+| CVE crítica o explotada | Preparar sí; la automatización no filtra por severidad | Persona en la priorización; máquina si llega como parche o minor con los checks en verde |
 | Ignorar o posponer | No | Persona, con fecha de caducidad |
+
+La automatización filtra por tipo de versión, no por severidad: un aviso crítico que llegue como parche o minor también se fusiona con los checks en verde; la persona mantiene la priorización y el seguimiento.
 
 La regla práctica: se automatiza el parche de bajo riesgo con tests verdes; se revisa el cambio que puede romper. Automatizar un major traslada el riesgo a la peor hora.
 
@@ -82,4 +85,4 @@ gh pr checks <número> --watch
 
 - **Validado:** la política se aplicó a un lote real, con checks obligatorios, rama actualizada y squash; el escaneo de dependencias queda limpio.
 - **Parcial:** el informe semanal es manual; la agrupación ya produjo un lote y el primer major sigue pendiente de revisión.
-- **Fuera de alcance:** el SDK de .NET se fija en el pipeline (`10.0.x`) y no tiene `global.json`; las dependencias npm del laboratorio PKCE viven en otro repositorio y siguen el mismo criterio con `npm audit`.
+- **Fuera de alcance:** el SDK de .NET se fija en el pipeline (`10.0.x`) y no tiene `global.json`; las dependencias npm del laboratorio PKCE viven en otro repositorio y siguen el mismo criterio con `npm audit` y Dependabot.
