@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Pre-commit hook: stop the commit when the staged diff looks like a credential.
+#
+# Gitleaks reads only the index, so the check costs well under a second. If the
+# repository has a .gitleaks.toml, its configuration applies. Requires Gitleaks
+# 8.19 or later, the first version with the `git` subcommand.
+#
+# The hook is a fast local echo, not the barrier: the full-history scan belongs
+# to CI where the repository has it. That is why it warns and lets the commit
+# through when gitleaks is not installed, instead of blocking work on a missing
+# local dependency.
+#
+# Install it with the repository's hook installer. Bypass: git commit
+# --no-verify, which leaves the commit unscanned locally.
+
+set -u
+
+GITLEAKS="$(command -v gitleaks 2>/dev/null || true)"
+[[ -n "$GITLEAKS" ]] || GITLEAKS="$HOME/.local/bin/gitleaks"
+
+if [[ ! -x "$GITLEAKS" ]]; then
+  echo "Aviso: Gitleaks no está instalado; este commit no se escanea en local."
+  echo "Instálalo antes de publicar, o revisa los cambios a mano."
+  exit 0
+fi
+
+"$GITLEAKS" git --staged --redact -v --no-banner
+status=$?
+
+if (( status != 0 )); then
+  echo
+  echo "Commit abortado: Gitleaks ha fallado sobre los cambios preparados."
+  echo "Devuelve 1 tanto con una credencial como con una configuración rota, así"
+  echo "que lee la salida de arriba. Un falso positivo se acota con una entrada"
+  echo "en .gitleaks.toml, no con --no-verify."
+fi
+exit "$status"

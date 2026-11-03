@@ -51,6 +51,7 @@ Resumen; el detalle con pruebas y límites está en [`docs/capacidades.md`](docs
 |---|---|
 | Validación JWT y autorización por usuario | Implementado; la criptografía requiere tenant real |
 | BOLA/IDOR, *mass assignment*, CORS, *rate limit* y límites | Implementado |
+| Aviso de secretos antes del commit (hook local) | Parcial: opt-in por clon |
 | Contrato de error único (`400`, `404`, `500`) sin fugas en el `500` | Implementado |
 | Arquitectura por capas verificada con pruebas | Implementado |
 | Outbox transaccional y consumidor idempotente | Implementado (local) |
@@ -102,6 +103,28 @@ dotnet test EcommerceApi.sln
 ```
 
 Cuatro suites (dominio y handlers, arquitectura, infraestructura sobre SQLite e integración HTTP): **87 pruebas**. Las de integración usan un esquema de autenticación de test y cada factory crea su propia base temporal. El desglose está en [`docs/capacidades.md`](docs/capacidades.md#1-verificación-en-un-bloque).
+
+### Hook local de secretos
+
+El pipeline escanea el historial completo en cada push a `main` y en cada pull
+request, pero ese aviso llega después del commit. El repositorio incluye un hook
+`pre-commit` que pasa Gitleaks sobre lo preparado y aborta el commit si Gitleaks
+falla:
+
+```bash
+scripts/install-git-hooks.sh
+```
+
+Escribe `core.hooksPath=scripts/hooks` en la configuración local del clon, así
+que hay que ejecutarlo una vez por clon. La ruta es relativa: el hook no se
+copia, se lee del repositorio y cada worktree usa el suyo. Si la rama activa no
+tiene `scripts/hooks`, Git no ejecuta ningún hook; `--check` lo detecta, y
+también falla si falta Gitleaks o es anterior a 8.19. `--uninstall` borra el
+ajuste local.
+
+Es un eco rápido, no la barrera: si Gitleaks no está instalado, avisa y deja
+pasar el commit, porque quien decide es el CI. Los falsos positivos se acotan en
+`.gitleaks.toml`, no con `--no-verify`.
 
 ### Docker
 

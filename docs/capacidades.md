@@ -64,6 +64,7 @@ El contrato completo, incluido el formato de error, está en
 | `404` en lugar de `403` para pedidos ajenos | `OrdersController.GetOrderById` | La misma prueba | Implementado |
 | DTOs de entrada contra *mass assignment* | `Models/Create*Request.cs` | Revisión de código; `Id` no es asignable | Implementado |
 | Escaneo de secretos sobre historial completo | `.github/workflows/devsecops-ci.yml` (`gitleaks`) | Ejecutar el comando de la sección 1 | Implementado |
+| Aviso de secretos antes del commit (hook local) | `scripts/hooks/pre-commit` | `scripts/install-git-hooks.sh --check` (instalación y versión) y `gitleaks git --staged` sobre un cambio preparado | Parcial: opt-in por clon, no lo impone la plataforma |
 | SAST con CodeQL (`security-extended`) | Workflow, job `sast` | Ejecución en GitHub Actions | Implementado |
 | SCA con Trivy, bloqueante en `CRITICAL`/`HIGH` | Workflow, job `sca` | Ejecución en GitHub Actions | Implementado |
 | Escaneo de imagen y verificación de usuario no-root | Workflow, job `container-security` | `docker run --entrypoint id ... -u` distinto de `0` | Implementado |
