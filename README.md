@@ -73,6 +73,7 @@ lab-api-local-azure/
 ├── tests/                      # Unitarias, arquitectura, infraestructura e integración
 ├── infra/                      # Bicep: VNet, NSG, Key Vault, App Service, PE
 ├── docs/                       # Referencia, capacidades, ADR y diseños
+├── docker-compose.yml          # Arranque local en dos comandos
 └── .github/workflows/          # Pipeline DevSecOps
 ```
 
@@ -104,12 +105,24 @@ Cuatro suites (dominio y handlers, arquitectura, infraestructura sobre SQLite e 
 
 ### Docker
 
+Dos comandos, desde la raíz del repositorio:
+
+```bash
+docker compose up --build -d
+curl -i http://localhost:8080/health
+```
+
+El compose construye la imagen con el `Dockerfile`, publica el `8080` y monta un volumen nombrado en `/app/data`, donde la API escribe la base SQLite; `docker compose down` lo conserva y `docker compose down -v` lo borra con la base. El contenedor corre sin root (`USER $APP_UID`, UID 1654), escucha en `8080` y no lleva SDK ni código fuente. El porqué de cada decisión está en [ADR-0006](docs/adr/0006-imagen-de-contenedor.md).
+
+Comprobado el 2026-11-03 con Docker 29.1.3 y Compose 2.40.3: `/health` devuelve `200 OK`, el proceso del contenedor corre como UID 1654 y la base conserva tamaño y fecha tras `docker compose down` y `up -d`.
+
+Sin compose, una alternativa equivalente por separado (usa otra etiqueta y otro
+volumen, así que no comparte base con el compose):
+
 ```bash
 docker build -t ecommerce-api .
 docker run --rm -p 8080:8080 -v ecommerce-data:/app/data ecommerce-api
 ```
-
-El contenedor se ejecuta con `USER $APP_UID` (no root), escucha en `8080` y escribe la base SQLite en `/app/data`. Sin volumen, los datos se pierden al eliminar el contenedor.
 
 ## Autenticación con Entra ID
 
