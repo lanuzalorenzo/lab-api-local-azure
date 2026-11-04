@@ -188,7 +188,7 @@ La política de dependencias, los plazos por severidad y el estado del primer lo
 | [Pruebas con tokens](docs/azure-ad-tests.md) | Token real, BOLA con dos identidades y checklist |
 | [Threat model](docs/threat-model-appsec.md) | STRIDE, OWASP API Top 10 y riesgos residuales |
 | [Dependencias](docs/dependencias.md) | Dueño, plazos por severidad y evidencia del lote |
-| [Gobernanza del repositorio](docs/repo-governance.md) | PR, checks obligatorios, break-glass y su límite |
+| [Gobernanza del repositorio](docs/repo-governance.md) | PR, checks obligatorios y por qué no hay bypass |
 
 **Diseño**
 
