@@ -28,6 +28,13 @@ RUN dotnet publish "EcommerceApi.csproj" -c Release -o /app/publish /p:UseAppHos
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 
+# Parches del sistema operativo base en la construcción. La etiqueta :10.0 trae
+# el runtime al día; los paquetes de Ubuntu se actualizan aquí para no heredar
+# CVE corregibles en la imagen publicada. Sin listas de APT en la capa final.
+RUN apt-get update \
+    && apt-get -y upgrade \
+    && rm -rf /var/lib/apt/lists/*
+
 # Puerto por defecto no privilegiado en .NET 8+
 EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
