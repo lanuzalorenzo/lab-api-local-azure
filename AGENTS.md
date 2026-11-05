@@ -33,7 +33,7 @@ bicep build infra/main.bicep --outfile /tmp/main.json
 gitleaks detect --source . --redact --verbose --exit-code 2
 ```
 
-Son los mismos pasos de `.github/workflows/devsecops-ci.yml`. El hook local de secretos se instala con `scripts/install-git-hooks.sh` y se comprueba con `--check`; es un aviso temprano, no sustituye al CI. **Definición de cambio listo:** los seis comandos anteriores sin fallos y los siete checks del pipeline en verde, sin bypass. La gobernanza de `main` y los checks obligatorios están en `docs/repo-governance.md`; no presentes un bypass como flujo válido.
+Los pasos .NET se ejecutan con la acción compartida de [`core`](https://github.com/lanuzalorenzo/core) desde `.github/workflows/devsecops-ci.yml`; Bicep y Gitleaks siguen en ese workflow. El hook local de secretos se instala con `scripts/install-git-hooks.sh` y se comprueba con `--check`; es un aviso temprano, no sustituye al CI. **Definición de cambio listo:** los seis comandos anteriores sin fallos y los siete checks del pipeline en verde, sin bypass. La gobernanza de `main` y los checks obligatorios están en `docs/repo-governance.md`; no presentes un bypass como flujo válido.
 
 ## Commits
 

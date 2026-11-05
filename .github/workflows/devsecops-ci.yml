@@ -22,33 +22,11 @@ jobs:
       - name: Checkout del repositorio
         uses: actions/checkout@v7
 
-      - name: Configurar .NET 10 SDK
-        uses: actions/setup-dotnet@v6
+      - name: Compilar, verificar formato y probar
+        uses: lanuzalorenzo/core/actions/dotnet@v1.1
         with:
+          solution: EcommerceApi.sln
           dotnet-version: '10.0.x'
-
-      - name: Restaurar dependencias
-        run: dotnet restore EcommerceApi.sln
-
-      - name: Compilar en Release
-        run: dotnet build EcommerceApi.sln -c Release --no-restore
-
-      - name: Verificar formato
-        run: dotnet format EcommerceApi.sln --verify-no-changes --no-restore
-
-      - name: Ejecutar pruebas (unitarias, arquitectura e integración)
-        run: >
-          dotnet test EcommerceApi.sln
-          -c Release --no-build --no-restore
-          --logger "trx;LogFileName=test-results.trx"
-
-      - name: Publicar resultados de pruebas
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: test-results
-          path: tests/**/TestResults/*.trx
-          if-no-files-found: ignore
 
   secret-scanning:
     name: Detección de secretos (historial completo)
