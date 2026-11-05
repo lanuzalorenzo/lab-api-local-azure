@@ -215,7 +215,7 @@ La política de dependencias, los plazos por severidad y el estado del primer lo
 - Service Bus y la Function no están desplegados: el publicador por defecto registra el mensaje en lugar de entregarlo a un broker.
 - El outbox es *at-least-once*: la garantía efectiva depende de la idempotencia del consumidor, que sí está probada.
 - Sin microservicios, sin scopes/roles aplicados endpoint a endpoint y sin WAF/API Management desplegado.
-- Sin pruebas de carga ni caos; la plantilla Bicep no se ha desplegado y su validación es estática.
+- Con una prueba puntual de carga, sin caos ni prueba de resistencia; la plantilla Bicep no se ha desplegado y su validación es estática.
 - La gobernanza de `main` se apoya en PR y siete checks, sin revisor humano; el detalle está en [`docs/repo-governance.md`](docs/repo-governance.md).
 
 Estas limitaciones son deliberadas y se declaran para no confundir un laboratorio con un sistema productivo.
