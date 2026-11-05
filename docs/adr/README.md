@@ -16,6 +16,7 @@ Cada ADR contiene: contexto, decisión, alternativas descartadas, consecuencias 
 | [0004](0004-persistencia-sqlite-y-outbox.md) | Persistencia SQLite y outbox transaccional | Aceptada |
 | [0005](0005-observabilidad.md) | Observabilidad: logs de plataforma y telemetría de aplicación | Aceptada |
 | [0006](0006-imagen-de-contenedor.md) | Imagen de contenedor: dos fases, sin root y sin SDK en ejecución | Aceptada |
+| [0007](0007-rate-limiting.md) | Rate limiting global por IP como umbral de laboratorio | Aceptada |
 
 ## Patrones en el código
 
