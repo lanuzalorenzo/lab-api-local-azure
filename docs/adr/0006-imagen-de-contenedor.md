@@ -1,6 +1,6 @@
 # ADR-0006 — Imagen de contenedor: dos fases, sin root y sin SDK en ejecución
 
-> **Estado:** Aceptada · actualizada el 2026-11-03
+> **Estado:** Aceptada · actualizada el 2026-11-05
 > **Ámbito:** `Dockerfile`, composición local y trabajo de imagen en CI.
 > **Evidencia:** [`Dockerfile`](../../Dockerfile), [`.github/workflows/devsecops-ci.yml`](../../.github/workflows/devsecops-ci.yml) (construcción y comprobación de UID), [`EcommerceApi/Program.cs`](../../EcommerceApi/Program.cs) (`/health`) y [`EcommerceApi/appsettings.json`](../../EcommerceApi/appsettings.json) (`Storage`).
 > **Relacionada con:** [ADR-0005](0005-observabilidad.md) y [ADR-0004](0004-persistencia-sqlite-y-outbox.md).
@@ -50,6 +50,11 @@ Datos medidos el 2026-11-03 en el host de trabajo:
    `healthcheck` en el contenedor**: la imagen no trae `curl` y añadir un cliente
    HTTP solo para sondear aumenta la superficie; la comprobación se hace desde el
    host contra `/health`, que es anónimo.
+8. **Parches del sistema operativo en la construcción.** La fase final ejecuta
+   `apt-get update && apt-get upgrade` y borra las listas. La etiqueta `:10.0`
+   aporta el runtime de .NET parcheado; los paquetes de Ubuntu se actualizan en
+   cada construcción para no publicar CVE corregibles que el escaneo de CI
+   convertiría en fallo.
 
 ## 3. Alternativas descartadas
 
@@ -70,6 +75,8 @@ Datos medidos el 2026-11-03 en el host de trabajo:
 
 - La imagen final no contiene herramientas de compilación ni código fuente: menos
   componentes que puedan tener una vulnerabilidad explotable.
+- La imagen no hereda CVE de Ubuntu ya corregidos: los parches del sistema se
+  aplican en la construcción y el escaneo del pipeline sigue siendo bloqueante.
 - El arranque local es reproducible y no depende de recordar parámetros.
 - La compilación en la imagen es independiente de la de CI: cualquiera puede
   reconstruirla desde el repositorio.
@@ -84,6 +91,10 @@ Datos medidos el 2026-11-03 en el host de trabajo:
   se acepta porque la comprobación es manual; antes de desplegar hay que decidirlo.
 - La imagen todavía no genera inventario de componentes ni se firma; el escaneo de
   vulnerabilidades de la imagen ya lo hace el pipeline.
+- La capa de `apt` añade tamaño y unos segundos de construcción, y dos
+  construcciones del mismo commit pueden diferir si el repositorio de Ubuntu
+  cambia. Se acepta porque el escaneo es bloqueante y la alternativa es publicar
+  CVE corregidos.
 
 **Comprobado en ejecución:** el 2026-11-03, con Docker 29.1.3 y Compose 2.40.3,
 `docker compose up --build -d` levanta la API desde una imagen borrada y
@@ -92,6 +103,13 @@ La base (`/app/data/ecommerce.db`, 49 152 bytes) conserva tamaño y fecha tras
 `docker compose down` y `up -d`. Lo que sigue sin probarse es el despliegue en un
 orquestador, que decide el `healthcheck`.
 
+**Comprobado en ejecución:** el 2026-11-05, con Docker 29.1.3, una construcción con
+`--pull` produce una imagen con .NET 10.0.14, `apt` 2.8.4ubuntu0.1, `/health` en
+`200 OK` y UID 1654. El escaneo de Trivy (`CRITICAL,HIGH`, `ignore-unfixed`) no
+devuelve hallazgos; antes del cambio marcaba CVE-2026-109518 en `apt` y
+CVE-2026-111497 en el runtime 10.0.13. El escaneo se hizo con `aquasec/trivy`
+sobre la imagen exportada, no con el pipeline.
+
 ## 5. Cuándo revisar esta decisión
 
 - Al primer despliegue en un orquestador: si el contenedor necesita sonda, la
@@ -99,6 +117,8 @@ orquestador, que decide el `healthcheck`.
 - Cuando entren inventario de componentes y firma: el escaneo puede pedir otra base.
 - Antes del primer despliegue: decidir `healthcheck` y usuario en la plataforma.
 - Si el tamaño de la imagen o sus CVE obligan a Alpine o *chiseled*.
+- Si la etiqueta `:10.0` deja de traer el runtime parcheado o el `apt-get upgrade`
+  rompe el arranque: se fija el digest y se mueve el parcheo al pipeline.
 
 **Criterio de cierre:** un orquestador decide el `healthcheck` y la base sigue
 disponible en ese despliegue.
