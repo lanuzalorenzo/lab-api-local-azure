@@ -1,9 +1,9 @@
 # Referencia de la API
 
-> **Estado:** Implementado · verificado el 2026-10-29 contra `main`.
+> **Estado:** Implementado · verificado el 2026-10-29 contra `main`; límites de rate limit revisados el 2026-11-05.
 > **Ámbito:** contrato HTTP de `EcommerceApi` (endpoints, autenticación, cuerpos, errores y límites).
 > **Evidencia:** `EcommerceApi/Controllers`, `EcommerceApi/Models`, `EcommerceApi.Application` y `tests/EcommerceApi.Tests`.
-> **Relacionada con:** [Persistencia y paginación](persistence.md), [Entra ID](entra-id.md), [ADR-0005](adr/0005-observabilidad.md).
+> **Relacionada con:** [Persistencia y paginación](persistence.md), [Entra ID](entra-id.md), [ADR-0005](adr/0005-observabilidad.md) y [ADR-0007](adr/0007-rate-limiting.md).
 
 Imagina el mostrador de una tienda: un portero comprueba la identificación, cada
 cliente solo ve sus propios pedidos y, cuando algo falla, se entrega un número de
@@ -83,6 +83,9 @@ implementa.
 
 `{id}` es un entero positivo. El `201` incluye `Location` con la ruta del recurso
 creado (`CreatedAtAction`).
+
+El `429` es global: cualquier ruta puede devolverlo al superar 120 peticiones por
+minuto e IP, incluido `/health`, que también consume cuota ([ADR-0007](adr/0007-rate-limiting.md)).
 
 ## 4. Contratos
 
@@ -192,7 +195,7 @@ llegar a un controlador.
 | `403` | Autenticado sin permiso | No se produce hoy: no hay políticas ni roles | — |
 | `404` | Recurso inexistente o pedido de otro usuario | `ProblemDetails` con `detail` | Sí |
 | `413` | Cuerpo mayor de 16 KB en `POST` | Vacío | No |
-| `429` | Más de 120 peticiones por minuto y IP | Vacío | No |
+| `429` | Más de 120 peticiones por minuto y IP | Vacío, sin `Retry-After` | No |
 | `500` | Excepción no controlada | `ProblemDetails` sin `detail` ni traza | Sí |
 
 Los títulos son estables y se pueden usar para ramificar: `Invalid request` en los
@@ -291,7 +294,8 @@ Regla para el cliente: leer `detail` si existe; en un `500`, conservar el
 | Precio y stock | 0 a 1.000.000 | `Product.MaxPrice`, `Product.MaxStock` |
 
 El rate limit es un control de laboratorio por IP; detrás de un proxy inverso
-todas las peticiones pueden compartir la misma IP de origen. El límite de cuerpo
+todas las peticiones pueden compartir la misma IP de origen. La decisión y su
+criterio de revisión están en [ADR-0007](adr/0007-rate-limiting.md). El límite de cuerpo
 lo aplica Kestrel: `TestServer` no lo reproduce, así que el `413` se comprueba de
 forma manual y no tiene prueba de integración.
 

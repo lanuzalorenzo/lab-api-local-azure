@@ -1,6 +1,6 @@
 # Capacidades y evidencia
 
-> **Estado:** Implementado · verificado el 2026-10-29 contra `main`.
+> **Estado:** Implementado · verificado el 2026-10-29 contra `main`; rate limit revisado el 2026-11-05 con [ADR-0007](adr/0007-rate-limiting.md).
 > **Ámbito:** qué puede afirmarse sobre este repositorio, con qué se comprueba y qué queda fuera.
 > **Evidencia:** `dotnet test`, `.github/workflows/devsecops-ci.yml`, `infra/main.bicep` y `docs/`.
 > **Relacionada con:** [Referencia de la API](api.md), [resumen de estado](../README.md#estado-de-seguridad), [ADR](adr/README.md).
@@ -49,7 +49,7 @@ verificación y ajusta la tabla en el mismo lote.
 | Paginación por cursor (*keyset*) con límites y filtro temporal | `OrderQuery`, `SqliteOrderReadModel` | `GetOrders_WithLimit_ReturnsCursorAndNextPage` | Implementado |
 | Contrato de error único (`400`, `404`, `500`) | `ProblemDetails`, controladores y `DomainExceptionHandler` | `ErrorContractTests` (4 casos) | Implementado |
 | CORS con denegación por defecto | `Program.cs` | `AllowedOrigin_ReceivesCorsHeader`, `UnknownOrigin_DoesNotReceiveCorsHeader` | Implementado |
-| Rate limit global de 120 req/min por IP | `Program.cs` | `ExceedingGlobalLimit_ReturnsTooManyRequests` | Implementado (laboratorio) |
+| Rate limit global de 120 req/min por IP | `Program.cs` ([ADR-0007](adr/0007-rate-limiting.md)) | `ExceedingGlobalLimit_ReturnsTooManyRequests` | Implementado (laboratorio) |
 | Límite de cuerpo de 16 KB en escrituras | `[RequestSizeLimit]` | Manual: `TestServer` no aplica el límite de Kestrel | Implementado |
 
 El contrato completo, incluido el formato de error, está en
