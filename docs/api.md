@@ -295,9 +295,12 @@ Regla para el cliente: leer `detail` si existe; en un `500`, conservar el
 
 El rate limit es un control de laboratorio por IP; detrás de un proxy inverso
 todas las peticiones pueden compartir la misma IP de origen. La decisión y su
-criterio de revisión están en [ADR-0007](adr/0007-rate-limiting.md). El límite de cuerpo
-lo aplica Kestrel: `TestServer` no lo reproduce, así que el `413` se comprueba de
-forma manual y no tiene prueba de integración.
+criterio de revisión están en [ADR-0007](adr/0007-rate-limiting.md): en una prueba
+de carga de 50 s sobre `GET /health`, con un cliente, se mantienen 119 aceptadas
+por ventana (120 menos la sonda de salud), sin `5xx`, aunque el valor no está
+calibrado contra un SLO. El límite de cuerpo lo aplica Kestrel: `TestServer` no lo
+reproduce, así que el `413` está pendiente de comprobación manual y no tiene prueba
+de integración.
 
 ## 8. Swagger, health y diagnóstico
 

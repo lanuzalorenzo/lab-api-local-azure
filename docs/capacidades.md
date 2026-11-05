@@ -49,8 +49,8 @@ verificación y ajusta la tabla en el mismo lote.
 | Paginación por cursor (*keyset*) con límites y filtro temporal | `OrderQuery`, `SqliteOrderReadModel` | `GetOrders_WithLimit_ReturnsCursorAndNextPage` | Implementado |
 | Contrato de error único (`400`, `404`, `500`) | `ProblemDetails`, controladores y `DomainExceptionHandler` | `ErrorContractTests` (4 casos) | Implementado |
 | CORS con denegación por defecto | `Program.cs` | `AllowedOrigin_ReceivesCorsHeader`, `UnknownOrigin_DoesNotReceiveCorsHeader` | Implementado |
-| Rate limit global de 120 req/min por IP | `Program.cs` ([ADR-0007](adr/0007-rate-limiting.md)) | `ExceedingGlobalLimit_ReturnsTooManyRequests` | Implementado (laboratorio) |
-| Límite de cuerpo de 16 KB en escrituras | `[RequestSizeLimit]` | Manual: `TestServer` no aplica el límite de Kestrel | Implementado |
+| Rate limit global de 120 req/min por IP | `Program.cs` ([ADR-0007](adr/0007-rate-limiting.md)) | `ExceedingGlobalLimit_ReturnsTooManyRequests`; carga con k6 en el portfolio | Validado en local (secuencial y concurrente); sin SLO |
+| Límite de cuerpo de 16 KB en escrituras | `[RequestSizeLimit]` | Pendiente de comprobación manual: `TestServer` no aplica el límite de Kestrel | Implementado; `413` sin comprobar |
 
 El contrato completo, incluido el formato de error, está en
 [docs/api.md](api.md).
@@ -128,7 +128,7 @@ Lista deliberada. Sirve para no arrastrar afirmaciones que el código no sostien
 | PKCE implementado | El flujo lo ejecuta el cliente; aquí solo se documenta y se valida el token resultante |
 | Azure desplegado | `infra/main.bicep` se compila y se escanea, pero no se ha aplicado a una suscripción |
 | OIDC de CI a Azure activo | Hay un workflow de CI, no de despliegue |
-| Alta disponibilidad, SLA o tráfico elevado | SQLite, una instancia y ninguna prueba de carga |
+| Alta disponibilidad, SLA o tráfico elevado | SQLite, una instancia y solo una prueba puntual de carga, no tráfico elevado |
 | Cobertura de pruebas medida | `coverlet` está disponible, pero no hay umbral ni informe en CI |
 | Validación de dominio ejercitada por HTTP | `DataAnnotations` y la deduplicación del caso de uso la cubren antes; `DomainExceptionHandler` actúa como red de seguridad y no tiene prueba de integración |
 

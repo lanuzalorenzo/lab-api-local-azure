@@ -2,7 +2,7 @@
 
 > **Estado:** Aceptada · 2026-11-05
 > **Ámbito:** middleware de rate limiting en [`EcommerceApi/Program.cs`](../../EcommerceApi/Program.cs), límites operativos de [`docs/api.md`](../api.md) y tabla de capacidades.
-> **Evidencia:** medición del 2026-11-05 contra la imagen del commit `b9176b0` (130 peticiones: 120 `200` y 10 `429`, recuperación tras reiniciar la ventana), registrada en el portfolio: [`2026-11-05-11-api-rate-limit`](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/blob/main/laboratorio-final/evidencias/2026-11-05-11-api-rate-limit/README.md).
+> **Evidencia:** mediciones del 2026-11-05 contra una imagen construida desde el árbol de `b9176b0` (`Program.cs` sin cambios hasta `main` en `2b92c85`): sesión secuencial (130 peticiones: 120 `200` y `429` desde la 121) y sesión de carga con k6 (10 y 50 peticiones por segundo durante 50 s: 119 `200` por ventana, resto `429`, sin `5xx`). Registradas en el portfolio: [`2026-11-05-11-api-rate-limit`](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/blob/main/laboratorio-final/evidencias/2026-11-05-11-api-rate-limit/README.md) y [`2026-11-05-11-api-rate-limit-carga`](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/blob/main/laboratorio-final/evidencias/2026-11-05-11-api-rate-limit-carga/README.md).
 > **Relacionada con:** [ADR-0005](0005-observabilidad.md) y [ADR-0006](0006-imagen-de-contenedor.md).
 
 Un límite de peticiones es como el aforo de una sala: fija cuántos caben y deja fuera al que insiste, sin prometer que la sala aguante un incendio. Este documento fija que el aforo es de 120 peticiones por minuto y por IP, dónde se aplica y qué NO se puede afirmar con él. Es un control de laboratorio: no sustituye a un gateway ni a un WAF.
@@ -35,14 +35,19 @@ El coste de la decisión es cero en infraestructura: el limiter vive en el proce
 
 ## 4. Consecuencias
 
-Medido el 2026-11-05 contra el contenedor del commit `b9176b0`, con ráfaga secuencial de un cliente:
+Medido el 2026-11-05 contra el contenedor del commit `b9176b0`, con una ráfaga secuencial y dos pruebas de carga con k6 sobre `GET /health` (un cliente, 50 s por escenario):
 
 | Hecho | Observación |
 |---|---|
 | Cuota exacta | 120 respuestas `200`; la primera `429` en la petición 121 |
 | Reinicio de la ventana | `200` de nuevo tras 62 s |
+| Carga a 10 peticiones/s | 119 `200` y 382 `429` en 50 s; p95 de `200` 1,58 ms |
+| Carga a 50 peticiones/s | 119 `200` y 2 381 `429` en 50 s; p95 de `200` 1,90 ms |
+| Coste del rechazo | p95 del `429` en torno a 1,1 ms, sin cola |
 | Cuerpo del rechazo | `429` con `Content-Length: 0`, sin `Retry-After` |
 | Clave de partición | Tres `X-Forwarded-For` inventadas siguieron recibiendo `429` |
+
+En las pruebas de carga, 119 = 120 menos la petición de salud que abre la ventana; los totales fueron 501 y 2 500 peticiones, sin estados distintos de `200` o `429`.
 
 Lo anterior confirma el umbral y la clave, no su robustez. Consecuencias asumidas:
 
@@ -51,7 +56,7 @@ Lo anterior confirma el umbral y la clave, no su robustez. Consecuencias asumida
 - **Sin `Retry-After`.** El cliente no sabe cuándo reintentar y su reintento automático puede alargar la saturación. Es una brecha de interoperabilidad, no de protección.
 - **Estado local.** Cada instancia tendría su propia cuota; escalar horizontalmente multiplica el límite efectivo.
 - **Sin cuotas por usuario.** Un token válido puede consumir la cuota de todos.
-- **Secuencial, no concurrente.** La medición usó un cliente; no hay latencias bajo saturación ni prueba de que 120/min sea suficiente o excesivo.
+- **Umbral no calibrado.** La carga se midió a 10 y 50 peticiones por segundo durante 50 s: el número de aceptadas no cambió, pero no hay un SLO de latencia ni un coste por endpoint que diga si 120/min es la cifra adecuada.
 - **`/health` incluido.** Un monitor que sondea demasiado rápido también puede recibir `429`.
 
 ## 5. Criterio para revisarla
@@ -60,7 +65,7 @@ Esta ADR se revisa cuando ocurra cualquiera de estas condiciones:
 
 1. **Hay un proxy inverso o balanceador delante.** Entonces `RemoteIpAddress` deja de ser la IP del cliente: o se configura `UseForwardedHeaders` con orígenes conocidos, o el límite pasa al gateway. Sin ese paso, la decisión deja de ser válida.
 2. **Hay tokens reales de Entra ID.** Con identidad disponible antes del limiter, se evalúa cuota por usuario además de por IP.
-3. **Existe una medición concurrente.** Si la carga concurrente muestra un `429` antes de lo esperado o latencias que crecen, se recalibra el umbral o se cambia a ventana deslizante/token bucket.
+3. **Aparece un SLO de latencia o cambia el coste por endpoint.** La carga concurrente ya está medida; si el SLO o el coste muestran que 120/min no es adecuado, se recalibra el umbral o se cambia a ventana deslizante/token bucket.
 4. **Se despliega en más de una instancia.** El estado local deja de ser suficiente; el límite se mueve a un componente compartido.
 5. **Aparece tráfico legítimo rechazado.** Se revisa el valor de 120/min y se añade `Retry-After` o un mecanismo de reintento acordado con el cliente.
 6. **Los costes por endpoint divergen.** Si una operación cuesta órdenes de magnitud más que otra, se pondera por ruta en lugar de aplicar un global.

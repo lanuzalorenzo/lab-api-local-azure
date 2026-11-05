@@ -39,7 +39,7 @@ STRIDE agrupa las amenazas en seis familias: suplantación de identidad, manipul
 | **Tampering** | Reenvío o duplicado de `OrderCreatedV1` | Idempotencia por `messageId` en `ProcessedMessages`; el outbox escribe el mensaje en la misma transacción que el pedido | Implementado (local) |
 | **Repudiation** | Usuario niega una operación | No hay auditoría persistente; solo logs de aplicación | Parcial |
 | **Information Disclosure** | Fuga de IDs, stack traces o tokens | `UserId` no se serializa, `ProblemDetails`, Swagger solo en Development | Parcial |
-| **Denial of Service** | Peticiones masivas o cuerpos enormes | Rate limit 120/min por IP, límite de 16 KB, límites del contenedor | Parcial |
+| **Denial of Service** | Peticiones masivas o cuerpos enormes | Rate limit 120/min por IP validado con carga puntual; límite de 16 KB sin comprobar; límites del contenedor | Parcial |
 | **Elevation of Privilege** | Usuario accede a pedidos ajenos | Filtrado por identidad y `404` para recursos ajenos | Implementado (BOLA) |
 | **Elevation of Privilege** | Acceso a funciones administrativas | No hay roles/scopes aplicados; no existen endpoints admin | Pendiente / fuera de alcance |
 
@@ -80,7 +80,7 @@ y consumidor idempotente por `messageId`.
 3. **Sin auditoría inmutable**: los logs no están centralizados ni firmados.
 4. **Sin WAF/API Management**: el rate limit es local y por IP.
 5. **Sin despliegue real**: la plantilla Bicep y los Private Endpoints no se han probado contra Azure.
-6. **Sin pruebas de carga**: el límite de 120/min no se ha calibrado.
+6. **Sin SLO ni calibración**: el límite se probó bajo carga (10 y 50 peticiones/s), pero 120/min no se ha calibrado contra latencia ni coste por endpoint. El `413` del cuerpo de 16 KB tampoco se ha comprobado en ejecución.
 7. **Client credentials**: el claim `sub` identifica a la aplicación, no a una persona; las pruebas de usuario final requieren flujos delegados.
 
 ## 6. Verificación en CI
@@ -100,7 +100,7 @@ Los resultados se publican como SARIF en GitHub Security.
 
 - Implementar políticas de autorización por scopes/roles.
 - Añadir auditoría persistente y correlación de `oid`/`sub`.
-- Añadir pruebas de carga y calibración del rate limit.
+- Calibrar el rate limit contra un SLO de latencia y el coste por endpoint.
 - Desplegar la plantilla Bicep en una suscripción de laboratorio y validar
   Private Endpoints, DNS y diagnóstico.
 - Añadir API Management/WAF delante de la API.
