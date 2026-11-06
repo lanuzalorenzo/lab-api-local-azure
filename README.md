@@ -113,6 +113,10 @@ GitHub Packages exige autenticación incluso para paquetes públicos, así que u
 docker build --secret id=github_token,env=GITHUB_TOKEN -t ecommerce-api -f Dockerfile .
 ```
 
+### Compilación y versiones
+
+`Directory.Build.props` fija la configuración común de compilación —`Nullable`, `ImplicitUsings`, avisos como errores y auditoría NuGet— y `Directory.Packages.props` declara una sola vez la versión de cada paquete. Los `.csproj` solo declaran qué referencian y sus ajustes propios, sin repetir `Nullable`, `ImplicitUsings` ni `Version`. La decisión y sus límites están en [ADR-0008](docs/adr/0008-configuracion-de-compilacion-y-paquetes-centralizada.md).
+
 ### Pruebas
 
 ```bash

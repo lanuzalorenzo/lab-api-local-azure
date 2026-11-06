@@ -6,6 +6,7 @@ API empresarial en .NET 10 y workload de referencia del portfolio público. Este
 
 - Desacoplada: `Domain` sin dependencias, `Application` solo `Domain`, `Infrastructure` de ambas y el host compone todo. Verificado en `tests/EcommerceApi.Architecture.Tests`; no debilites esa separación.
 - Toda decisión estructural se documenta como ADR en `docs/adr/`.
+- `Directory.Build.props` fija la configuración común de compilación y `Directory.Packages.props` la única versión de cada paquete; los `.csproj` no repiten `Nullable`, `ImplicitUsings` ni `Version`. Ver [ADR-0008](docs/adr/0008-configuracion-de-compilacion-y-paquetes-centralizada.md).
 - `functions/` contiene el procesador de pedidos; los diseños de plataforma están en `docs/app-service.md`, `docs/functions.md` y `docs/ai-integration.md`. Si un cambio los contradice, actualiza el documento en el mismo lote.
 - `infra/main.bicep` es la infraestructura; sin recursos públicos por defecto.
 
