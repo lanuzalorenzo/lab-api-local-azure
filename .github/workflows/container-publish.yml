@@ -27,7 +27,7 @@ jobs:
 
       - name: Construir y publicar
         id: imagen
-        uses: lanuzalorenzo/core/actions/container-publish@5fb346d
+        uses: lanuzalorenzo/core/actions/container-publish@5fb346d0643004129a169559ce1f7634772cebd5
         with:
           image: ${{ github.repository_owner }}/ecommerceapi
           username: ${{ github.actor }}
