@@ -1,7 +1,7 @@
 # ADR-0007 — Rate limiting global por IP: umbral de laboratorio, no barrera de producción
 
 > **Estado:** Aceptada · 2026-11-05
-> **Ámbito:** middleware de rate limiting en [`EcommerceApi/Program.cs`](../../EcommerceApi/Program.cs), límites operativos de [`docs/api.md`](../api.md) y tabla de capacidades.
+> **Ámbito:** middleware de rate limiting del paquete `LL.Security` (`AddRemoteIpRateLimiting`) configurado en [`EcommerceApi/Program.cs`](../../EcommerceApi/Program.cs), límites operativos de [`docs/api.md`](../api.md) y tabla de capacidades.
 > **Evidencia:** mediciones del 2026-11-05 contra una imagen construida desde el árbol de `b9176b0` (`Program.cs` sin cambios hasta `main` en `2b92c85`): sesión secuencial (130 peticiones: 120 `200` y `429` desde la 121) y sesión de carga con k6 (10 y 50 peticiones por segundo durante 50 s: 119 `200` por ventana, resto `429`, sin `5xx`). Registradas en el portfolio: [`2026-11-05-11-api-rate-limit`](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/blob/main/laboratorio-final/evidencias/2026-11-05-11-api-rate-limit/README.md) y [`2026-11-05-11-api-rate-limit-carga`](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/blob/main/laboratorio-final/evidencias/2026-11-05-11-api-rate-limit-carga/README.md).
 > **Relacionada con:** [ADR-0005](0005-observabilidad.md) y [ADR-0006](0006-imagen-de-contenedor.md).
 
@@ -9,7 +9,7 @@ Un límite de peticiones es como el aforo de una sala: fija cuántos caben y dej
 
 ## 1. Contexto
 
-La API se expone sin API Management ni WAF delante. El middleware de rate limiting está registrado en `Program.cs`, pero no tenía decisión escrita: `docs/api.md` lo mencionaba como límite operativo y `RateLimitTests` comprobaba el `429` a través de `WebApplicationFactory`, que valida el comportamiento del middleware y no su efecto sobre un cliente real.
+La API se expone sin API Management ni WAF delante. El middleware de rate limiting se registra con `AddRemoteIpRateLimiting` del paquete `LL.Security` y se configura en `Program.cs`, pero no tenía decisión escrita: `docs/api.md` lo mencionaba como límite operativo y `RateLimitTests` comprobaba el `429` a través de `WebApplicationFactory`, que valida el comportamiento del middleware y no su efecto sobre un cliente real.
 
 OWASP API4 (Unrestricted Resource Consumption) y el threat model del repositorio lo clasifican como **Parcial**: hay un límite global, no cuotas por usuario ni por endpoint, y no hay calibración. Sin embargo, «existe un limiter» y «el límite corta donde dice» son afirmaciones distintas; hasta el 2026-11-05 solo la primera estaba probada contra un proceso en ejecución.
 
@@ -72,7 +72,7 @@ Esta ADR se revisa cuando ocurra cualquiera de estas condiciones:
 
 ## 6. Referencias
 
-- [`EcommerceApi/Program.cs`](../../EcommerceApi/Program.cs) — `AddRateLimiter` y `UseRateLimiter`.
+- [`EcommerceApi/Program.cs`](../../EcommerceApi/Program.cs) — `AddRemoteIpRateLimiting` y `UseRateLimiter`.
 - [`docs/api.md`](../api.md) — límites operativos y comportamiento del `429`.
 - [`docs/threat-model-appsec.md`](../threat-model-appsec.md) — API4 y denegación de servicio.
 - [OWASP API Security Top 10 (2023), API4](https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/)

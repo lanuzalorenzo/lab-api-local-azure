@@ -70,42 +70,32 @@ Para una aplicación frontend (cliente público), configura los **Redirect URIs*
 
 `appsettings.json` solo contiene placeholders (`YOUR_TENANT_ID`, `YOUR_API_CLIENT_ID`). La API arranca con ellos, pero registra una advertencia y no valida tokens reales hasta que se configure un tenant.
 
-La validación se registra en `EcommerceApi/Program.cs`:
+La validación la registra el paquete `LL.Security`; el host solo aporta emisor y audiencia:
 
 ```csharp
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.Authority = azureAdOptions.Authority;
-        options.Audience = azureAdOptions.Audience;
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = azureAdOptions.Authority,
-            ValidateAudience = true,
-            ValidAudience = azureAdOptions.Audience,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ClockSkew = TimeSpan.FromMinutes(2)
-        };
-    });
+builder.Services.AddHardenedJwtBearer(options =>
+{
+    options.Authority = azureAdOptions.Authority;
+    options.Audience = azureAdOptions.Audience;
+});
 ```
+
+El paquete activa firma, emisor, audiencia y vigencia, y falla al arrancar si el emisor no es una URL absoluta o la audiencia está vacía.
 
 La firma se comprueba con las claves públicas (JWKS) del documento de metadatos de la autoridad configurada.
 
 Orden del pipeline:
 
 ```csharp
-app.UseExceptionHandler();
-app.UseHttpsRedirection();
-app.UseHsts();               // solo en Production
-app.Use(async (context, next) => { /* cabeceras de seguridad */ });
+app.UseSecurityHeaders();
+app.UseApiProblemDetails();
+app.UseApiTransportSecurity(app.Environment);  // HTTPS y HSTS; se salta en Testing
 app.UseCors("ApiCors");
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-app.MapHealthChecks("/health").AllowAnonymous();
+app.MapApiHealthChecks();
 ```
 
 `UseAuthentication()` va antes de `UseAuthorization()`. `UseCors()` va antes de autenticación para que las respuestas de preflight no exijan token.

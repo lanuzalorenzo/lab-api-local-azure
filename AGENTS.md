@@ -12,7 +12,7 @@ API empresarial en .NET 10 y workload de referencia del portfolio público. Este
 ## Seguridad
 
 - Security by Design y OWASP API Security Top 10.
-- No elimines ni debilites la validación criptográfica JWT/JWKS de `Program.cs`.
+- No elimines ni debilites la validación criptográfica JWT/JWKS: la aplica `LL.Security` (`AddHardenedJwtBearer`) y `Program.cs` solo aporta emisor y audiencia.
 - CORS con denegación por defecto y orígenes explícitos.
 - Dockerfile con usuario no privilegiado (`USER $APP_UID`).
 - Sin secretos ni cadenas reales en el código: `appsettings.Development.json` (ignorado), user-secrets o variables de entorno.
