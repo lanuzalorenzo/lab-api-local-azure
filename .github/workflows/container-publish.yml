@@ -1,0 +1,43 @@
+name: Imagen de la API
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: imagen-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Construir y publicar la imagen
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v7
+
+      - name: Construir y publicar
+        id: imagen
+        uses: lanuzalorenzo/core/actions/container-publish@5fb346d
+        with:
+          image: ${{ github.repository_owner }}/ecommerceapi
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          push: ${{ github.event_name != 'pull_request' }}
+          secrets: |
+            github_token=${{ secrets.GITHUB_TOKEN }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Anotar el digest
+        run: |
+          echo "Digest de la imagen: ${{ steps.imagen.outputs.digest }}" >> "$GITHUB_STEP_SUMMARY"
