@@ -109,6 +109,11 @@ La base (`/app/data/ecommerce.db`, 49 152 bytes) conserva tamaño y fecha tras
 `docker compose down` y `up -d`. Lo que sigue sin probarse es el despliegue en un
 orquestador, que decide el `healthcheck`.
 
+**Comprobado en CI:** el 2026-11-06 el job `container-security` construyó la
+imagen con `--secret id=github_token,env=GITHUB_TOKEN` contra el feed de GitHub
+Packages; la comprobación de UID y el escaneo de Trivy pasaron en la misma
+ejecución.
+
 **Comprobado en ejecución:** el 2026-11-05, con Docker 29.1.3, una construcción con
 `--pull` produce una imagen con .NET 10.0.14, `apt` 2.8.4ubuntu0.1, `/health` en
 `200 OK` y UID 1654. El escaneo de Trivy (`CRITICAL,HIGH`, `ignore-unfixed`) no
