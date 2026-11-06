@@ -12,6 +12,10 @@ updates:
     labels:
       - "dependencies"
       - "security"
+    ignore:
+      # Los paquetes LL.* viven en shared-dotnet: el rango 0.1.* los actualiza al
+      # restaurar y un salto de versión mayor es deliberado (ADR-0002).
+      - dependency-name: "LL.*"
     groups:
       nuget-patch-minor:
         patterns:

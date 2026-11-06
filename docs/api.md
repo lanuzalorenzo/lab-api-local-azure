@@ -35,8 +35,9 @@ el contrato vigente.
 
 ## 2. Autenticación y autorización
 
-El host actúa como *resource server*: no emite tokens, los valida. La configuración
-está en `EcommerceApi/Program.cs:133-148`.
+El host actúa como *resource server*: no emite tokens, los valida. La validación
+la registra `LL.Security` (`AddHardenedJwtBearer`) y la configura el host en
+`EcommerceApi/Program.cs`.
 
 | Comprobación | Detalle |
 |---|---|
@@ -286,7 +287,7 @@ Regla para el cliente: leer `detail` si existe; en un `500`, conservar el
 
 | Límite | Valor | Dónde |
 |---|---|---|
-| Peticiones por IP | 120 por minuto, ventana fija, sin cola | `Program.cs:119-131` |
+| Peticiones por IP | 120 por minuto, ventana fija, sin cola | `LL.Security` (`AddRemoteIpRateLimiting`) |
 | Cuerpo en `POST` | 16 KB | `OrdersController`, `ProductsController` |
 | Líneas por pedido | 20 | `Order.MaxLines` |
 | Tamaño de página | 100 | `OrderQuery.MaxLimit` |
@@ -304,11 +305,13 @@ de integración.
 
 ## 8. Swagger, health y diagnóstico
 
-- Swagger UI y el documento OpenAPI solo se exponen en `Development`
-  (`Program.cs:160-164`); en `Production` no hay endpoint de documentación.
-- `GET /health` es anónimo y devuelve `200` con el texto `Healthy`.
+- Swagger UI y el documento OpenAPI solo se exponen en `Development`; en
+  `Production` no hay endpoint de documentación.
+- `GET /health` es anónimo y devuelve `200` con el texto `Healthy`
+  (`LL.Hosting`, `MapApiHealthChecks`).
 - Cabeceras de seguridad en todas las respuestas: `X-Content-Type-Options`,
-  `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` (`Program.cs:178-185`).
+  `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`
+  (`LL.Security`, `UseSecurityHeaders`).
 - CORS: lista vacía deniega cualquier origen; solo se permite lo declarado en
   `Cors:AllowedOrigins`.
 

@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # ==============================================================================
 # Dockerfile: EcommerceApi (.NET 10 Web API)
 # Enfoque: Multi-stage build, imagen reducida y segregación de privilegios (non-root)
@@ -9,18 +10,24 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# Copiar csproj y restaurar dependencias primero para aprovechar la caché de capas
+# Copiar csproj y restaurar dependencias primero para aprovechar la caché de capas.
+# El feed de GitHub Packages exige token incluso para paquetes públicos: entra
+# como secreto de BuildKit y no queda en ninguna capa de la imagen.
+COPY ["NuGet.config", "."]
 COPY ["EcommerceApi/EcommerceApi.csproj", "EcommerceApi/"]
 COPY ["EcommerceApi.Domain/EcommerceApi.Domain.csproj", "EcommerceApi.Domain/"]
 COPY ["EcommerceApi.Application/EcommerceApi.Application.csproj", "EcommerceApi.Application/"]
+COPY ["EcommerceApi.Contracts/EcommerceApi.Contracts.csproj", "EcommerceApi.Contracts/"]
 COPY ["EcommerceApi.Infrastructure/EcommerceApi.Infrastructure.csproj", "EcommerceApi.Infrastructure/"]
-RUN dotnet restore "EcommerceApi/EcommerceApi.csproj"
+RUN --mount=type=secret,id=github_token \
+    GITHUB_TOKEN="$(cat /run/secrets/github_token)" \
+    dotnet restore "EcommerceApi/EcommerceApi.csproj"
 
 # Copiar el resto del código y compilar en modo Release
 COPY . .
 WORKDIR "/src/EcommerceApi"
-RUN dotnet build "EcommerceApi.csproj" -c Release -o /app/build
-RUN dotnet publish "EcommerceApi.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet build "EcommerceApi.csproj" -c Release --no-restore -o /app/build
+RUN dotnet publish "EcommerceApi.csproj" -c Release --no-restore -o /app/publish /p:UseAppHost=false
 
 # ------------------------------------------------------------------------------
 # Fase 2: Runtime endurecido para producción

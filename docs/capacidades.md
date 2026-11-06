@@ -1,6 +1,6 @@
 # Capacidades y evidencia
 
-> **Estado:** Implementado · verificado el 2026-10-29 contra `main`; rate limit revisado el 2026-11-05 con [ADR-0007](adr/0007-rate-limiting.md).
+> **Estado:** Implementado · verificado el 2026-10-29 contra `main`; rate limit revisado el 2026-11-05 con [ADR-0007](adr/0007-rate-limiting.md); controles compartidos desde los paquetes `LL.Security` y `LL.Hosting` el 2026-11-06.
 > **Ámbito:** qué puede afirmarse sobre este repositorio, con qué se comprueba y qué queda fuera.
 > **Evidencia:** `dotnet test`, `.github/workflows/devsecops-ci.yml`, `infra/main.bicep` y `docs/`.
 > **Relacionada con:** [Referencia de la API](api.md), [resumen de estado](../README.md#estado-de-seguridad), [ADR](adr/README.md).
@@ -47,9 +47,11 @@ verificación y ajusta la tabla en el mismo lote.
 | ASP.NET Core Web API con controladores y *host* mínimo | `EcommerceApi/Program.cs` | Swagger en `Development` o `curl` a `/api/products` | Implementado |
 | Contrato REST con `201` + `Location`, `404` y validación por DTO | `Controllers/`, `Models/` | `tests/EcommerceApi.Tests` | Implementado |
 | Paginación por cursor (*keyset*) con límites y filtro temporal | `OrderQuery`, `SqliteOrderReadModel` | `GetOrders_WithLimit_ReturnsCursorAndNextPage` | Implementado |
-| Contrato de error único (`400`, `404`, `500`) | `ProblemDetails`, controladores y `DomainExceptionHandler` | `ErrorContractTests` (4 casos) | Implementado |
-| CORS con denegación por defecto | `Program.cs` | `AllowedOrigin_ReceivesCorsHeader`, `UnknownOrigin_DoesNotReceiveCorsHeader` | Implementado |
-| Rate limit global de 120 req/min por IP | `Program.cs` ([ADR-0007](adr/0007-rate-limiting.md)) | `ExceedingGlobalLimit_ReturnsTooManyRequests`; carga con k6 en el portfolio | Validado en local (secuencial y concurrente); sin SLO |
+| Contrato de error único (`400`, `404`, `500`) | `LL.Hosting` (`AddApiProblemDetails`), controladores y `DomainExceptionHandler` | `ErrorContractTests` (4 casos) | Implementado |
+| CORS con denegación por defecto | `LL.Security` (`AddDenyByDefaultCors`) | `AllowedOrigin_ReceivesCorsHeader`, `UnknownOrigin_DoesNotReceiveCorsHeader` | Implementado |
+| Rate limit global de 120 req/min por IP | `LL.Security` (`AddRemoteIpRateLimiting`; [ADR-0007](adr/0007-rate-limiting.md)) | `ExceedingGlobalLimit_ReturnsTooManyRequests`; carga con k6 en el portfolio | Validado en local (secuencial y concurrente); sin SLO |
+| Salud anónima en `/health` | `LL.Hosting` (`MapApiHealthChecks`) | `Health_IsAnonymous_ReturnsHealthy` | Implementado |
+| Controles compartidos instalados con rango `0.1.*` | `EcommerceApi.csproj`, [`NuGet.config`](../NuGet.config) | `dotnet restore` desde GitHub Packages en CI | Implementado |
 | Límite de cuerpo de 16 KB en escrituras | `[RequestSizeLimit]` | Pendiente de comprobación manual: `TestServer` no aplica el límite de Kestrel | Implementado; `413` sin comprobar |
 
 El contrato completo, incluido el formato de error, está en
@@ -59,7 +61,7 @@ El contrato completo, incluido el formato de error, está en
 
 | Capacidad | Dónde | Cómo se comprueba | Estado |
 |---|---|---|---|
-| Validación JWT: firma, `iss`, `aud`, `exp`, `nbf` y *clock skew* | `Program.cs:133-148` | Requiere tenant real; ver [azure-ad-tests.md](azure-ad-tests.md) | Implementado; fuera de CI |
+| Validación JWT: firma, `iss`, `aud`, `exp`, `nbf` y *clock skew* | `LL.Security` (`AddHardenedJwtBearer`) | Requiere tenant real; ver [azure-ad-tests.md](azure-ad-tests.md) | Implementado; fuera de CI |
 | Autorización por propietario (BOLA/IDOR) | `OrdersController`, `GetOrderByIdHandler` | `UserCannotReadAnotherUsersOrder` y `CreateOrder_ReturnsOnlyOwnOrders` | Implementado |
 | `404` en lugar de `403` para pedidos ajenos | `OrdersController.GetOrderById` | La misma prueba | Implementado |
 | DTOs de entrada contra *mass assignment* | `Models/Create*Request.cs` | Revisión de código; `Id` no es asignable | Implementado |

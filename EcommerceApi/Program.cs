@@ -1,4 +1,3 @@
-using System.Threading.RateLimiting;
 using EcommerceApi.Application.Abstractions;
 using EcommerceApi.Application.OrderProcessing;
 using EcommerceApi.Application.Orders;
@@ -8,9 +7,8 @@ using EcommerceApi.ErrorHandling;
 using EcommerceApi.Infrastructure.Outbox;
 using EcommerceApi.Infrastructure.Persistence;
 using EcommerceApi.Infrastructure.Processing;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.IdentityModel.Tokens;
+using LL.Hosting;
+using LL.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,7 +27,7 @@ var azureAdOptions = builder.Configuration
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddProblemDetails();
+builder.Services.AddApiProblemDetails();
 builder.Services.AddExceptionHandler<DomainExceptionHandler>();
 
 // Telemetry is opt-in: without a connection string the SDK is not registered,
@@ -40,7 +38,7 @@ if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
 {
     builder.Services.AddApplicationInsightsTelemetry();
 }
-builder.Services.AddHealthChecks();
+builder.Services.AddApiHealthChecks();
 
 // Composition root: the host is the only place that knows about concrete adapters.
 // Application and domain code depend only on the ports.
@@ -89,64 +87,15 @@ builder.Services.AddScoped<IGetOrdersHandler, GetOrdersHandler>();
 builder.Services.AddScoped<IGetOrderByIdHandler, GetOrderByIdHandler>();
 builder.Services.AddSingleton<IProcessOrderHandler, ProcessOrderHandler>();
 
-// CORS is deny-by-default. Browser clients must be explicitly allowlisted through
-// configuration (Cors__AllowedOrigins__0, ...). Same-origin calls (Swagger) do not
-// require CORS.
-builder.Services.AddCors(options =>
+// Shared controls live in the LL packages: deny-by-default CORS, hardened JWT,
+// rate limiting, security headers, ProblemDetails, HTTPS/HSTS and health checks.
+builder.Services.AddDenyByDefaultCors(builder.Configuration);
+builder.Services.AddRemoteIpRateLimiting();
+builder.Services.AddHardenedJwtBearer(options =>
 {
-    options.AddPolicy("ApiCors", policy =>
-    {
-        // Read at policy-resolution time, not before Build: configuration providers
-        // added by the test host are only applied when the host is built.
-        var allowedOrigins = builder.Configuration
-            .GetSection("Cors:AllowedOrigins")
-            .Get<string[]>() ?? Array.Empty<string>();
-
-        if (allowedOrigins.Length == 0)
-        {
-            policy.SetIsOriginAllowed(_ => false);
-            return;
-        }
-
-        policy.WithOrigins(allowedOrigins)
-            .AllowAnyHeader()
-            .AllowAnyMethod();
-    });
+    options.Authority = azureAdOptions.Authority;
+    options.Audience = azureAdOptions.Audience;
 });
-
-// Basic abuse protection: 120 requests per minute per source IP. This is a lab
-// control, not a substitute for an API gateway or WAF.
-builder.Services.AddRateLimiter(options =>
-{
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = 120,
-                Window = TimeSpan.FromMinutes(1),
-                QueueLimit = 0
-            }));
-});
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.Authority = azureAdOptions.Authority;
-        options.Audience = azureAdOptions.Audience;
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = azureAdOptions.Authority,
-            ValidateAudience = true,
-            ValidAudience = azureAdOptions.Audience,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ClockSkew = TimeSpan.FromMinutes(2)
-        };
-    });
-
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
@@ -163,34 +112,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseExceptionHandler();
-
-if (!app.Environment.IsEnvironment("Testing"))
-{
-    app.UseHttpsRedirection();
-
-    if (!app.Environment.IsDevelopment())
-    {
-        app.UseHsts();
-    }
-}
-
-app.Use(async (context, next) =>
-{
-    context.Response.Headers.TryAdd("X-Content-Type-Options", "nosniff");
-    context.Response.Headers.TryAdd("X-Frame-Options", "DENY");
-    context.Response.Headers.TryAdd("Referrer-Policy", "no-referrer");
-    context.Response.Headers.TryAdd("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
-    await next();
-});
-
+// Headers first: the exception handler clears them when it writes a response, and
+// the middleware re-applies them before the response starts.
+app.UseSecurityHeaders();
+app.UseApiProblemDetails();
+app.UseApiTransportSecurity(app.Environment);
 app.UseCors("ApiCors");
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHealthChecks("/health").AllowAnonymous();
+app.MapApiHealthChecks();
 
 await app.Services.GetRequiredService<SqliteSchemaInitializer>().InitializeAsync();
 

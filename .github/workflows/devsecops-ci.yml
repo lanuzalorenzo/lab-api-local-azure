@@ -18,6 +18,11 @@ jobs:
   build-and-test:
     name: Compilación, formato y pruebas (.NET 10)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout del repositorio
         uses: actions/checkout@v7
@@ -53,7 +58,10 @@ jobs:
     permissions:
       actions: read
       contents: read
+      packages: read
       security-events: write
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout del repositorio
         uses: actions/checkout@v7
@@ -82,7 +90,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: read
       security-events: write
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout del repositorio
         uses: actions/checkout@v7
@@ -124,13 +135,20 @@ jobs:
     needs: [ build-and-test ]
     permissions:
       contents: read
+      packages: read
       security-events: write
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout del repositorio
         uses: actions/checkout@v7
 
       - name: Construir imagen de contenedor
-        run: docker build -t ecommerce-api:${GITHUB_SHA} -f Dockerfile .
+        run: >
+          docker build
+          --secret id=github_token,env=GITHUB_TOKEN
+          -t ecommerce-api:${GITHUB_SHA}
+          -f Dockerfile .
 
       - name: Verificar que el contenedor no ejecuta como root
         run: |

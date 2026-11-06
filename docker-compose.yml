@@ -1,11 +1,15 @@
 # Composición local de EcommerceApi.
 # La imagen se construye con el Dockerfile del repositorio (dos fases, sin root).
-# No se sobrescribe nada de la imagen: sin build.args ni environment.
+# El único dato de construcción es el token del feed, como secreto de BuildKit.
 services:
   api:
     build:
       context: .
       dockerfile: Dockerfile
+      secrets:
+        # GitHub Packages exige token para restaurar LL.Security y LL.Hosting.
+        # Se lee del entorno; no se guarda en la imagen ni en el repositorio.
+        - github_token
     image: ecommerce-api:local
     ports:
       - "8080:8080"
@@ -15,6 +19,10 @@ services:
     restart: unless-stopped
     # Sin healthcheck: la imagen no trae cliente HTTP. Se comprueba desde el
     # host contra /health, que es anónimo (ADR-0006).
+
+secrets:
+  github_token:
+    environment: GITHUB_TOKEN
 
 volumes:
   api-data:

@@ -74,17 +74,18 @@ lab-api-local-azure/
 ├── tests/                      # Unitarias, arquitectura, infraestructura e integración
 ├── infra/                      # Bicep: VNet, NSG, Key Vault, App Service, PE
 ├── docs/                       # Referencia, capacidades, ADR y diseños
-├── docker-compose.yml          # Arranque local en dos comandos
+├── docker-compose.yml          # Arranque local con compose
 └── .github/workflows/          # Pipeline DevSecOps
 ```
 
 ## Puesta en marcha
 
-Requisitos: .NET SDK 10.0 y, opcionalmente, Docker. Para validar tokens reales hace falta un tenant de Entra ID.
+Requisitos: .NET SDK 10.0 y, opcionalmente, Docker. Para validar tokens reales hace falta un tenant de Entra ID. La restauración necesita un `GITHUB_TOKEN` con `read:packages`, porque los controles compartidos vienen de GitHub Packages (ver [Paquetes compartidos](#paquetes-compartidos)).
 
 ```bash
 cp EcommerceApi/appsettings.Development.example.json EcommerceApi/appsettings.Development.json
 # Edita el archivo con tenant, client ID, audience, authority y orígenes CORS
+export GITHUB_TOKEN="$(gh auth token)"
 dotnet restore EcommerceApi.sln
 dotnet run --project EcommerceApi --urls http://localhost:5080
 ```
@@ -95,6 +96,22 @@ dotnet run --project EcommerceApi --urls http://localhost:5080
 - Pedidos: `GET /api/orders?limit=20&afterId=42`; las reglas de paginación están en [`docs/persistence.md`](docs/persistence.md).
 
 `appsettings.Development.json` está ignorado por Git. No guardes secretos en `appsettings.json` ni en el repositorio.
+
+### Paquetes compartidos
+
+`LL.Security` y `LL.Hosting` se publican desde [`shared-dotnet`](https://github.com/lanuzalorenzo/shared-dotnet) en el feed de GitHub Packages del propietario. El feed y sus credenciales viven en [`NuGet.config`](NuGet.config); el usuario es el propietario y la contraseña sale de `GITHUB_TOKEN`:
+
+```bash
+gh auth refresh -h github.com -s read:packages
+export GITHUB_TOKEN="$(gh auth token)"
+dotnet restore EcommerceApi.sln
+```
+
+GitHub Packages exige autenticación incluso para paquetes públicos, así que un clon sin token no restaura. En CI el token lo aporta el propio workflow con `packages: read`. Para construir la imagen, el token entra como secreto de BuildKit y no queda en ninguna capa:
+
+```bash
+docker build --secret id=github_token,env=GITHUB_TOKEN -t ecommerce-api -f Dockerfile .
+```
 
 ### Pruebas
 
@@ -128,9 +145,11 @@ pasar el commit, porque quien decide es el CI. Los falsos positivos se acotan en
 
 ### Docker
 
-Dos comandos, desde la raíz del repositorio:
+Tres comandos, desde la raíz del repositorio. El primero exporta el token que
+necesita la restauración del feed; los otros dos construyen y comprueban:
 
 ```bash
+export GITHUB_TOKEN="$(gh auth token)"
 docker compose up --build -d
 curl -i http://localhost:8080/health
 ```
@@ -143,7 +162,7 @@ Sin compose, una alternativa equivalente por separado (usa otra etiqueta y otro
 volumen, así que no comparte base con el compose):
 
 ```bash
-docker build -t ecommerce-api .
+docker build --secret id=github_token,env=GITHUB_TOKEN -t ecommerce-api .
 docker run --rm -p 8080:8080 -v ecommerce-data:/app/data ecommerce-api
 ```
 

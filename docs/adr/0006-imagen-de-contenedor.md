@@ -1,8 +1,8 @@
 # ADR-0006 — Imagen de contenedor: dos fases, sin root y sin SDK en ejecución
 
-> **Estado:** Aceptada · actualizada el 2026-11-05
+> **Estado:** Aceptada · actualizada el 2026-11-06
 > **Ámbito:** `Dockerfile`, composición local y trabajo de imagen en CI.
-> **Evidencia:** [`Dockerfile`](../../Dockerfile), [`.github/workflows/devsecops-ci.yml`](../../.github/workflows/devsecops-ci.yml) (construcción y comprobación de UID), [`EcommerceApi/Program.cs`](../../EcommerceApi/Program.cs) (`/health`) y [`EcommerceApi/appsettings.json`](../../EcommerceApi/appsettings.json) (`Storage`).
+> **Evidencia:** [`Dockerfile`](../../Dockerfile), [`NuGet.config`](../../NuGet.config), [`.github/workflows/devsecops-ci.yml`](../../.github/workflows/devsecops-ci.yml) (construcción y comprobación de UID), [`EcommerceApi/Program.cs`](../../EcommerceApi/Program.cs) (salud vía `LL.Hosting`) y [`EcommerceApi/appsettings.json`](../../EcommerceApi/appsettings.json) (`Storage`).
 > **Relacionada con:** [ADR-0005](0005-observabilidad.md) y [ADR-0004](0004-persistencia-sqlite-y-outbox.md).
 
 La API se entrega como una imagen de contenedor, y esa imagen es lo que se escanea,
@@ -37,16 +37,19 @@ Datos medidos el 2026-11-03 en el host de trabajo:
    sus `runtimeconfig.json` y `deps.json` coherentes, sin activos de compilación.
    Con `-c Release` y `/p:UseAppHost=false`, porque el `ENTRYPOINT` arranca con
    `dotnet EcommerceApi.dll` y el lanzador nativo no se usaría.
-3. **Caché de capas ordenada.** Primero los cinco `.csproj`, después `restore`, y
-   solo al final `COPY . .`. Cambiar un controlador no invalida la restauración.
+3. **Caché de capas ordenada.** Primero `NuGet.config` y los cinco `.csproj`,
+   después `restore`, y solo al final `COPY . .`. Cambiar un controlador no invalida
+   la restauración. El token del feed entra como secreto de BuildKit y no queda en
+   ninguna capa.
 4. **Usuario no root.** `USER $APP_UID` (UID 1654 en las imágenes oficiales). CI lo
    verifica con `id -u` distinto de `0`.
 5. **Puerto no privilegiado.** `ASPNETCORE_URLS=http://+:8080` y `EXPOSE 8080`.
 6. **Datos fuera de la imagen.** `/app/data` se crea en la construcción y pertenece
    al usuario de aplicación. En local se monta un volumen nombrado; la imagen no
    guarda estado.
-7. **Composición local explícita.** Un `docker-compose.yml` con `build: .`, puerto
-   `8080:8080`, volumen sobre `/app/data` y `restart: unless-stopped`. **Sin
+7. **Composición local explícita.** Un `docker-compose.yml` con `build: .`, el
+   secreto `github_token` leído de `GITHUB_TOKEN`, puerto `8080:8080`, volumen
+   sobre `/app/data` y `restart: unless-stopped`. **Sin
    `healthcheck` en el contenedor**: la imagen no trae `curl` y añadir un cliente
    HTTP solo para sondear aumenta la superficie; la comprobación se hace desde el
    host contra `/health`, que es anónimo.
@@ -78,8 +81,8 @@ Datos medidos el 2026-11-03 en el host de trabajo:
 - La imagen no hereda CVE de Ubuntu ya corregidos: los parches del sistema se
   aplican en la construcción y el escaneo del pipeline sigue siendo bloqueante.
 - El arranque local es reproducible y no depende de recordar parámetros.
-- La compilación en la imagen es independiente de la de CI: cualquiera puede
-  reconstruirla desde el repositorio.
+- La compilación en la imagen es independiente de la de CI: cualquiera con acceso
+  al feed puede reconstruirla desde el repositorio.
 
 ### Negativas y límites
 
@@ -95,6 +98,9 @@ Datos medidos el 2026-11-03 en el host de trabajo:
   construcciones del mismo commit pueden diferir si el repositorio de Ubuntu
   cambia. Se acepta porque el escaneo es bloqueante y la alternativa es publicar
   CVE corregidos.
+- Desde el 2026-11-06 la construcción exige un `GITHUB_TOKEN` con `read:packages`,
+  porque `LL.Security` y `LL.Hosting` vienen de GitHub Packages. Sin el secreto de
+  BuildKit, el `restore` falla; es el precio de no duplicar los controles.
 
 **Comprobado en ejecución:** el 2026-11-03, con Docker 29.1.3 y Compose 2.40.3,
 `docker compose up --build -d` levanta la API desde una imagen borrada y
