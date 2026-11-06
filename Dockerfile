@@ -10,10 +10,12 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# Copiar csproj y restaurar dependencias primero para aprovechar la caché de capas.
+# Copiar la configuración raíz, los csproj y restaurar dependencias primero para aprovechar la caché de capas.
 # El feed de GitHub Packages exige token incluso para paquetes públicos: entra
 # como secreto de BuildKit y no queda en ninguna capa de la imagen.
 COPY ["NuGet.config", "."]
+COPY ["Directory.Build.props", "."]
+COPY ["Directory.Packages.props", "."]
 COPY ["EcommerceApi/EcommerceApi.csproj", "EcommerceApi/"]
 COPY ["EcommerceApi.Domain/EcommerceApi.Domain.csproj", "EcommerceApi.Domain/"]
 COPY ["EcommerceApi.Application/EcommerceApi.Application.csproj", "EcommerceApi.Application/"]

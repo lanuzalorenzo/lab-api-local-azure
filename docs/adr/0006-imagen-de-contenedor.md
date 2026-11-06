@@ -2,7 +2,7 @@
 
 > **Estado:** Aceptada · actualizada el 2026-11-06
 > **Ámbito:** `Dockerfile`, composición local y trabajo de imagen en CI.
-> **Evidencia:** [`Dockerfile`](../../Dockerfile), [`NuGet.config`](../../NuGet.config), [`.github/workflows/devsecops-ci.yml`](../../.github/workflows/devsecops-ci.yml) (construcción y comprobación de UID), [`EcommerceApi/Program.cs`](../../EcommerceApi/Program.cs) (salud vía `LL.Hosting`) y [`EcommerceApi/appsettings.json`](../../EcommerceApi/appsettings.json) (`Storage`).
+> **Evidencia:** [`Dockerfile`](../../Dockerfile), [`NuGet.config`](../../NuGet.config), [`Directory.Build.props`](../../Directory.Build.props), [`Directory.Packages.props`](../../Directory.Packages.props), [`.github/workflows/devsecops-ci.yml`](../../.github/workflows/devsecops-ci.yml) (construcción y comprobación de UID), [`EcommerceApi/Program.cs`](../../EcommerceApi/Program.cs) (salud vía `LL.Hosting`) y [`EcommerceApi/appsettings.json`](../../EcommerceApi/appsettings.json) (`Storage`).
 > **Relacionada con:** [ADR-0005](0005-observabilidad.md) y [ADR-0004](0004-persistencia-sqlite-y-outbox.md).
 
 La API se entrega como una imagen de contenedor, y esa imagen es lo que se escanea,
@@ -37,8 +37,9 @@ Datos medidos el 2026-11-03 en el host de trabajo:
    sus `runtimeconfig.json` y `deps.json` coherentes, sin activos de compilación.
    Con `-c Release` y `/p:UseAppHost=false`, porque el `ENTRYPOINT` arranca con
    `dotnet EcommerceApi.dll` y el lanzador nativo no se usaría.
-3. **Caché de capas ordenada.** Primero `NuGet.config` y los cinco `.csproj`,
-   después `restore`, y solo al final `COPY . .`. Cambiar un controlador no invalida
+3. **Caché de capas ordenada.** Primero `NuGet.config`, `Directory.Build.props`,
+   `Directory.Packages.props` y los cinco `.csproj`, después `restore`, y solo al
+   final `COPY . .`. Cambiar un controlador no invalida
    la restauración. El token del feed entra como secreto de BuildKit y no queda en
    ninguna capa.
 4. **Usuario no root.** `USER $APP_UID` (UID 1654 en las imágenes oficiales). CI lo

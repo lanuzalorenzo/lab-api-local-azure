@@ -17,6 +17,7 @@ Cada ADR contiene: contexto, decisión, alternativas descartadas, consecuencias 
 | [0005](0005-observabilidad.md) | Observabilidad: logs de plataforma y telemetría de aplicación | Aceptada |
 | [0006](0006-imagen-de-contenedor.md) | Imagen de contenedor: dos fases, sin root y sin SDK en ejecución | Aceptada |
 | [0007](0007-rate-limiting.md) | Rate limiting global por IP como umbral de laboratorio | Aceptada |
+| [0008](0008-configuracion-de-compilacion-y-paquetes-centralizada.md) | Configuración de compilación y versiones de paquetes en dos archivos raíz | Aceptada |
 
 ## Patrones en el código
 
