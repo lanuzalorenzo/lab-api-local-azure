@@ -1,7 +1,7 @@
 # Dependencias: dueño, plazo y evidencia
 
 > **Estado:** Validado (política aplicada y lote cerrado) · Parcial (informe semanal manual; agrupación validada con un lote de 8 actualizaciones) · Diseño (fusión automática de Dependabot, pendiente de su primera ejecución).
-> **Última revisión:** 2026-11-01.
+> **Última revisión:** 2026-11-07.
 > **Evidencia:** lote de 8 actualizaciones resuelto con squash y checks en verde; `dotnet list package --vulnerable --include-transitive` sin paquetes vulnerables.
 
 Una dependencia es una pieza de software que mantiene otra persona y de la que este proyecto se fía para funcionar. Un aviso de seguridad se parece a la luz de avería del coche: no arregla el motor, solo dice que hay que mirarlo. Lo que evita el problema no es el aviso, sino que alguien sea dueño del coche, lo lleve al taller y apunte la fecha.
@@ -26,6 +26,7 @@ El plazo se cuenta desde que se publica la alerta, no desde que alguien la ve. U
 ## 3. Configuración en este repositorio
 
 - `.github/dependabot.yml` revisa NuGet y GitHub Actions cada lunes, con un límite de 5 pull requests abiertas y etiquetas `dependencies` y `security`.
+- El feed de GitHub Packages de `LL.*` se declara en `NuGet.config` y en el registro de Dependabot. Dependabot no acepta `GITHUB_TOKEN` dentro de `registries`: usa el secreto `LL_PACKAGES_TOKEN`. El criterio, la rotación y la verificación están en [`credenciales.md`](credenciales.md).
 - El pipeline exige siete checks obligatorios, rama actualizada antes de fusionar e historial lineal. La fusión es siempre con squash: una pull request, un commit.
 - `.github/workflows/dependabot-auto-merge.yml` fusiona solo las PRs de Dependabot de parche y minor cuando pasan los siete checks; las major siguen necesitando una persona.
 - El límite de 5 reduce ruido, pero puede retrasar avisos: el informe semanal mira también `dotnet list package --outdated` para ver lo que Dependabot aún no ha abierto.

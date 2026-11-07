@@ -1,6 +1,6 @@
 # Capacidades y evidencia
 
-> **Estado:** Implementado · verificado el 2026-10-29 contra `main`; rate limit revisado el 2026-11-05 con [ADR-0007](adr/0007-rate-limiting.md); controles compartidos desde los paquetes `LL.Security` y `LL.Hosting` el 2026-11-06.
+> **Estado:** Implementado · verificado el 2026-10-29 contra `main`; rate limit revisado el 2026-11-05 con [ADR-0007](adr/0007-rate-limiting.md); controles compartidos desde los paquetes `LL.Security` y `LL.Hosting` el 2026-11-06; credenciales del feed privado en **Parcial** el 2026-11-07.
 > **Ámbito:** qué puede afirmarse sobre este repositorio, con qué se comprueba y qué queda fuera.
 > **Evidencia:** `dotnet test`, `.github/workflows/devsecops-ci.yml`, `infra/main.bicep` y `docs/`.
 > **Relacionada con:** [Referencia de la API](api.md), [resumen de estado](../README.md#estado-de-seguridad), [ADR](adr/README.md).
@@ -52,6 +52,7 @@ verificación y ajusta la tabla en el mismo lote.
 | Rate limit global de 120 req/min por IP | `LL.Security` (`AddRemoteIpRateLimiting`; [ADR-0007](adr/0007-rate-limiting.md)) | `ExceedingGlobalLimit_ReturnsTooManyRequests`; carga con k6 en el portfolio | Validado en local (secuencial y concurrente); sin SLO |
 | Salud anónima en `/health` | `LL.Hosting` (`MapApiHealthChecks`) | `Health_IsAnonymous_ReturnsHealthy` | Implementado |
 | Controles compartidos instalados con rango `0.1.*` | [`Directory.Packages.props`](../Directory.Packages.props), [`NuGet.config`](../NuGet.config) | `dotnet restore` desde GitHub Packages en CI | Implementado |
+| Credencial de solo lectura para el feed privado `LL.*` | Gestor de secretos local y secreto `LL_PACKAGES_TOKEN` de Dependabot | [`credenciales.md`](credenciales.md); runs [42409729475](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/42409729475) y [42410124439](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/42410124439) | Parcial: falta PR real de `LL.*` |
 | Límite de cuerpo de 16 KB en escrituras | `[RequestSizeLimit]` | Pendiente de comprobación manual: `TestServer` no aplica el límite de Kestrel | Implementado; `413` sin comprobar |
 
 El contrato completo, incluido el formato de error, está en
