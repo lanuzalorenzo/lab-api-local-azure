@@ -4,7 +4,7 @@ Una rama principal sin reglas es una puerta sin cerradura: cualquiera con permis
 
 > **Estado:** Validado (ruleset activo, PR y siete checks obligatorios) · Parcial (sin revisor humano).
 > **Última revisión:** 2026-11-04.
-> **Evidencia:** ruleset `main`, rechazo de push directo y de push forzado.
+> **Evidencia:** ruleset `main`; [PR #12](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/12) y [run 40887287486](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/40887287486) (2026-10-29); rechazo de push directo y de push forzado comprobado el 2026-11-04 ([PR #34](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/34)).
 
 ## 1. Estado actual
 
