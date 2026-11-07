@@ -1,7 +1,17 @@
 version: 2
+registries:
+  github-packages:
+    type: nuget-feed
+    url: https://nuget.pkg.github.com/lanuzalorenzo/index.json
+    username: lanuzalorenzo
+    # Reproducción controlada del límite de Dependabot: el PR siguiente cambia
+    # esta línea por ${{secrets.LL_PACKAGES_TOKEN}}. No debe quedarse en main.
+    password: ${{secrets.GITHUB_TOKEN}}
 updates:
   - package-ecosystem: "nuget"
     directory: "/"
+    registries:
+      - github-packages
     schedule:
       interval: "weekly"
       day: "monday"
@@ -13,9 +23,11 @@ updates:
       - "dependencies"
       - "security"
     ignore:
-      # Los paquetes LL.* viven en shared-dotnet: el rango 0.1.* los actualiza al
-      # restaurar y un salto de versión mayor es deliberado (ADR-0002 de shared-dotnet).
+      # Los paquetes LL.* viven en shared-dotnet; el rango 0.1.* los actualiza al
+      # restaurar. Un salto de versión mayor es deliberado (ADR-0002 de shared-dotnet).
       - dependency-name: "LL.*"
+        update-types:
+          - "version-update:semver-major"
     groups:
       nuget-patch-minor:
         patterns:
