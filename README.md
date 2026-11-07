@@ -80,12 +80,12 @@ lab-api-local-azure/
 
 ## Puesta en marcha
 
-Requisitos: .NET SDK 10.0 y, opcionalmente, Docker. Para validar tokens reales hace falta un tenant de Entra ID. La restauración necesita un `GITHUB_TOKEN` con `read:packages`, porque los controles compartidos vienen de GitHub Packages (ver [Paquetes compartidos](#paquetes-compartidos)).
+Requisitos: .NET SDK 10.0 y, opcionalmente, Docker. Para validar tokens reales hace falta un tenant de Entra ID. La restauración necesita una credencial de solo lectura para GitHub Packages, porque los controles compartidos vienen de un feed privado (ver [Credenciales del feed](docs/credenciales.md)).
 
 ```bash
 cp EcommerceApi/appsettings.Development.example.json EcommerceApi/appsettings.Development.json
 # Edita el archivo con tenant, client ID, audience, authority y orígenes CORS
-export GITHUB_TOKEN="$(gh auth token)"
+# La credencial de solo lectura ya debe estar en GITHUB_TOKEN (ver docs/credenciales.md).
 dotnet restore EcommerceApi.sln
 dotnet run --project EcommerceApi --urls http://localhost:5080
 ```
@@ -99,11 +99,10 @@ dotnet run --project EcommerceApi --urls http://localhost:5080
 
 ### Paquetes compartidos
 
-`LL.Security` y `LL.Hosting` se publican desde [`shared-dotnet`](https://github.com/lanuzalorenzo/shared-dotnet) en el feed de GitHub Packages del propietario. El feed y sus credenciales viven en [`NuGet.config`](NuGet.config); el usuario es el propietario y la contraseña sale de `GITHUB_TOKEN`:
+`LL.Security` y `LL.Hosting` se publican desde [`shared-dotnet`](https://github.com/lanuzalorenzo/shared-dotnet) en el feed de GitHub Packages del propietario. El feed vive en [`NuGet.config`](NuGet.config); el usuario es el propietario y la contraseña sale de `GITHUB_TOKEN`, que debe ser una credencial de solo lectura guardada en el gestor de secretos. El criterio completo, la separación entre identidad y automatización, la rotación y el caso de Dependabot están en [`docs/credenciales.md`](docs/credenciales.md).
 
 ```bash
-gh auth refresh -h github.com -s read:packages
-export GITHUB_TOKEN="$(gh auth token)"
+# Con la credencial de solo lectura ya exportada por el shell:
 dotnet restore EcommerceApi.sln
 ```
 
@@ -149,11 +148,11 @@ pasar el commit, porque quien decide es el CI. Los falsos positivos se acotan en
 
 ### Docker
 
-Tres comandos, desde la raíz del repositorio. El primero exporta el token que
-necesita la restauración del feed; los otros dos construyen y comprueban:
+Dos comandos, desde la raíz del repositorio. La credencial de solo lectura del
+feed debe estar ya exportada (ver [Credenciales del feed](docs/credenciales.md));
+los comandos construyen y comprueban:
 
 ```bash
-export GITHUB_TOKEN="$(gh auth token)"
 docker compose up --build -d
 curl -i http://localhost:8080/health
 ```
@@ -211,6 +210,7 @@ La política de dependencias, los plazos por severidad y el estado del primer lo
 | [Pruebas con tokens](docs/azure-ad-tests.md) | Token real, BOLA con dos identidades y checklist |
 | [Threat model](docs/threat-model-appsec.md) | STRIDE, OWASP API Top 10 y riesgos residuales |
 | [Dependencias](docs/dependencias.md) | Dueño, plazos por severidad y evidencia del lote |
+| [Credenciales del feed](docs/credenciales.md) | Credencial de solo lectura, rotación y límite de Dependabot. Parcial |
 | [Gobernanza del repositorio](docs/repo-governance.md) | PR, checks obligatorios y por qué no hay bypass |
 
 **Diseño**
