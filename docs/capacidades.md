@@ -1,6 +1,6 @@
 # Capacidades y evidencia
 
-> **Estado:** Implementado · verificado el 2026-10-29 contra `main`; rate limit revisado el 2026-11-05 con [ADR-0007](adr/0007-rate-limiting.md); controles compartidos desde los paquetes `LL.Security` y `LL.Hosting` el 2026-11-06; credenciales del feed privado en **Parcial** el 2026-11-07.
+> **Estado:** Parcial (2026-11-07): la matriz conserva etiquetas fuera del contrato (`Implementado`, `Documentado, no activo` y variantes de alcance como `Validado en local`) y aún no está normalizada. Verificado el 2026-10-29 contra `main`; rate limit revisado el 2026-11-05 con [ADR-0007](adr/0007-rate-limiting.md); controles compartidos desde los paquetes `LL.Security` y `LL.Hosting` el 2026-11-06. Queda por comprobar el `413` del límite de 16 KB, la validación JWT fuera de CI, el hook de secretos opt-in, el despliegue de Service Bus y las credenciales del feed privado ([`credenciales.md`](credenciales.md), en **Parcial**).
 > **Ámbito:** qué puede afirmarse sobre este repositorio, con qué se comprueba y qué queda fuera.
 > **Evidencia:** `dotnet test`, `.github/workflows/devsecops-ci.yml`, `infra/main.bicep` y `docs/`.
 > **Relacionada con:** [Referencia de la API](api.md), [resumen de estado](../README.md#estado-de-seguridad), [ADR](adr/README.md).

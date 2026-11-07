@@ -1,6 +1,6 @@
 # Referencia de la API
 
-> **Estado:** Implementado · verificado el 2026-10-29 contra `main`; límites de rate limit revisados el 2026-11-05.
+> **Estado:** Parcial (2026-11-07): contrato HTTP verificado el 2026-10-29 contra `main`; el `413` del límite de 16 KB sigue sin comprobar y los límites de rate limit se revisaron el 2026-11-05. Evidencia: [`OrdersEndpointsTests`](https://github.com/lanuzalorenzo/lab-api-local-azure/blob/main/tests/EcommerceApi.Tests/OrdersEndpointsTests.cs) y [`ErrorContractTests`](https://github.com/lanuzalorenzo/lab-api-local-azure/blob/main/tests/EcommerceApi.Tests/ErrorContractTests.cs).
 > **Ámbito:** contrato HTTP de `EcommerceApi` (endpoints, autenticación, cuerpos, errores y límites).
 > **Evidencia:** `EcommerceApi/Controllers`, `EcommerceApi/Models`, `EcommerceApi.Application` y `tests/EcommerceApi.Tests`.
 > **Relacionada con:** [Persistencia y paginación](persistence.md), [Entra ID](entra-id.md), [ADR-0005](adr/0005-observabilidad.md) y [ADR-0007](adr/0007-rate-limiting.md).

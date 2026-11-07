@@ -2,7 +2,7 @@
 
 > **Estado:** Validado (política aplicada y lote cerrado) · Parcial (informe semanal manual; agrupación validada con un lote de 8 actualizaciones) · Diseño (fusión automática de Dependabot, pendiente de su primera ejecución).
 > **Última revisión:** 2026-11-07.
-> **Evidencia:** lote de 8 actualizaciones resuelto con squash y checks en verde; `dotnet list package --vulnerable --include-transitive` sin paquetes vulnerables.
+> **Evidencia:** lote de 8 actualizaciones ([PR #27](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/27), checks en verde) resuelto con squash; `dotnet list package --vulnerable --include-transitive`: todos los proyectos sin paquetes vulnerables (salida local, 2026-11-07).
 
 Una dependencia es una pieza de software que mantiene otra persona y de la que este proyecto se fía para funcionar. Un aviso de seguridad se parece a la luz de avería del coche: no arregla el motor, solo dice que hay que mirarlo. Lo que evita el problema no es el aviso, sino que alguien sea dueño del coche, lo lleve al taller y apunte la fecha.
 
