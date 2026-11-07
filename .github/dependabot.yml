@@ -4,9 +4,8 @@ registries:
     type: nuget-feed
     url: https://nuget.pkg.github.com/lanuzalorenzo/index.json
     username: lanuzalorenzo
-    # Reproducción controlada del límite de Dependabot: el PR siguiente cambia
-    # esta línea por ${{secrets.LL_PACKAGES_TOKEN}}. No debe quedarse en main.
-    password: ${{secrets.GITHUB_TOKEN}}
+    # Secreto de Dependabot con un PAT de solo lectura (read:packages).
+    password: ${{secrets.LL_PACKAGES_TOKEN}}
 updates:
   - package-ecosystem: "nuget"
     directory: "/"
