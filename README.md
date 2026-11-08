@@ -4,6 +4,8 @@
 
 Una tienda de juguete con las puertas de una tienda real: así es este repositorio. La API, un servicio web al que se llama por HTTP, está hecha en .NET 10 y protegida con Microsoft Entra ID; sirve de banco de pruebas para AppSec (seguridad de las aplicaciones) y DevSecOps (seguridad integrada en el ciclo de entrega). El catálogo y los pedidos son inventados; los controles de acceso, no: cada puerta rechaza a quien no debe entrar.
 
+**In English.** A toy store with the doors of a real one: that is this repository. The API —a web service called over HTTP— is built in .NET 10 and protected with Microsoft Entra ID; it serves as a test bench for AppSec and DevSecOps. The catalogue and the orders are made up; the access controls are not: every door turns away whoever should not walk in.
+
 [![.NET](https://img.shields.io/badge/.NET-10.0-512bd4?style=flat-square)](https://dotnet.microsoft.com/)
 [![Microsoft Entra ID](https://img.shields.io/badge/Auth-Microsoft%20Entra%20ID-0078d4?style=flat-square)](https://learn.microsoft.com/entra/)
 [![DevSecOps CI](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/workflows/devsecops-ci.yml/badge.svg)](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/workflows/devsecops-ci.yml)
