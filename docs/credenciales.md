@@ -2,7 +2,7 @@
 
 > **Estado:** Parcial (2026-11-08). La separación de credenciales está validada en local y CI; la credencial de solo lectura y el registro de Dependabot están verificados con una ejecución fallida y otra correcta. Falta una PR real de actualización de `LL.*` para cerrar el ciclo completo.
 > **Última revisión:** 2026-11-08.
-> **Evidencia:** ejecuciones de Dependabot [fallida](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/42409729475) y [correcta](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/42410124439); restore local con caché vacía; prueba negativa `401`; [run de CI](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/42469656250).
+> **Evidencia:** ejecuciones de Dependabot [fallida](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/42409729475) y [correcta](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/42410124439); restore local con caché vacía; prueba negativa `401`; [run de CI](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/42470483409).
 
 El restore de NuGet —la descarga y resolución de paquetes que hace el build— se parece a abrir el trastero donde están las cajas compartidas: sin la llave no hay caja, pero la llave de casa no debería servir también para el trastero. Este documento explica por qué el build necesita una credencial, por qué esa credencial debe ser de solo lectura y cómo se separa de la identidad con la que se trabaja a diario.
 
@@ -150,7 +150,7 @@ Resultado esperado: `NU1301` con `401` en los paquetes `LL.*`. Si el restore pas
 | 2026-11-08 | Restore con caché vacía y `GH_PACKAGES_TOKEN` | `exit 0`, sin credencial en la salida |
 | 2026-11-08 | Restore sin `GH_PACKAGES_TOKEN` y caché vacía | `NU1301` `401` |
 | 2026-11-08 | Shell nuevo: `GITHUB_TOKEN` libre y `gh` con la sesión del llavero | `GH_PACKAGES_TOKEN` definido; `gh auth status` con `repo` |
-| 2026-11-08 | CI con `secrets.GITHUB_TOKEN` mapeado a `GH_PACKAGES_TOKEN` | [Run 42469656250](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/42469656250) en verde |
+| 2026-11-08 | CI con `secrets.GITHUB_TOKEN` mapeado a `GH_PACKAGES_TOKEN` | [Run 42470483409](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/42470483409) en verde |
 
 Salida resumida del restore con caché vacía (rutas locales sustituidas por `<repo>`):
 
