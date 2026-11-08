@@ -44,7 +44,7 @@ jobs:
           fetch-depth: 0
 
       - name: Escanear secretos con Gitleaks
-        uses: lanuzalorenzo/core/actions/gitleaks@v1.3
+        uses: lanuzalorenzo/core/actions/gitleaks@v1.4
 
   sast:
     name: SAST (CodeQL)
