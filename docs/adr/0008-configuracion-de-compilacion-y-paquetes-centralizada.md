@@ -34,7 +34,7 @@ La solución tiene diez proyectos: cinco de la API, cuatro de pruebas y el proce
 
 - Cambiar una versión es una línea en `Directory.Packages.props` y un `restore`; no hay que recorrer proyectos.
 - Una misma ID de paquete usa la misma versión en todo el repositorio. Si un proyecto necesita otra, se justifica con `VersionOverride` o se divide el archivo; no se duplica en silencio.
-- El restore necesita acceso al feed que publica `LL.*`. En un clon sin `GITHUB_TOKEN` con permiso de lectura de paquetes, el restore falla; es una condición del feed privado, no de la configuración central. Con el paquete ya en la caché local se puede verificar con un feed local temporal.
+- El restore necesita acceso al feed que publica `LL.*`. En un clon sin `GH_PACKAGES_TOKEN` con permiso de lectura de paquetes, el restore falla; es una condición del feed privado, no de la configuración central. Con el paquete ya en la caché local se puede verificar con un feed local temporal.
 - La auditoría NuGet pasa a formar parte de la compilación: una vulnerabilidad conocida bloquea igual que un error de tipos.
 
 ## 5. Criterio para revisarla
