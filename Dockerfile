@@ -22,7 +22,7 @@ COPY ["EcommerceApi.Application/EcommerceApi.Application.csproj", "EcommerceApi.
 COPY ["EcommerceApi.Contracts/EcommerceApi.Contracts.csproj", "EcommerceApi.Contracts/"]
 COPY ["EcommerceApi.Infrastructure/EcommerceApi.Infrastructure.csproj", "EcommerceApi.Infrastructure/"]
 RUN --mount=type=secret,id=github_token \
-    GITHUB_TOKEN="$(cat /run/secrets/github_token)" \
+    GH_PACKAGES_TOKEN="$(cat /run/secrets/github_token)" \
     dotnet restore "EcommerceApi/EcommerceApi.csproj"
 
 # Copiar el resto del código y compilar en modo Release

@@ -49,7 +49,7 @@ Datos medidos el 2026-11-03 en el host de trabajo:
    al usuario de aplicación. En local se monta un volumen nombrado; la imagen no
    guarda estado.
 7. **Composición local explícita.** Un `docker-compose.yml` con `build: .`, el
-   secreto `github_token` leído de `GITHUB_TOKEN`, puerto `8080:8080`, volumen
+   secreto `github_token` leído de `GH_PACKAGES_TOKEN`, puerto `8080:8080`, volumen
    sobre `/app/data` y `restart: unless-stopped`. **Sin
    `healthcheck` en el contenedor**: la imagen no trae `curl` y añadir un cliente
    HTTP solo para sondear aumenta la superficie; la comprobación se hace desde el
@@ -99,7 +99,7 @@ Datos medidos el 2026-11-03 en el host de trabajo:
   construcciones del mismo commit pueden diferir si el repositorio de Ubuntu
   cambia. Se acepta porque el escaneo es bloqueante y la alternativa es publicar
   CVE corregidos.
-- Desde el 2026-11-06 la construcción exige un `GITHUB_TOKEN` con `read:packages`,
+- Desde el 2026-11-06 la construcción exige un `GH_PACKAGES_TOKEN` con `read:packages`,
   porque `LL.Security` y `LL.Hosting` vienen de GitHub Packages. Sin el secreto de
   BuildKit, el `restore` falla; es el precio de no duplicar los controles.
 
@@ -111,7 +111,7 @@ La base (`/app/data/ecommerce.db`, 49 152 bytes) conserva tamaño y fecha tras
 orquestador, que decide el `healthcheck`.
 
 **Comprobado en CI:** el 2026-11-06 el job `container-security` construyó la
-imagen con `--secret id=github_token,env=GITHUB_TOKEN` contra el feed de GitHub
+imagen con `--secret id=github_token,env=GH_PACKAGES_TOKEN` contra el feed de GitHub
 Packages; la comprobación de UID y el escaneo de Trivy pasaron en la misma
 ejecución.
 

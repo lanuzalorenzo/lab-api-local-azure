@@ -87,7 +87,7 @@ Requisitos: .NET SDK 10.0 y, opcionalmente, Docker. Para validar tokens reales h
 ```bash
 cp EcommerceApi/appsettings.Development.example.json EcommerceApi/appsettings.Development.json
 # Edita el archivo con tenant, client ID, audience, authority y orígenes CORS
-# La credencial de solo lectura ya debe estar en GITHUB_TOKEN (ver docs/credenciales.md).
+# La credencial de solo lectura ya debe estar en GH_PACKAGES_TOKEN (ver docs/credenciales.md).
 dotnet restore EcommerceApi.sln
 dotnet run --project EcommerceApi --urls http://localhost:5080
 ```
@@ -101,7 +101,7 @@ dotnet run --project EcommerceApi --urls http://localhost:5080
 
 ### Paquetes compartidos
 
-`LL.Security` y `LL.Hosting` se publican desde [`shared-dotnet`](https://github.com/lanuzalorenzo/shared-dotnet) en el feed de GitHub Packages del propietario. El feed vive en [`NuGet.config`](NuGet.config); el usuario es el propietario y la contraseña sale de `GITHUB_TOKEN`, que debe ser una credencial de solo lectura guardada en el gestor de secretos. El criterio completo, la separación entre identidad y automatización, la rotación y el caso de Dependabot están en [`docs/credenciales.md`](docs/credenciales.md).
+`LL.Security` y `LL.Hosting` se publican desde [`shared-dotnet`](https://github.com/lanuzalorenzo/shared-dotnet) en el feed de GitHub Packages del propietario. El feed vive en [`NuGet.config`](NuGet.config); el usuario es el propietario y la contraseña sale de `GH_PACKAGES_TOKEN`, que debe ser una credencial de solo lectura guardada en el gestor de secretos. No se llama `GITHUB_TOKEN` porque `gh` y Git le dan prioridad y un token sin `repo` deja los push en `403`. El criterio completo, la separación entre identidad y automatización, la rotación y el caso de Dependabot están en [`docs/credenciales.md`](docs/credenciales.md).
 
 ```bash
 # Con la credencial de solo lectura ya exportada por el shell:
@@ -111,7 +111,7 @@ dotnet restore EcommerceApi.sln
 GitHub Packages exige autenticación incluso para paquetes públicos, así que un clon sin token no restaura. En CI el token lo aporta el propio workflow con `packages: read`. Para construir la imagen, el token entra como secreto de BuildKit y no queda en ninguna capa:
 
 ```bash
-docker build --secret id=github_token,env=GITHUB_TOKEN -t ecommerce-api -f Dockerfile .
+docker build --secret id=github_token,env=GH_PACKAGES_TOKEN -t ecommerce-api -f Dockerfile .
 ```
 
 ### Compilación y versiones
@@ -167,7 +167,7 @@ Sin compose, una alternativa equivalente por separado (usa otra etiqueta y otro
 volumen, así que no comparte base con el compose):
 
 ```bash
-docker build --secret id=github_token,env=GITHUB_TOKEN -t ecommerce-api .
+docker build --secret id=github_token,env=GH_PACKAGES_TOKEN -t ecommerce-api .
 docker run --rm -p 8080:8080 -v ecommerce-data:/app/data ecommerce-api
 ```
 
