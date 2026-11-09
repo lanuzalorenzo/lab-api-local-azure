@@ -118,8 +118,13 @@ if (app.Environment.IsDevelopment())
 }
 
 // Headers first: the exception handler clears them when it writes a response, and
-// the middleware re-applies them before the response starts.
-app.UseSecurityHeaders();
+// the middleware re-applies them before the response starts. The policy denies
+// everything: this API returns JSON and loads nothing.
+var securityHeaders = new SecurityHeadersOptions
+{
+    Csp = ContentSecurityPolicy.DenyAll(),
+};
+app.UseSecurityHeaders(securityHeaders);
 app.UseApiProblemDetails();
 app.UseApiTransportSecurity(app.Environment);
 app.UseCors("ApiCors");
