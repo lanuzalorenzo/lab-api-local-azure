@@ -124,7 +124,7 @@ docker build --secret id=github_token,env=GH_PACKAGES_TOKEN -t ecommerce-api -f 
 dotnet test EcommerceApi.sln
 ```
 
-Cuatro suites (dominio y handlers, arquitectura, infraestructura sobre SQLite e integración HTTP): **87 pruebas**. Las de integración usan un esquema de autenticación de test y cada factory crea su propia base temporal. El desglose está en [`docs/capacidades.md`](docs/capacidades.md#1-verificación-en-un-bloque).
+Cuatro suites (dominio y handlers, arquitectura, infraestructura sobre SQLite e integración HTTP): **89 pruebas**. Las de integración usan un esquema de autenticación de test y cada factory crea su propia base temporal. El desglose está en [`docs/capacidades.md`](docs/capacidades.md#1-verificación-en-un-bloque).
 
 ### Hook local de secretos
 
