@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Compilar, verificar formato y probar
-        uses: lanuzalorenzo/core/actions/dotnet@v1.3
+        uses: lanuzalorenzo/core/actions/dotnet@v1.4
         with:
           solution: EcommerceApi.sln
           dotnet-version: '10.0.x'
