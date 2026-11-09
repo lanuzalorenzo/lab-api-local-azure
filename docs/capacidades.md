@@ -66,7 +66,7 @@ El contrato completo, incluido el formato de error, está en
 | Autorización por propietario (BOLA/IDOR) | `OrdersController`, `GetOrderByIdHandler` | `UserCannotReadAnotherUsersOrder` y `CreateOrder_ReturnsOnlyOwnOrders` | Implementado |
 | `404` en lugar de `403` para pedidos ajenos | `OrdersController.GetOrderById` | La misma prueba | Implementado |
 | DTOs de entrada contra *mass assignment* | `Models/Create*Request.cs` | Revisión de código; `Id` no es asignable | Implementado |
-| Sin cabecera `Server` (huella del servidor web) | `EcommerceApi/Program.cs` (`AddServerHeader = false`) | `ServerHeaderTests` fija la opción; job `container-security`: `scripts/check-server-header.sh` contra el contenedor | Parcial: rojo y verde contra el contenedor local el 2026-11-09; falta el run de CI |
+| Sin cabecera `Server` (huella del servidor web) | `EcommerceApi/Program.cs` (`AddServerHeader = false`) | `ServerHeaderTests` fija la opción; job `container-security`: `scripts/check-server-header.sh` contra el contenedor | Validado: run [42685834576](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/42685834576) (2026-11-09) |
 | Escaneo de secretos sobre historial completo | Acción `gitleaks` de [`core`](https://github.com/lanuzalorenzo/core), en el job `secret-scanning` de `.github/workflows/devsecops-ci.yml` | Ejecución en GitHub Actions | Implementado |
 | Aviso de secretos antes del commit (hook local) | `scripts/hooks/pre-commit` | `scripts/install-git-hooks.sh --check` (instalación y versión) y `gitleaks git --staged` sobre un cambio preparado | Parcial: opt-in por clon, no lo impone la plataforma |
 | SAST con CodeQL (`security-extended`) | Workflow, job `sast` | Ejecución en GitHub Actions | Implementado |
