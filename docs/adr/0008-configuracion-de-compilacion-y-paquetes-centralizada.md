@@ -18,7 +18,7 @@ La solución tiene diez proyectos: cinco de la API, cuatro de pruebas y el proce
    - `TreatWarningsAsErrors` para que un aviso no llegue a `main`.
    - `NuGetAudit` en modo `all` y `NU1901`–`NU1904` como errores, de modo que una dependencia vulnerable —directa o transitiva— rompa la compilación.
 2. **`Directory.Packages.props` en la raíz** activa `ManagePackageVersionsCentrally`. Cada paquete tiene una sola `<PackageVersion>` y los `.csproj` declaran `<PackageReference>` sin `Version`.
-   - El rango flotante `0.1.*` de `LL.Hosting` y `LL.Security` se conserva con `CentralPackageFloatingVersionsEnabled`: mientras esos paquetes no estabilicen su API, el laboratorio quiere recibir sus parches sin editar el repositorio.
+   - `LL.Hosting` y `LL.Security` se fijan a su versión exacta: una actualización llega como pull request de Dependabot y pasa por el CI. (Actualizado el 9 de noviembre de 2026: antes el rango era `0.1.*`, y ese rango aplicaba los parches `0.1.x` en el `restore`, sin PR ni revisión.)
    - `xunit.runner.visualstudio` se unifica en 3.1.5, la versión que ya usaban tres de los cuatro proyectos de prueba.
 3. **`TargetFramework` sigue en cada proyecto.** Todos usan `net10.0` hoy, pero dejarlo ahí permite multi-target sin tocar la configuración común.
 4. **`AnalysisLevel` no se centraliza todavía.** Al probar `latest-recommended` apareció `CA1036` en `Money` (implementa `IComparable` y no define los operadores de comparación). Es un hallazgo legítimo, pero mezclar un cambio de analizadores con la centralización habría hecho este lote más grande y difícil de revisar. Se abordará en su propio cambio.
@@ -28,7 +28,7 @@ La solución tiene diez proyectos: cinco de la API, cuatro de pruebas y el proce
 - **Dejar la configuración en cada `.csproj`.** Es lo que había: versiones duplicadas y una divergencia que nadie detectó hasta revisar los archivos. La comodidad de no tener archivos raíz se paga en deriva.
 - **Un `.props` compartido importado a mano.** Funciona, pero cada proyecto nuevo puede olvidar el `Import`. El archivo raíz se aplica por convención y no depende de que alguien se acuerde.
 - **Un script que reescriba versiones.** Automatiza la edición, no la fuente de verdad: sigue habiendo diez sitios donde el valor puede quedar distinto.
-- **Fijar `LL.*` a una versión exacta.** Quita el mecanismo de actualización deliberado y obliga a editar el repositorio por cada parche de los paquetes compartidos.
+- **Un rango flotante para `LL.*`.** Era la decisión inicial: recibir los parches sin editar el repositorio. Se descartó el 9 de noviembre de 2026 porque el `restore` aplica la versión nueva sin que nadie la revise; con la versión exacta, el cambio es una PR con su CI.
 
 ## 4. Consecuencias
 

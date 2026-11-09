@@ -171,7 +171,7 @@ Response status code does not indicate success: 401 (Unauthorized).
 
 La ejecución local terminó con `exit 0`; la prueba de control, con `exit 1`. El extracto anterior no incluye el valor de la credencial ni las rutas completas del equipo.
 
-**Estado real: Parcial.** El ciclo de la credencial está verificado, pero falta la prueba que cierra el propósito: una pull request (PR) real de actualización de `LL.*` generada por Dependabot y con su CI (integración continua) en verde. La versión publicada `0.1.0` es la última, así que Dependabot no tiene una actualización que proponer. Pasará a **Validado** cuando Dependabot genere esa PR y su CI esté en verde. Para que exista, la versión publicada debe quedar fuera del rango flotante `0.1.*` (por ejemplo, `0.2.0`) o hay que fijar temporalmente el rango para que Dependabot proponga el cambio; un `0.1.x` nuevo lo resolvería el restore sin abrir PR.
+**Estado real: Parcial.** El ciclo de la credencial está verificado, pero falta la prueba que cierra el propósito: una pull request (PR) real de actualización de `LL.*` generada por Dependabot y con su CI (integración continua) en verde. La versión publicada `0.1.0` es la última, así que Dependabot no tiene una actualización que proponer. Pasará a **Validado** cuando Dependabot genere esa PR y su CI esté en verde. Con la versión fijada, se espera que un parche o una minor nueva abran la PR; las major siguen ignoradas en `dependabot.yml` y se revisan a mano.
 
 ## 9. Límites
 
