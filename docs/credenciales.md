@@ -1,6 +1,6 @@
 # Credenciales para el feed privado de paquetes
 
-> **Estado:** Parcial (2026-11-08). La separación de credenciales está validada en local y CI; la credencial de solo lectura y el registro de Dependabot están verificados con una ejecución fallida y otra correcta. Falta una PR real de actualización de `LL.*` para cerrar el ciclo completo.
+> **Estado:** Validado (2026-11-09). La separación de credenciales está validada en local y CI; la credencial de solo lectura y el registro de Dependabot cerraron el ciclo con la PR #55, generada por Dependabot para `LL.Security` 0.2.0 y fusionada por el flujo automático con los checks en verde.
 > **Última revisión:** 2026-11-08.
 > **Evidencia:** ejecuciones de Dependabot [fallida](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/42409729475) y [correcta](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/42410124439); restore local con caché vacía; prueba negativa `401`; [run de CI](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/42470483409).
 
@@ -171,7 +171,7 @@ Response status code does not indicate success: 401 (Unauthorized).
 
 La ejecución local terminó con `exit 0`; la prueba de control, con `exit 1`. El extracto anterior no incluye el valor de la credencial ni las rutas completas del equipo.
 
-**Estado real: Parcial.** El ciclo de la credencial está verificado, pero falta la prueba que cierra el propósito: una pull request (PR) real de actualización de `LL.*` generada por Dependabot y con su CI (integración continua) en verde. La versión publicada `0.1.0` es la última, así que Dependabot no tiene una actualización que proponer. Pasará a **Validado** cuando Dependabot genere esa PR y su CI esté en verde. Con la versión fijada, se espera que un parche o una minor nueva abran la PR; las major siguen ignoradas en `dependabot.yml` y se revisan a mano.
+**Estado real: Validado (2026-11-09).** El ciclo se cerró con la PR #55: Dependabot leyó el feed con `LL_PACKAGES_TOKEN`, propuso `LL.Security` de `0.1.0` a `0.2.0` y el flujo automático la fusionó con los checks en verde. Con la versión fijada, una publicación nueva repite el ciclo; las major siguen ignoradas en `dependabot.yml` y se revisan a mano.
 
 ## 9. Límites
 
