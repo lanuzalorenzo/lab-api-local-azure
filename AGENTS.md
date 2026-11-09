@@ -16,6 +16,7 @@ API empresarial en .NET 10 y workload de referencia del portfolio público. Este
 - No elimines ni debilites la validación criptográfica JWT/JWKS: la aplica `LL.Security` (`AddHardenedJwtBearer`) y `Program.cs` solo aporta emisor y audiencia.
 - Los controles de plataforma se consumen por la versión publicada de `LL.Security` y `LL.Hosting`, fijada en `Directory.Packages.props`. Una versión nueva entra por su PR y su CI; no se copia el código de otro consumidor.
 - CORS con denegación por defecto y orígenes explícitos.
+- Cabeceras de seguridad y política de contenido restrictiva desde `LL.Security`: la API devuelve JSON y no carga ni incrusta nada. Servir HTML o un recurso externo exige cambiar la política, no copiar el middleware.
 - Dockerfile con usuario no privilegiado (`USER $APP_UID`).
 - Sin secretos ni cadenas reales en el código: `appsettings.Development.json` (ignorado), user-secrets o variables de entorno.
 - Pruebas de integración en `tests/EcommerceApi.Tests` para cualquier cambio de comportamiento.

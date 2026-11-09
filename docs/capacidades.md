@@ -49,6 +49,7 @@ verificación y ajusta la tabla en el mismo lote.
 | Paginación por cursor (*keyset*) con límites y filtro temporal | `OrderQuery`, `SqliteOrderReadModel` | `GetOrders_WithLimit_ReturnsCursorAndNextPage` | Implementado |
 | Contrato de error único (`400`, `404`, `500`) | `LL.Hosting` (`AddApiProblemDetails`), controladores y `DomainExceptionHandler` | `ErrorContractTests` (4 casos) | Implementado |
 | CORS con denegación por defecto | `LL.Security` (`AddDenyByDefaultCors`) | `AllowedOrigin_ReceivesCorsHeader`, `UnknownOrigin_DoesNotReceiveCorsHeader` | Implementado |
+| Cabeceras de seguridad y política de contenido restrictiva | `LL.Security` (`UseSecurityHeaders` con `ContentSecurityPolicy.DenyAll`) | `SecurityHeadersTests` | Implementado |
 | Rate limit global de 120 req/min por IP | `LL.Security` (`AddRemoteIpRateLimiting`; [ADR-0007](adr/0007-rate-limiting.md)) | `ExceedingGlobalLimit_ReturnsTooManyRequests`; carga con k6 en el portfolio | Validado en local (secuencial y concurrente); sin SLO |
 | Salud anónima en `/health` | `LL.Hosting` (`MapApiHealthChecks`) | `Health_IsAnonymous_ReturnsHealthy` | Implementado |
 | Controles compartidos instalados con versión fijada `0.1.0` | [`Directory.Packages.props`](../Directory.Packages.props), [`NuGet.config`](../NuGet.config) | `dotnet restore` desde GitHub Packages en CI | Implementado |
