@@ -22,8 +22,9 @@ updates:
       - "dependencies"
       - "security"
     ignore:
-      # Los paquetes LL.* viven en shared-dotnet; el rango 0.1.* los actualiza al
-      # restaurar. Un salto de versión mayor es deliberado (ADR-0002 de shared-dotnet).
+      # Los paquetes LL.* se publican en shared-dotnet y su versión está fijada
+      # en Directory.Packages.props: un parche o una minor abre PR. Un salto
+      # mayor es deliberado y se revisa a mano.
       - dependency-name: "LL.*"
         update-types:
           - "version-update:semver-major"

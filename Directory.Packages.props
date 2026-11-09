@@ -2,13 +2,12 @@
 
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <!-- LL.* publica versiones 0.1.x mientras se estabilizan; el rango flotante es deliberado. -->
-    <CentralPackageFloatingVersionsEnabled>true</CentralPackageFloatingVersionsEnabled>
   </PropertyGroup>
 
   <ItemGroup Label="Aplicación">
-    <PackageVersion Include="LL.Hosting" Version="0.1.*" />
-    <PackageVersion Include="LL.Security" Version="0.1.*" />
+    <!-- Versión exacta: una actualización de shared-dotnet entra por PR y pasa por el mismo CI. -->
+    <PackageVersion Include="LL.Hosting" Version="0.1.0" />
+    <PackageVersion Include="LL.Security" Version="0.1.0" />
     <PackageVersion Include="Microsoft.ApplicationInsights.AspNetCore" Version="3.2.0" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.14" />
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.3.1" />
