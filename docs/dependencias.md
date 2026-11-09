@@ -1,6 +1,6 @@
 # Dependencias: dueño, plazo y evidencia
 
-> **Estado:** Validado (política aplicada y lote cerrado) · Parcial (informe semanal manual; agrupación validada con un lote de 8 actualizaciones) · Diseño (fusión automática de Dependabot, pendiente de su primera ejecución).
+> **Estado:** Validado (política aplicada y lote cerrado; la fusión automática se estrenó con la PR #55 el 2026-11-09) · Parcial (informe semanal manual; agrupación validada con un lote de 8 actualizaciones).
 > **Última revisión:** 2026-11-07.
 > **Evidencia:** lote de 8 actualizaciones ([PR #27](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/27), checks en verde) resuelto con squash; `dotnet list package --vulnerable --include-transitive`: todos los proyectos sin paquetes vulnerables (salida local, 2026-11-07).
 
@@ -84,6 +84,6 @@ gh pr checks <número> --watch
 
 ## 8. Estado y límites
 
-- **Validado:** la política se aplicó a un lote real, con checks obligatorios, rama actualizada y squash; el escaneo de dependencias queda limpio.
+- **Validado:** la política se aplicó a un lote real, con checks obligatorios, rama actualizada y squash; el escaneo de dependencias queda limpio. La fusión automática se estrenó con la PR #55, de `LL.Security` 0.1.0 a 0.2.0, con los checks en verde (9 de noviembre de 2026).
 - **Parcial:** el informe semanal es manual; la agrupación ya produjo un lote y el primer major sigue pendiente de revisión.
 - **Fuera de alcance:** el SDK de .NET se fija en el pipeline (`10.0.x`) y no tiene `global.json`; las dependencias npm del laboratorio PKCE viven en otro repositorio y siguen el mismo criterio con `npm audit` y Dependabot.
