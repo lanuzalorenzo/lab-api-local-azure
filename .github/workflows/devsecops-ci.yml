@@ -170,6 +170,7 @@ jobs:
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: 'trivy-image.sarif'
+          category: 'trivy-image'
 
       - name: Verificar que la API no publica la cabecera Server
         run: |
@@ -185,7 +186,6 @@ jobs:
           done
           test "${healthy}" = 1
           scripts/check-server-header.sh http://localhost:8080/health
-          category: 'trivy-image'
 
   iac-security:
     name: Seguridad de infraestructura como código (Bicep)
