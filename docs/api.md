@@ -311,7 +311,9 @@ de integración.
   (`LL.Hosting`, `MapApiHealthChecks`).
 - Cabeceras de seguridad en todas las respuestas: `X-Content-Type-Options`,
   `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`
-  (`LL.Security`, `UseSecurityHeaders`).
+  (`LL.Security`, `UseSecurityHeaders`). Kestrel no añade `Server` en el
+  contenedor, así que las respuestas servidas por Kestrel no identifican el
+  servidor web (`EcommerceApi/Program.cs`).
 - CORS: lista vacía deniega cualquier origen; solo se permite lo declarado en
   `Cors:AllowedOrigins`.
 

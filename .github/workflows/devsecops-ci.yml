@@ -170,6 +170,21 @@ jobs:
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: 'trivy-image.sarif'
+
+      - name: Verificar que la API no publica la cabecera Server
+        run: |
+          docker run -d --name server-header-probe -p 8080:8080 "ecommerce-api:${GITHUB_SHA}"
+          trap 'docker rm -f server-header-probe >/dev/null 2>&1 || true' EXIT
+          healthy=0
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://localhost:8080/health >/dev/null 2>&1; then
+              healthy=1
+              break
+            fi
+            sleep 1
+          done
+          test "${healthy}" = 1
+          scripts/check-server-header.sh http://localhost:8080/health
           category: 'trivy-image'
 
   iac-security:
