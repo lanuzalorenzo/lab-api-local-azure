@@ -7,9 +7,9 @@ namespace EcommerceApi.Tests;
 
 /// <summary>
 /// Kestrel adds "Server: Kestrel" to every response unless the option is off.
-/// TestServer never writes the header, so the HTTP-level absence is checked
-/// against the container in CI; this test pins the option so a refactor cannot
-/// turn the header back on silently.
+/// The option is set by UseSecurityHeaders (LL.Security); TestServer never writes
+/// the header, so the HTTP-level absence is checked against the container in CI.
+/// This test fails if the package stops applying it or the app overrides it.
 /// </summary>
 public sealed class ServerHeaderTests : IClassFixture<ApiFactory>
 {

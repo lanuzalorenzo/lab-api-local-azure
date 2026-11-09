@@ -24,11 +24,6 @@ var azureAdOptions = builder.Configuration
     .GetSection(AzureAdOptions.SectionName)
     .Get<AzureAdOptions>() ?? new AzureAdOptions();
 
-// Kestrel adds "Server: Kestrel" to every response by default, which tells an
-// anonymous client which web server is behind the API. The name is not needed
-// to serve traffic, and scripts/check-server-header.sh guards its absence.
-builder.WebHost.ConfigureKestrel(options => options.AddServerHeader = false);
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
