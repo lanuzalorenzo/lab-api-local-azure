@@ -61,23 +61,12 @@ jobs:
       - name: Checkout del repositorio
         uses: actions/checkout@v7
 
-      - name: Configurar .NET 10 SDK
-        uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: '10.0.x'
-
-      - name: Inicializar CodeQL
-        uses: github/codeql-action/init@v4
+      - name: Analizar con la acción compartida
+        # SHA temporal de la rama de core; se sustituye por @v1.5 al publicarse.
+        uses: lanuzalorenzo/core/actions/sast@f78ddbdf34f5df5b4f64f79a311a3f818e741382
         with:
           languages: csharp
           queries: security-extended
-
-      - name: Compilar para CodeQL
-        uses: github/codeql-action/autobuild@v4
-
-      - name: Analizar con CodeQL
-        uses: github/codeql-action/analyze@v4
-        with:
           category: '/language:csharp'
 
   sca:
@@ -104,26 +93,17 @@ jobs:
           dotnet restore EcommerceApi.sln
           dotnet build EcommerceApi.sln -c Release --no-restore
 
-      - name: Escanear dependencias con Trivy
-        uses: aquasecurity/trivy-action@v0.36.0
+      - name: Escanear dependencias con la acción compartida
+        # SHA temporal de la rama de core; se sustituye por @v1.5 al publicarse.
+        uses: lanuzalorenzo/core/actions/scan@f78ddbdf34f5df5b4f64f79a311a3f818e741382
         with:
-          version: 'v0.76.0'
-          scan-type: 'fs'
+          scan-type: fs
           scan-ref: '.'
-          skip-dirs: '**/.git'
-          format: 'sarif'
-          output: 'trivy-fs.sarif'
           severity: 'CRITICAL,HIGH'
           exit-code: '1'
           ignore-unfixed: true
-          limit-severities-for-sarif: 'true'
-
-      - name: Publicar hallazgos SCA
-        if: always() && hashFiles('trivy-fs.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: 'trivy-fs.sarif'
-          category: 'trivy-fs'
+          output: trivy-fs.sarif
+          category: trivy-fs
 
   container-security:
     name: Hardening y escaneo de contenedor
@@ -153,24 +133,17 @@ jobs:
           echo "UID del contenedor: ${container_uid}"
           test "${container_uid}" != "0"
 
-      - name: Escanear imagen con Trivy
-        uses: aquasecurity/trivy-action@v0.36.0
+      - name: Escanear imagen con la acción compartida
+        # SHA temporal de la rama de core; se sustituye por @v1.5 al publicarse.
+        uses: lanuzalorenzo/core/actions/scan@f78ddbdf34f5df5b4f64f79a311a3f818e741382
         with:
-          version: 'v0.76.0'
+          scan-type: image
           image-ref: 'ecommerce-api:${{ github.sha }}'
-          format: 'sarif'
-          output: 'trivy-image.sarif'
           severity: 'CRITICAL,HIGH'
           exit-code: '1'
           ignore-unfixed: true
-          limit-severities-for-sarif: 'true'
-
-      - name: Publicar hallazgos de la imagen
-        if: always() && hashFiles('trivy-image.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: 'trivy-image.sarif'
-          category: 'trivy-image'
+          output: trivy-image.sarif
+          category: trivy-image
 
       - name: Verificar que la API no publica la cabecera Server
         run: |
@@ -216,25 +189,17 @@ jobs:
       - name: Compilar plantilla Bicep
         run: bicep build infra/main.bicep --outfile infra/main.json
 
-      - name: Escanear infraestructura con Trivy
-        uses: aquasecurity/trivy-action@v0.36.0
+      - name: Escanear infraestructura con la acción compartida
+        # SHA temporal de la rama de core; se sustituye por @v1.5 al publicarse.
+        uses: lanuzalorenzo/core/actions/scan@f78ddbdf34f5df5b4f64f79a311a3f818e741382
         with:
-          version: 'v0.76.0'
-          scan-type: 'config'
-          scan-ref: 'infra'
-          format: 'sarif'
-          output: 'trivy-config.sarif'
+          scan-type: config
+          scan-ref: infra
           severity: 'CRITICAL,HIGH'
           exit-code: '1'
-          trivyignores: '.trivyignore'
-          limit-severities-for-sarif: 'true'
-
-      - name: Publicar hallazgos de IaC
-        if: always() && hashFiles('trivy-config.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: 'trivy-config.sarif'
-          category: 'trivy-config'
+          output: trivy-config.sarif
+          category: trivy-config
+          trivyignores: .trivyignore
 
   dependency-review:
     name: Revisión de dependencias (solo PR)
