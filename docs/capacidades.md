@@ -24,7 +24,7 @@ bicep build infra/main.bicep --outfile /tmp/main.json
 gitleaks detect --source . --redact --verbose --exit-code 2
 ```
 
-Resultado observado el 2026-10-29:
+Resultado observado el 2026-10-29, recuentos al 2026-11-09:
 
 | Proyecto de pruebas | Casos | Cobertura de qué |
 |---|---|---|
@@ -52,7 +52,7 @@ verificación y ajusta la tabla en el mismo lote.
 | Cabeceras de seguridad y política de contenido restrictiva | `LL.Security` (`UseSecurityHeaders` con `ContentSecurityPolicy.DenyAll`) | `SecurityHeadersTests` | Implementado |
 | Rate limit global de 120 req/min por IP | `LL.Security` (`AddRemoteIpRateLimiting`; [ADR-0007](adr/0007-rate-limiting.md)) | `ExceedingGlobalLimit_ReturnsTooManyRequests`; carga con k6 en el portfolio | Validado en local (secuencial y concurrente); sin SLO |
 | Salud anónima en `/health` | `LL.Hosting` (`MapApiHealthChecks`) | `Health_IsAnonymous_ReturnsHealthy` | Implementado |
-| Controles compartidos instalados con versión fijada `0.1.0` | [`Directory.Packages.props`](../Directory.Packages.props), [`NuGet.config`](../NuGet.config) | `dotnet restore` desde GitHub Packages en CI | Implementado |
+| Controles compartidos con versión fijada: `LL.Hosting` `0.1.0` y `LL.Security` `0.3.0` | [`Directory.Packages.props`](../Directory.Packages.props), [`NuGet.config`](../NuGet.config) | `dotnet restore` desde GitHub Packages en CI | Implementado |
 | Credencial de solo lectura para el feed privado `LL.*` | Gestor de secretos local y secreto `LL_PACKAGES_TOKEN` de Dependabot | [`credenciales.md`](credenciales.md); PR #55 generada por Dependabot y fusionada por el flujo automático con los checks en verde | Validado el 9 de noviembre de 2026 |
 | Límite de cuerpo de 16 KB en escrituras | `[RequestSizeLimit]` | Pendiente de comprobación manual: `TestServer` no aplica el límite de Kestrel | Implementado; `413` sin comprobar |
 
