@@ -62,8 +62,8 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Analizar con la acción compartida
-        # SHA temporal de la rama de core; se sustituye por @v1.5 al publicarse.
-        uses: lanuzalorenzo/core/actions/sast@f78ddbdf34f5df5b4f64f79a311a3f818e741382
+        # Acción compartida de core, fijada a v1.6.
+        uses: lanuzalorenzo/core/actions/sast@v1.6
         with:
           languages: csharp
           queries: security-extended
@@ -94,8 +94,8 @@ jobs:
           dotnet build EcommerceApi.sln -c Release --no-restore
 
       - name: Escanear dependencias con la acción compartida
-        # SHA temporal de la rama de core; se sustituye por @v1.5 al publicarse.
-        uses: lanuzalorenzo/core/actions/scan@f78ddbdf34f5df5b4f64f79a311a3f818e741382
+        # Acción compartida de core, fijada a v1.6.
+        uses: lanuzalorenzo/core/actions/scan@v1.6
         with:
           scan-type: fs
           scan-ref: '.'
@@ -134,8 +134,8 @@ jobs:
           test "${container_uid}" != "0"
 
       - name: Escanear imagen con la acción compartida
-        # SHA temporal de la rama de core; se sustituye por @v1.5 al publicarse.
-        uses: lanuzalorenzo/core/actions/scan@f78ddbdf34f5df5b4f64f79a311a3f818e741382
+        # Acción compartida de core, fijada a v1.6.
+        uses: lanuzalorenzo/core/actions/scan@v1.6
         with:
           scan-type: image
           image-ref: 'ecommerce-api:${{ github.sha }}'
@@ -190,8 +190,8 @@ jobs:
         run: bicep build infra/main.bicep --outfile infra/main.json
 
       - name: Escanear infraestructura con la acción compartida
-        # SHA temporal de la rama de core; se sustituye por @v1.5 al publicarse.
-        uses: lanuzalorenzo/core/actions/scan@f78ddbdf34f5df5b4f64f79a311a3f818e741382
+        # Acción compartida de core, fijada a v1.6.
+        uses: lanuzalorenzo/core/actions/scan@v1.6
         with:
           scan-type: config
           scan-ref: infra
