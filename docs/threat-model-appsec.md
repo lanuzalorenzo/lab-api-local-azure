@@ -43,7 +43,61 @@ STRIDE agrupa las amenazas en seis familias: suplantación de identidad, manipul
 | **Elevation of Privilege** | Usuario accede a pedidos ajenos | Filtrado por identidad y `404` para recursos ajenos | Implementado (BOLA) |
 | **Elevation of Privilege** | Acceso a funciones administrativas | No hay roles/scopes aplicados; no existen endpoints admin | Pendiente / fuera de alcance |
 
-## 3. OWASP API Security Top 10 (2023)
+## 3. Activos y límites de confianza
+
+La tabla de STRIDE dice qué puede salir mal; esta sección dice dónde acaba lo que el sistema controla. La **capa** es el proyecto que toca la frontera y el **radio de impacto**, lo que se pierde si esa frontera cede.
+
+### 3.1 Activos
+
+| Activo | Dónde vive hoy | Qué se pierde si cae |
+|---|---|---|
+| Token del cliente | cabecera `Authorization` del cliente | suplantación mientras siga vigente; firma y caducidad acotan la ventana |
+| Configuración de Entra ID (`iss`, `aud`, JWKS) | configuración del host | se aceptarían tokens de otro emisor: cae el modelo de identidad entero |
+| Pedidos y su `UserId` | SQLite | lectura y alteración de pedidos ajenos; filtrado por identidad y `404` |
+| `OrderCreatedV1` y `ProcessedMessages` | outbox e idempotencia en SQLite | pedidos duplicados o inventados; escritura atómica y `messageId` |
+| Credenciales de despliegue | pipeline, fuera del repo | tocar la suscripción; hoy no existen (OIDC diseñado, no activo) |
+| Imagen publicada y workflows | GHCR (`container-publish.yml`) y `core` | cadena de suministro; Gitleaks, Trivy y dependency-review |
+| Identidad de agente (futuro) | por definir | ejecutar cambios de cloud con identidad propia; §4 |
+
+### 3.2 Límites de confianza
+
+| Frontera | Qué la cruza | Capa que la toca | Radio de impacto | Control |
+|---|---|---|---|---|
+| Cliente ↔ host | HTTPS con bearer JWT | host | la superficie entera de la API, actuando como ese usuario | `JwtBearer` (firma, `iss`, `aud`, `exp`), rate limit de 120/min, cuerpo de 16 KB, contenedor no-root |
+| Host ↔ Entra ID | metadatos y claves públicas | host | validación de tokens de todo el proceso | firma comprobada en local; la caché de claves la aporta la librería, sin verificar aquí |
+| Host ↔ Infrastructure | registro de dependencias del contenedor | host | cualquier adaptador que componga el proceso | `Controllers_DoNotDependOnInfrastructure`; la composición vive solo en `Program.cs` |
+| Application ↔ Infrastructure | puertos (`IOrderRepository`, `IProductRepository`) | Application | los adaptadores, nunca el dominio | [ADR-0002](adr/0002-capas-y-regla-de-dependencias.md) y `LayerDependencyTests`, que impiden instanciar adaptadores fuera del host |
+| Infrastructure ↔ SQLite y outbox | lectura y escritura del archivo | Infrastructure | el almacén entero, sin copia | volumen local y usuario no-root; SQLite es un archivo en proceso, no un servicio en red |
+| Host ↔ Function y Service Bus | `OrderCreatedV1` | host e Infrastructure | consumidor idempotente | diseñado, no desplegado |
+| Pipeline ↔ GHCR y Azure | imagen publicada y credenciales | CI | el registro o la suscripción | `GITHUB_TOKEN` con `packages: write` en `container-publish.yml`; OIDC a Azure diseñado, no activo |
+
+La regla de dependencias no sustituye a una frontera de capacidad: `LayerDependencyTests` compara referencias de ensamblado, así que impide instanciar adaptadores desde `Domain` o `Application`, no llamar a la red del BCL desde ellos. Lo que sí fija es **dónde vive la decisión sensible** —la conexión, la configuración y el host— y con ello qué contiene cada capa cuando una cede: la contención es máxima arriba, donde no hay credenciales ni conexiones que perder, y mínima en el host, que tiene todas, de modo que su radio de impacto es el proceso entero. `Contracts` no cruza ninguna frontera: son tipos de datos, sin entrada ni salida.
+
+### 3.3 Lo que todavía no existe
+
+- No hay frontera real entre el host y Azure: no hay nada desplegado.
+- No hay identidad de carga de trabajo ni Managed Identity; la persistencia es un archivo local.
+- No hay segregación por usuario en el almacén: el aislamiento es lógico, en el controlador.
+
+## 4. Un agente que escribe código de cloud y lo ejecuta
+
+Hasta ahora la amenaza tenía forma humana. Un agente escribe Bicep o comandos de `az`, los ejecuta y reintenta hasta que algo pasa la prueba; no necesita mala intención para publicar un `0.0.0.0/0`, solo elegir el camino que le funciona. El límite de confianza es el mismo de §3, pero quien lo cruza ya no es una persona delante de la pantalla: es una identidad con permisos.
+
+| Lo que puede hacer | Qué lo frena | Estado |
+|---|---|---|
+| Leer toda la suscripción | el rol de su principal | Pendiente: no hay principal |
+| Crear recursos con coste | presupuesto con alerta y política que deniegue SKUs caras | Pendiente |
+| Abrir un puerto para «comprobar que va» | política que deniegue entrada pública y revisión del diff de red | Pendiente |
+| Escribir un secreto en el repositorio | Gitleaks sobre el historial completo, en CI | Validado |
+| Escribir un secreto en un log | redacción en el código y revisión del registro | Pendiente: sin control verificado |
+| Reemplazar o borrar recursos (`--mode Complete`) | `what-if` y aprobación humana antes de aplicar | Pendiente |
+| Actuar contra una cuenta real que no es de laboratorio | suscripción separada y RBAC acotado a un grupo de recursos | Pendiente |
+
+La regla que se propone: un agente no hereda credenciales de persona, sino un principal propio, de corta duración por OIDC y acotado a un grupo de recursos, sin escritura sobre red ni sobre IAM. Todo `apply` pasa por `what-if` y lo aprueba una persona, porque el freno son el presupuesto y las políticas, no la buena intención del prompt. Su radio de impacto debe ser el grupo de recursos, nunca la suscripción ni el inquilino.
+
+Estado: **Diseño**, no despliegue. No hay suscripción, ni OIDC activo, ni identidad de agente; lo único Validado es la puerta que impide que el código llegue con secretos.
+
+## 5. OWASP API Security Top 10 (2023)
 
 | Riesgo | Estado | Evidencia / limitación |
 |---|---|---|
@@ -58,7 +112,7 @@ STRIDE agrupa las amenazas en seis familias: suplantación de identidad, manipul
 | **API9 Improper Inventory Management** | Parcial | Swagger solo en Development; no hay inventario formal de versiones |
 | **API10 Unsafe Consumption of APIs** | No aplica | No consume APIs de terceros |
 
-## 4. Controles implementados en código
+## 6. Controles implementados en código
 
 La lista completa, con el archivo y la prueba de cada control, está en
 [`capacidades.md`](capacidades.md#22-seguridad). Los que cambian este modelo de
@@ -73,7 +127,7 @@ En profundidad: invariantes de dominio que impiden persistir estados
 inconsistentes, importes en céntimos, paginación por cursor, outbox transaccional
 y consumidor idempotente por `messageId`.
 
-## 5. Riesgos residuales
+## 7. Riesgos residuales
 
 1. **Persistencia de laboratorio**: SQLite no ofrece backups, réplica ni alta disponibilidad, y el esquema se crea con `CREATE TABLE IF NOT EXISTS` sin migraciones versionadas. El outbox y la idempotencia protegen la entrega, no la disponibilidad del almacén.
 2. **Sin autorización granular**: no se validan scopes/roles por endpoint.
@@ -82,8 +136,9 @@ y consumidor idempotente por `messageId`.
 5. **Sin despliegue real**: la plantilla Bicep y los Private Endpoints no se han probado contra Azure.
 6. **Sin SLO ni calibración**: el límite se probó bajo carga (10 y 50 peticiones/s), pero 120/min no se ha calibrado contra latencia ni coste por endpoint. El `413` del cuerpo de 16 KB tampoco se ha comprobado en ejecución.
 7. **Client credentials**: el claim `sub` identifica a la aplicación, no a una persona; las pruebas de usuario final requieren flujos delegados.
+8. **Sin identidad de agente ni presupuesto**: si un agente ejecuta cambios de cloud con la credencial de una persona, su radio de impacto es la suscripción entera y nada lo frena. Hoy no hay suscripción; el diseño de §4 no está aplicado.
 
-## 6. Verificación en CI
+## 8. Verificación en CI
 
 El pipeline `.github/workflows/devsecops-ci.yml` ejecuta:
 
@@ -96,7 +151,7 @@ El pipeline `.github/workflows/devsecops-ci.yml` ejecuta:
 
 Los resultados se publican como SARIF en GitHub Security.
 
-## 7. Líneas de trabajo
+## 9. Líneas de trabajo
 
 - Implementar políticas de autorización por scopes/roles.
 - Añadir auditoría persistente y correlación de `oid`/`sub`.
@@ -105,3 +160,4 @@ Los resultados se publican como SARIF en GitHub Security.
   Private Endpoints, DNS y diagnóstico.
 - Añadir API Management/WAF delante de la API.
 - Incorporar pruebas de seguridad de API (BOLA/BFLA) contra un entorno desplegado.
+- Definir el principal del agente (OIDC, un grupo de recursos, sin red ni IAM) con presupuesto y `what-if` obligatorio.
