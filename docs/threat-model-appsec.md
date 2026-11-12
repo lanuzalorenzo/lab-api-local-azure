@@ -39,7 +39,7 @@ STRIDE agrupa las amenazas en seis familias: suplantación de identidad, manipul
 | **Tampering** | Reenvío o duplicado de `OrderCreatedV1` | Idempotencia por `messageId` en `ProcessedMessages`; el outbox escribe el mensaje en la misma transacción que el pedido | Implementado (local) |
 | **Repudiation** | Usuario niega una operación | No hay auditoría persistente; solo logs de aplicación | Parcial |
 | **Information Disclosure** | Fuga de IDs, stack traces o tokens | `UserId` no se serializa, `ProblemDetails`, Swagger solo en Development | Parcial |
-| **Denial of Service** | Peticiones masivas o cuerpos enormes | Rate limit 120/min por IP validado con carga puntual; límite de 16 KB sin comprobar; límites del contenedor | Parcial |
+| **Denial of Service** | Peticiones masivas o cuerpos enormes | Rate limit 120/min por IP validado con carga puntual; límite de 16 KB validado en local (`413` a 17 KB); límites del contenedor | Parcial |
 | **Elevation of Privilege** | Usuario accede a pedidos ajenos | Filtrado por identidad y `404` para recursos ajenos | Implementado (BOLA) |
 | **Elevation of Privilege** | Acceso a funciones administrativas | No hay roles/scopes aplicados; no existen endpoints admin | Pendiente / fuera de alcance |
 
@@ -56,7 +56,7 @@ La tabla de STRIDE dice qué puede salir mal; esta sección dice dónde acaba lo
 | Pedidos y su `UserId` | SQLite | lectura y alteración de pedidos ajenos; filtrado por identidad y `404` |
 | `OrderCreatedV1` y `ProcessedMessages` | outbox e idempotencia en SQLite | pedidos duplicados o inventados; escritura atómica y `messageId` |
 | Credenciales de despliegue | pipeline, fuera del repo | tocar la suscripción; hoy no existen (OIDC diseñado, no activo) |
-| Imagen publicada y workflows | GHCR (`container-publish.yml`) y `core`; el SBOM, en el artefacto de la ejecución | cadena de suministro; Gitleaks, Trivy, dependency-review y el inventario SBOM CycloneDX del digest publicado |
+| Imagen publicada y workflows | GHCR (`container-publish.yml`) y `core`; el SBOM, en el artefacto de la ejecución | cadena de suministro; Gitleaks, Trivy, dependency-review, inventario SBOM CycloneDX, firma keyless y atestación del digest publicado |
 | Identidad de agente (futuro) | por definir | ejecutar cambios de cloud con identidad propia; §4 |
 
 ### 3.2 Límites de confianza
@@ -134,7 +134,7 @@ y consumidor idempotente por `messageId`.
 3. **Sin auditoría inmutable**: los logs no están centralizados ni firmados.
 4. **Sin WAF/API Management**: el rate limit es local y por IP.
 5. **Sin despliegue real**: la plantilla Bicep y los Private Endpoints no se han probado contra Azure.
-6. **Sin SLO ni calibración**: el límite se probó bajo carga (10 y 50 peticiones/s), pero 120/min no se ha calibrado contra latencia ni coste por endpoint. El `413` del cuerpo de 16 KB tampoco se ha comprobado en ejecución.
+6. **Sin SLO ni calibración**: el límite se probó bajo carga (10 y 50 peticiones/s), pero 120/min no se ha calibrado contra latencia ni coste por endpoint. El `413` del cuerpo de 16 KB se validó en local el 2026-11-12; el SLO sigue pendiente.
 7. **Client credentials**: el claim `sub` identifica a la aplicación, no a una persona; las pruebas de usuario final requieren flujos delegados.
 8. **Sin identidad de agente ni presupuesto**: si un agente ejecuta cambios de cloud con la credencial de una persona, su radio de impacto es la suscripción entera y nada lo frena. Hoy no hay suscripción; el diseño de §4 no está aplicado.
 
@@ -151,7 +151,7 @@ El pipeline `.github/workflows/devsecops-ci.yml` ejecuta:
 
 Los resultados se publican como SARIF en GitHub Security.
 
-El workflow `.github/workflows/container-publish.yml` publica la imagen y genera el SBOM CycloneDX de ese mismo digest, adjunto a la ejecución. No evalúa vulnerabilidades: es el inventario de lo que contiene la imagen. La firma del artefacto sigue pendiente.
+El workflow `.github/workflows/container-publish.yml` publica la imagen, genera el SBOM CycloneDX de ese mismo digest y lo adjunta a la ejecución. No evalúa vulnerabilidades: es el inventario de lo que contiene la imagen. La firma y la atestación se añaden en el mismo workflow; su verificación se registra en la ejecución de CI.
 
 ## 9. Líneas de trabajo
 
