@@ -21,6 +21,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      digest: ${{ steps.imagen.outputs.digest }}
     steps:
       - name: Checkout del repositorio
         uses: actions/checkout@v7
@@ -41,3 +43,28 @@ jobs:
       - name: Anotar el digest
         run: |
           echo "Digest de la imagen: ${{ steps.imagen.outputs.digest }}" >> "$GITHUB_STEP_SUMMARY"
+
+  sbom:
+    name: SBOM CycloneDX del artefacto
+    needs: [ publish ]
+    if: github.event_name != 'pull_request' && needs.publish.outputs.digest != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Generar el SBOM del artefacto publicado
+        # Fijada por SHA; el comentario dice la etiqueta que corresponde.
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        with:
+          image: ghcr.io/${{ github.repository_owner }}/ecommerceapi@${{ needs.publish.outputs.digest }}
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
+          format: cyclonedx-json
+          output-file: ecommerceapi.cdx.json
+          artifact-name: ecommerceapi-${{ github.sha }}.cdx.json
+          upload-release-assets: false
+
+      - name: Anotar el SHA-256 del SBOM
+        run: |
+          echo "SHA-256 del SBOM: $(sha256sum ecommerceapi.cdx.json | cut -d' ' -f1)" >> "$GITHUB_STEP_SUMMARY"
