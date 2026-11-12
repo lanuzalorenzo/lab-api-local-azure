@@ -113,11 +113,15 @@ jobs:
           ISSUER: https://token.actions.githubusercontent.com
         run: |
           cosign verify \
+            --timeout 120s \
+            --output json \
             --certificate-identity "$IDENTITY" \
             --certificate-oidc-issuer "$ISSUER" \
-            "$IMAGE"
+            "$IMAGE" | jq -e 'length > 0'
           cosign verify-attestation \
+            --timeout 120s \
+            --output json \
             --type cyclonedx \
             --certificate-identity "$IDENTITY" \
             --certificate-oidc-issuer "$ISSUER" \
-            "$IMAGE"
+            "$IMAGE" | jq -e 'length > 0' 
