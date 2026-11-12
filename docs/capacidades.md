@@ -1,6 +1,6 @@
 # Capacidades y evidencia
 
-> **Estado:** Parcial (2026-11-12): la matriz conserva etiquetas fuera del contrato (`Implementado`, `Documentado, no activo` y variantes de alcance como `Validado en local`) y aún no está normalizada. Verificado el 2026-10-29 contra `main`; rate limit revisado el 2026-11-05 con [ADR-0007](adr/0007-rate-limiting.md); cabecera `Server` revisada el 2026-11-09; límite de cuerpo y artefacto de publicación revisados el 2026-11-12; controles compartidos desde los paquetes `LL.Security` y `LL.Hosting` el 2026-11-06, fijados y actualizados por Dependabot el 2026-11-09 (PR #55). Queda por comprobar la validación JWT fuera de CI, el hook de secretos opt-in y el despliegue de Service Bus.
+> **Estado:** Parcial (2026-11-12): la matriz conserva etiquetas fuera del contrato (`Implementado`, `Documentado, no activo` y variantes de alcance como `Validado en local`) y aún no está normalizada. Verificado el 2026-10-29 contra `main`; rate limit revisado el 2026-11-05 con [ADR-0007](adr/0007-rate-limiting.md); cabecera `Server` revisada el 2026-11-09; límite de cuerpo, artefacto de publicación, firma keyless y atestación del SBOM revisados el 2026-11-12; controles compartidos desde los paquetes `LL.Security` y `LL.Hosting` el 2026-11-06, fijados y actualizados por Dependabot el 2026-11-09 (PR #55). Queda por comprobar la validación JWT fuera de CI, el hook de secretos opt-in y el despliegue de Service Bus.
 > **Ámbito:** qué puede afirmarse sobre este repositorio, con qué se comprueba y qué queda fuera.
 > **Evidencia:** `dotnet test`, `.github/workflows/devsecops-ci.yml`, `infra/main.bicep` y `docs/`.
 > **Relacionada con:** [Referencia de la API](api.md), [resumen de estado](../README.md#estado-de-seguridad), [ADR](adr/README.md).
@@ -112,8 +112,8 @@ importante y está en el threat model como `Parcial` en *Information Disclosure*
 | Fakes propios en lugar de framework de *mocking* | `tests/EcommerceApi.UnitTests/Fakes/InMemoryFakes.cs` | Revisión de código | Implementado |
 | Verificación de formato en CI | Workflow, job `build-and-test` | `dotnet format --verify-no-changes` | Implementado |
 | Pipeline con 7 jobs: build, secretos, SAST, SCA, contenedor, IaC y revisión de dependencias | `.github/workflows/devsecops-ci.yml` | Ejecución en Actions | Implementado |
-| Imagen firmada con cosign keyless | `.github/workflows/container-publish.yml`, job `sign` | `cosign sign` y `cosign verify` en el mismo job | Pendiente de la primera ejecución sobre `main` |
-| SBOM atestado y ligado al digest | `.github/workflows/container-publish.yml`, job `sign` | `cosign attest --type cyclonedx` y `cosign verify-attestation` | Pendiente de la primera ejecución sobre `main` |
+| Imagen firmada con cosign keyless | `.github/workflows/container-publish.yml`, job `sign` | `cosign sign` y `cosign verify` en el mismo job | Validado en CI: run [43314295991](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/43314295991) (2026-11-12) |
+| SBOM atestado y ligado al digest | `.github/workflows/container-publish.yml`, job `sign` | `cosign attest --type cyclonedx` y `cosign verify-attestation` | Validado en CI: run [43314295991](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/43314295991) (2026-11-12) |
 | Imagen multi-stage con usuario no privilegiado | `Dockerfile` (`USER $APP_UID`) | Job `container-security` | Implementado |
 | IaC Bicep con VNet, NSG, Key Vault, Private Endpoints y diagnóstico | `infra/main.bicep` | `bicep build` + Trivy config | Implementado (plantilla) |
 | Despliegue en Azure | — | — | Pendiente |
