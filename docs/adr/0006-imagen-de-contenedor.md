@@ -93,8 +93,11 @@ Datos medidos el 2026-11-03 en el host de trabajo:
   cambio en un fichero no ignorado rehace capas.
 - Sin `healthcheck` en el contenedor, el orquestador no sabe si está sano. En local
   se acepta porque la comprobación es manual; antes de desplegar hay que decidirlo.
-- La imagen todavía no genera inventario de componentes ni se firma; el escaneo de
-  vulnerabilidades de la imagen ya lo hace el pipeline.
+- El inventario de componentes ya se genera; la firma y la atestación están
+  implementadas en el workflow desde el 2026-11-12, pendientes de la primera
+  ejecución sobre `main`: genera el SBOM CycloneDX del digest publicado, firma la
+  imagen con cosign keyless y atesta ese SBOM. El escaneo de vulnerabilidades de
+  la imagen ya lo hacía el pipeline.
 - La capa de `apt` añade tamaño y unos segundos de construcción, y dos
   construcciones del mismo commit pueden diferir si el repositorio de Ubuntu
   cambia. Se acepta porque el escaneo es bloqueante y la alternativa es publicar
@@ -126,7 +129,7 @@ sobre la imagen exportada, no con el pipeline.
 
 - Al primer despliegue en un orquestador: si el contenedor necesita sonda, la
   decisión cambia con la causa.
-- Cuando entren inventario de componentes y firma: el escaneo puede pedir otra base.
+- Si cambia la identidad de firma o el formato del SBOM: la verificación puede pedir otra base.
 - Antes del primer despliegue: decidir `healthcheck` y usuario en la plataforma.
 - Si el tamaño de la imagen o sus CVE obligan a Alpine o *chiseled*.
 - Si la etiqueta `:10.0` deja de traer el runtime parcheado o el `apt-get upgrade`
