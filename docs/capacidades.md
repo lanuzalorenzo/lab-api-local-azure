@@ -112,6 +112,8 @@ importante y está en el threat model como `Parcial` en *Information Disclosure*
 | Fakes propios en lugar de framework de *mocking* | `tests/EcommerceApi.UnitTests/Fakes/InMemoryFakes.cs` | Revisión de código | Implementado |
 | Verificación de formato en CI | Workflow, job `build-and-test` | `dotnet format --verify-no-changes` | Implementado |
 | Pipeline con 7 jobs: build, secretos, SAST, SCA, contenedor, IaC y revisión de dependencias | `.github/workflows/devsecops-ci.yml` | Ejecución en Actions | Implementado |
+| Imagen firmada con cosign keyless | `.github/workflows/container-publish.yml`, job `sign` | `cosign sign` y `cosign verify` en el mismo job | Pendiente de la primera ejecución sobre `main` |
+| SBOM atestado y ligado al digest | `.github/workflows/container-publish.yml`, job `sign` | `cosign attest --type cyclonedx` y `cosign verify-attestation` | Pendiente de la primera ejecución sobre `main` |
 | Imagen multi-stage con usuario no privilegiado | `Dockerfile` (`USER $APP_UID`) | Job `container-security` | Implementado |
 | IaC Bicep con VNet, NSG, Key Vault, Private Endpoints y diagnóstico | `infra/main.bicep` | `bicep build` + Trivy config | Implementado (plantilla) |
 | Despliegue en Azure | — | — | Pendiente |
