@@ -104,7 +104,7 @@ jobs:
       - name: Atestar el SBOM
         env:
           IMAGE: ghcr.io/${{ github.repository_owner }}/ecommerceapi@${{ needs.publish.outputs.digest }}
-        run: cosign attest --yes --predicate sbom/ecommerceapi.cdx.json --type cyclonedx "$IMAGE"
+        run: cosign attest --yes --predicate "sbom/ecommerceapi-${{ github.sha }}.cdx.json" --type cyclonedx "$IMAGE"
 
       - name: Verificar firma y atestación
         env:
