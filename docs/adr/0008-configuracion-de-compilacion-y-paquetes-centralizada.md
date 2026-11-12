@@ -17,6 +17,7 @@ La solución tiene diez proyectos: cinco de la API, cuatro de pruebas y el proce
    - `Nullable` e `ImplicitUsings` activados.
    - `TreatWarningsAsErrors` para que un aviso no llegue a `main`.
    - `NuGetAudit` en modo `all` y `NU1901`–`NU1904` como errores, de modo que una dependencia vulnerable —directa o transitiva— rompa la compilación.
+   - `DebugType=none` y `DebugSymbols=false` en `Release` (añadido el 12 de noviembre de 2026): el artefacto publicado no lleva PDB; las compilaciones `Debug` conservan sus símbolos para depurar.
 2. **`Directory.Packages.props` en la raíz** activa `ManagePackageVersionsCentrally`. Cada paquete tiene una sola `<PackageVersion>` y los `.csproj` declaran `<PackageReference>` sin `Version`.
    - `LL.Hosting` y `LL.Security` se fijan a su versión exacta: una actualización llega como pull request de Dependabot y pasa por el CI. (Actualizado el 9 de noviembre de 2026: antes el rango era `0.1.*`, y ese rango aplicaba los parches `0.1.x` en el `restore`, sin PR ni revisión.)
    - `xunit.runner.visualstudio` se unifica en 3.1.5, la versión que ya usaban tres de los cuatro proyectos de prueba.
@@ -36,6 +37,7 @@ La solución tiene diez proyectos: cinco de la API, cuatro de pruebas y el proce
 - Una misma ID de paquete usa la misma versión en todo el repositorio. Si un proyecto necesita otra, se justifica con `VersionOverride` o se divide el archivo; no se duplica en silencio.
 - El restore necesita acceso al feed que publica `LL.*`. En un clon sin `GH_PACKAGES_TOKEN` con permiso de lectura de paquetes, el restore falla; es una condición del feed privado, no de la configuración central. Con el paquete ya en la caché local se puede verificar con un feed local temporal.
 - La auditoría NuGet pasa a formar parte de la compilación: una vulnerabilidad conocida bloquea igual que un error de tipos.
+- El publish Release no incluye PDB. Si una herramienta de cobertura o un diagnóstico necesita símbolos, debe usar una compilación `Debug` o pedir los PDB del pipeline, no relajar esta configuración en `Release`.
 
 ## 5. Criterio para revisarla
 

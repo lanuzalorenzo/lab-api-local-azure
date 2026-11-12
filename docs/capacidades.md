@@ -1,6 +1,6 @@
 # Capacidades y evidencia
 
-> **Estado:** Parcial (2026-11-07): la matriz conserva etiquetas fuera del contrato (`Implementado`, `Documentado, no activo` y variantes de alcance como `Validado en local`) y aún no está normalizada. Verificado el 2026-10-29 contra `main`; rate limit revisado el 2026-11-05 con [ADR-0007](adr/0007-rate-limiting.md); cabecera `Server` revisada el 2026-11-09; controles compartidos desde los paquetes `LL.Security` y `LL.Hosting` el 2026-11-06, fijados y actualizados por Dependabot el 2026-11-09 (PR #55). Queda por comprobar el `413` del límite de 16 KB, la validación JWT fuera de CI, el hook de secretos opt-in y el despliegue de Service Bus.
+> **Estado:** Parcial (2026-11-12): la matriz conserva etiquetas fuera del contrato (`Implementado`, `Documentado, no activo` y variantes de alcance como `Validado en local`) y aún no está normalizada. Verificado el 2026-10-29 contra `main`; rate limit revisado el 2026-11-05 con [ADR-0007](adr/0007-rate-limiting.md); cabecera `Server` revisada el 2026-11-09; límite de cuerpo y artefacto de publicación revisados el 2026-11-12; controles compartidos desde los paquetes `LL.Security` y `LL.Hosting` el 2026-11-06, fijados y actualizados por Dependabot el 2026-11-09 (PR #55). Queda por comprobar la validación JWT fuera de CI, el hook de secretos opt-in y el despliegue de Service Bus.
 > **Ámbito:** qué puede afirmarse sobre este repositorio, con qué se comprueba y qué queda fuera.
 > **Evidencia:** `dotnet test`, `.github/workflows/devsecops-ci.yml`, `infra/main.bicep` y `docs/`.
 > **Relacionada con:** [Referencia de la API](api.md), [resumen de estado](../README.md#estado-de-seguridad), [ADR](adr/README.md).
@@ -24,15 +24,15 @@ bicep build infra/main.bicep --outfile /tmp/main.json
 gitleaks detect --source . --redact --verbose --exit-code 2
 ```
 
-Resultado observado el 2026-10-29, recuentos al 2026-11-09:
+Resultado observado el 2026-10-29, recuentos al 2026-11-12:
 
 | Proyecto de pruebas | Casos | Cobertura de qué |
 |---|---|---|
 | `EcommerceApi.UnitTests` | 45 | Invariantes de dominio y handlers de aplicación |
 | `EcommerceApi.Architecture.Tests` | 7 | Regla de dependencias entre capas |
 | `EcommerceApi.Infrastructure.Tests` | 10 | SQLite, outbox, rollback, consultas y dispatcher |
-| `EcommerceApi.Tests` | 27 | Contrato HTTP, BOLA, CORS, *rate limit*, errores y observabilidad |
-| **Total** | **89** | Sin umbral de cobertura configurado |
+| `EcommerceApi.Tests` | 29 | Contrato HTTP, BOLA, CORS, *rate limit*, errores y observabilidad |
+| **Total** | **91** | Sin umbral de cobertura configurado |
 
 Los recuentos cambian con el código: si actualizas la matriz, ejecuta la
 verificación y ajusta la tabla en el mismo lote.
@@ -54,7 +54,7 @@ verificación y ajusta la tabla en el mismo lote.
 | Salud anónima en `/health` | `LL.Hosting` (`MapApiHealthChecks`) | `Health_IsAnonymous_ReturnsHealthy` | Implementado |
 | Controles compartidos con versión fijada: `LL.Hosting` `0.1.0` y `LL.Security` `0.3.0` | [`Directory.Packages.props`](../Directory.Packages.props), [`NuGet.config`](../NuGet.config) | `dotnet restore` desde GitHub Packages en CI | Implementado |
 | Credencial de solo lectura para el feed privado `LL.*` | Gestor de secretos local y secreto `LL_PACKAGES_TOKEN` de Dependabot | [`credenciales.md`](credenciales.md); PR #55 generada por Dependabot y fusionada por el flujo automático con los checks en verde | Validado el 9 de noviembre de 2026 |
-| Límite de cuerpo de 16 KB en escrituras | `[RequestSizeLimit]` | Pendiente de comprobación manual: `TestServer` no aplica el límite de Kestrel | Implementado; `413` sin comprobar |
+| Límite de cuerpo de 16 KB en `POST /api/products` | `[RequestSizeLimit]`; `BadHttpRequestExceptionHandler` conserva el estado | Prueba local con 16 384 y 17 408 bytes contra Kestrel; [evidencia](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/blob/main/laboratorio-final/evidencias/2026-11-12-11-api-body-limit/README.md) | Validado en local en `POST /api/products`: 16 KB pasan y 17 KB devuelven `413`; `POST /api/orders` no se midió |
 
 El contrato completo, incluido el formato de error, está en
 [docs/api.md](api.md).
@@ -107,6 +107,7 @@ importante y está en el threat model como `Parcial` en *Information Disclosure*
 
 | Capacidad | Dónde | Cómo se comprueba | Estado |
 |---|---|---|---|
+| Artefacto de publicación sin PDB | `Directory.Build.props` (`DebugType=none` y `DebugSymbols=false` en `Release`) | `dotnet publish` + `find -name '*.pdb'`; [evidencia](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/blob/main/laboratorio-final/evidencias/2026-11-12-05-api-binary/README.md) | Validado en local: 5 PDB antes, 0 después; sin secretos en el host |
 | Suite xUnit en cuatro proyectos | `tests/` | `dotnet test EcommerceApi.sln` | Implementado |
 | Fakes propios en lugar de framework de *mocking* | `tests/EcommerceApi.UnitTests/Fakes/InMemoryFakes.cs` | Revisión de código | Implementado |
 | Verificación de formato en CI | Workflow, job `build-and-test` | `dotnet format --verify-no-changes` | Implementado |
@@ -144,7 +145,7 @@ Lista deliberada. Sirve para no arrastrar afirmaciones que el código no sostien
 | «Implementé microservicios con Service Bus» | «Implementé un monolito modular con outbox transaccional sobre SQLite, reintentos y *dead-letter*, y un consumidor idempotente; el adaptador de Service Bus está escrito y no desplegado» |
 | «Arquitectura en Azure» | «Diseñé y validé estáticamente una plantilla Bicep con red privada, Private Endpoints, Key Vault y diagnóstico; no la he desplegado» |
 | «Clean Architecture» | «Arquitectura por capas con inversión de dependencias, verificada con pruebas que fallan si se rompe la dirección» |
-| «Alta cobertura de tests» | «89 pruebas en cuatro proyectos: dominio, aplicación, arquitectura, infraestructura e integración HTTP; sin umbral de cobertura» |
+| «Alta cobertura de tests» | «91 pruebas en cuatro proyectos: dominio, aplicación, arquitectura, infraestructura e integración HTTP; sin umbral de cobertura» |
 | «API segura» | «Validación JWT con `JwtBearer`, autorización por propietario con `404` anti-enumeración, CORS denegado por defecto y *rate limiting* de laboratorio» |
 
 La forma general: **verbo + artefacto + límite**. Si falta el límite, la frase
