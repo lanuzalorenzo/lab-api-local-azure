@@ -56,7 +56,7 @@ La tabla de STRIDE dice qué puede salir mal; esta sección dice dónde acaba lo
 | Pedidos y su `UserId` | SQLite | lectura y alteración de pedidos ajenos; filtrado por identidad y `404` |
 | `OrderCreatedV1` y `ProcessedMessages` | outbox e idempotencia en SQLite | pedidos duplicados o inventados; escritura atómica y `messageId` |
 | Credenciales de despliegue | pipeline, fuera del repo | tocar la suscripción; hoy no existen (OIDC diseñado, no activo) |
-| Imagen publicada y workflows | GHCR (`container-publish.yml`) y `core` | cadena de suministro; Gitleaks, Trivy y dependency-review |
+| Imagen publicada y workflows | GHCR (`container-publish.yml`) y `core`; el SBOM, en el artefacto de la ejecución | cadena de suministro; Gitleaks, Trivy, dependency-review y el inventario SBOM CycloneDX del digest publicado |
 | Identidad de agente (futuro) | por definir | ejecutar cambios de cloud con identidad propia; §4 |
 
 ### 3.2 Límites de confianza
@@ -150,6 +150,8 @@ El pipeline `.github/workflows/devsecops-ci.yml` ejecuta:
 6. **Dependency Review** en pull requests.
 
 Los resultados se publican como SARIF en GitHub Security.
+
+El workflow `.github/workflows/container-publish.yml` publica la imagen y genera el SBOM CycloneDX de ese mismo digest, adjunto a la ejecución. No evalúa vulnerabilidades: es el inventario de lo que contiene la imagen. La firma del artefacto sigue pendiente.
 
 ## 9. Líneas de trabajo
 
