@@ -151,7 +151,7 @@ El pipeline `.github/workflows/devsecops-ci.yml` ejecuta:
 
 Los resultados se publican como SARIF en GitHub Security.
 
-El workflow `.github/workflows/container-publish.yml` publica la imagen, genera el SBOM CycloneDX de ese mismo digest y lo adjunta a la ejecución. No evalúa vulnerabilidades: es el inventario de lo que contiene la imagen. La firma y la atestación se añaden en el mismo workflow; su verificación se registra en la ejecución de CI.
+El workflow `.github/workflows/container-publish.yml` publica la imagen, genera el SBOM CycloneDX de ese mismo digest y lo adjunta a la ejecución. No evalúa vulnerabilidades: es el inventario de lo que contiene la imagen. La firma y la atestación se validaron en el run [43314295991](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/43314295991): `cosign verify` y `cosign verify-attestation` en verde contra el digest publicado.
 
 ## 9. Líneas de trabajo
 

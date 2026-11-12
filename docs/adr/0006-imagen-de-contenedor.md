@@ -1,8 +1,8 @@
 # ADR-0006 — Imagen de contenedor: dos fases, sin root y sin SDK en ejecución
 
-> **Estado:** Aceptada · actualizada el 2026-11-06
+> **Estado:** Aceptada · actualizada el 2026-11-12
 > **Ámbito:** `Dockerfile`, composición local y trabajo de imagen en CI.
-> **Evidencia:** [`Dockerfile`](../../Dockerfile), [`NuGet.config`](../../NuGet.config), [`Directory.Build.props`](../../Directory.Build.props), [`Directory.Packages.props`](../../Directory.Packages.props), [`.github/workflows/devsecops-ci.yml`](../../.github/workflows/devsecops-ci.yml) (construcción y comprobación de UID), [`EcommerceApi/Program.cs`](../../EcommerceApi/Program.cs) (salud vía `LL.Hosting`) y [`EcommerceApi/appsettings.json`](../../EcommerceApi/appsettings.json) (`Storage`).
+> **Evidencia:** [`Dockerfile`](../../Dockerfile), [`NuGet.config`](../../NuGet.config), [`Directory.Build.props`](../../Directory.Build.props), [`Directory.Packages.props`](../../Directory.Packages.props), [`.github/workflows/devsecops-ci.yml`](../../.github/workflows/devsecops-ci.yml) (construcción y comprobación de UID), [`.github/workflows/container-publish.yml`](../../.github/workflows/container-publish.yml) (publicación, firma y atestación), [`EcommerceApi/Program.cs`](../../EcommerceApi/Program.cs) (salud vía `LL.Hosting`) y [`EcommerceApi/appsettings.json`](../../EcommerceApi/appsettings.json) (`Storage`).
 > **Relacionada con:** [ADR-0005](0005-observabilidad.md) y [ADR-0004](0004-persistencia-sqlite-y-outbox.md).
 
 La API se entrega como una imagen de contenedor, y esa imagen es lo que se escanea,
@@ -19,9 +19,10 @@ que el proceso no corre como root. Sin embargo, la decisión no estaba escrita y
 arranque local no tenía un camino corto: se documentaba `docker run` con parámetros
 sueltos, difíciles de reproducir.
 
-La imagen es la unidad que consumirán los pasos pendientes: el análisis dinámico de
-la API, el inventario de componentes y la firma de la imagen. Cambiar su forma
-después obliga a rehacer esos artefactos.
+La imagen es la unidad que consumen el análisis dinámico de la API, el inventario
+de componentes y la firma. En el momento de la decisión, el inventario y la firma
+estaban pendientes; cambiar la forma de la imagen después obliga a rehacer esos
+artefactos.
 
 Datos medidos el 2026-11-03 en el host de trabajo:
 
@@ -93,11 +94,10 @@ Datos medidos el 2026-11-03 en el host de trabajo:
   cambio en un fichero no ignorado rehace capas.
 - Sin `healthcheck` en el contenedor, el orquestador no sabe si está sano. En local
   se acepta porque la comprobación es manual; antes de desplegar hay que decidirlo.
-- El inventario de componentes ya se genera; la firma y la atestación están
-  implementadas en el workflow desde el 2026-11-12, pendientes de la primera
-  ejecución sobre `main`: genera el SBOM CycloneDX del digest publicado, firma la
-  imagen con cosign keyless y atesta ese SBOM. El escaneo de vulnerabilidades de
-  la imagen ya lo hacía el pipeline.
+- El inventario de componentes ya se genera; la firma y la atestación se validaron
+  en el run [43314295991](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/43314295991) (2026-11-12). El workflow genera el SBOM CycloneDX del
+  digest publicado, firma la imagen con cosign keyless y atesta ese SBOM. El
+  escaneo de vulnerabilidades de la imagen ya lo hacía el pipeline.
 - La capa de `apt` añade tamaño y unos segundos de construcción, y dos
   construcciones del mismo commit pueden diferir si el repositorio de Ubuntu
   cambia. Se acepta porque el escaneo es bloqueante y la alternativa es publicar
