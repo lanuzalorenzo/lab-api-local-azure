@@ -29,6 +29,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddApiProblemDetails();
 builder.Services.AddExceptionHandler<DomainExceptionHandler>();
+builder.Services.AddExceptionHandler<BadHttpRequestExceptionHandler>();
 
 // Telemetry is opt-in: without a connection string the SDK is not registered,
 // because the Azure Monitor exporter throws on startup when it is missing. The

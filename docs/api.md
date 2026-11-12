@@ -1,6 +1,6 @@
 # Referencia de la API
 
-> **Estado:** Parcial (2026-11-07): contrato HTTP verificado el 2026-10-29 contra `main`; el `413` del límite de 16 KB sigue sin comprobar y los límites de rate limit se revisaron el 2026-11-05. Evidencia: [`OrdersEndpointsTests`](https://github.com/lanuzalorenzo/lab-api-local-azure/blob/main/tests/EcommerceApi.Tests/OrdersEndpointsTests.cs) y [`ErrorContractTests`](https://github.com/lanuzalorenzo/lab-api-local-azure/blob/main/tests/EcommerceApi.Tests/ErrorContractTests.cs).
+> **Estado:** Parcial (2026-11-12): contrato HTTP verificado el 2026-10-29 contra `main`; el `413` del límite de 16 KB se validó el 2026-11-12 y los límites de rate limit se revisaron el 2026-11-05. Evidencia: [`OrdersEndpointsTests`](https://github.com/lanuzalorenzo/lab-api-local-azure/blob/main/tests/EcommerceApi.Tests/OrdersEndpointsTests.cs) y [`ErrorContractTests`](https://github.com/lanuzalorenzo/lab-api-local-azure/blob/main/tests/EcommerceApi.Tests/ErrorContractTests.cs).
 > **Ámbito:** contrato HTTP de `EcommerceApi` (endpoints, autenticación, cuerpos, errores y límites).
 > **Evidencia:** `EcommerceApi/Controllers`, `EcommerceApi/Models`, `EcommerceApi.Application` y `tests/EcommerceApi.Tests`.
 > **Relacionada con:** [Persistencia y paginación](persistence.md), [Entra ID](entra-id.md), [ADR-0005](adr/0005-observabilidad.md) y [ADR-0007](adr/0007-rate-limiting.md).
@@ -185,8 +185,8 @@ decisión de alcance, no un olvido; ver la sección 10.
 ## 6. Errores
 
 Todas las respuestas con cuerpo usan `application/problem+json` (RFC 9457). Los
-códigos sin cuerpo son `401`, `413` y `429`: los emite el framework antes de
-llegar a un controlador.
+códigos sin cuerpo son `401` y `429`; el `413` lo emite Kestrel al superar el
+límite de cuerpo y se escribe como ProblemDetails.
 
 | Código | Cuándo | Forma | `traceId` |
 |---|---|---|---|
@@ -195,7 +195,7 @@ llegar a un controlador.
 | `401` | Token ausente, inválido o expirado | Vacío + `WWW-Authenticate` | No |
 | `403` | Autenticado sin permiso | No se produce hoy: no hay políticas ni roles | — |
 | `404` | Recurso inexistente o pedido de otro usuario | `ProblemDetails` con `detail` | Sí |
-| `413` | Cuerpo mayor de 16 KB en `POST` | Vacío | No |
+| `413` | Cuerpo mayor de 16 KB en `POST` | [`ProblemDetails` con `detail`](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/blob/main/laboratorio-final/evidencias/2026-11-12-11-api-body-limit/artefactos/17kb-body.json) | Sí |
 | `429` | Más de 120 peticiones por minuto y IP | Vacío, sin `Retry-After` | No |
 | `500` | Excepción no controlada | `ProblemDetails` sin `detail` ni traza | Sí |
 
@@ -300,8 +300,8 @@ criterio de revisión están en [ADR-0007](adr/0007-rate-limiting.md): en una pr
 de carga de 50 s sobre `GET /health`, con un cliente, se mantienen 119 aceptadas
 por ventana (120 menos la sonda de salud), sin `5xx`, aunque el valor no está
 calibrado contra un SLO. El límite de cuerpo lo aplica Kestrel: `TestServer` no lo
-reproduce, así que el `413` está pendiente de comprobación manual y no tiene prueba
-de integración.
+reproduce, así que el `413` se comprueba a mano y no tiene prueba de integración.
+Se validó el 2026-11-12: 16 384 bytes pasan y 17 408 devuelven `413`.
 
 ## 8. Swagger, health y diagnóstico
 
@@ -407,4 +407,4 @@ dotnet test EcommerceApi.sln
 
 Las cuatro suites cubren dominio y handlers, regla de dependencias, SQLite y outbox, y contrato HTTP. El recuento y la cobertura de cada una están en [`capacidades.md`](capacidades.md#1-verificación-en-un-bloque).
 
-El `413` por cuerpo mayor de 16 KB se comprueba a mano: lo aplica Kestrel y `TestServer` no lo reproduce.
+El `413` por cuerpo mayor de 16 KB se comprueba a mano: lo aplica Kestrel y `TestServer` no lo reproduce. Validado el 2026-11-12 en [la evidencia del límite de cuerpo](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/blob/main/laboratorio-final/evidencias/2026-11-12-11-api-body-limit/README.md): 16 384 bytes pasan y 17 408 devuelven `413`.

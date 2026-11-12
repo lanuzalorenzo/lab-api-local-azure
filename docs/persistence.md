@@ -2,7 +2,7 @@
 
 > **Ámbito:** almacén SQLite del laboratorio, SQL explícito sin ORM.
 > **Decisión:** [ADR-0004](adr/0004-persistencia-sqlite-y-outbox.md).
-> **Estado:** Parcial (2026-11-07; recuento de pruebas al 2026-11-09): la suite local pasa (89/89), pero falta enlazar el run público de CI y normalizar la etiqueta `Implementado (laboratorio)` de la matriz. Las reglas de paginación, rango y uso de índice se prueban en [`SqliteOrderReadModelTests`](https://github.com/lanuzalorenzo/lab-api-local-azure/blob/main/tests/EcommerceApi.Infrastructure.Tests/SqliteOrderReadModelTests.cs) y en [`OrdersEndpointsTests`](https://github.com/lanuzalorenzo/lab-api-local-azure/blob/main/tests/EcommerceApi.Tests/OrdersEndpointsTests.cs).
+> **Estado:** Parcial (2026-11-07; recuento de pruebas al 2026-11-12): la suite local pasa (91/91), pero falta enlazar el run público de CI y normalizar la etiqueta `Implementado (laboratorio)` de la matriz. Las reglas de paginación, rango y uso de índice se prueban en [`SqliteOrderReadModelTests`](https://github.com/lanuzalorenzo/lab-api-local-azure/blob/main/tests/EcommerceApi.Infrastructure.Tests/SqliteOrderReadModelTests.cs) y en [`OrdersEndpointsTests`](https://github.com/lanuzalorenzo/lab-api-local-azure/blob/main/tests/EcommerceApi.Tests/OrdersEndpointsTests.cs).
 
 Una base de datos es el almacén del negocio: si guarda mal o se consulta a ciegas, el sistema se vuelve lento y los números dejan de cuadrar. Este documento explica cómo guarda la API los pedidos y los productos en SQLite (una base de datos que vive en un solo archivo), por qué los importes se guardan en céntimos y cómo se piden las páginas de pedidos sin recorrer la tabla entera. El SQL está escrito a mano, sin ORM (la capa que traduce objetos del código a tablas).
 
