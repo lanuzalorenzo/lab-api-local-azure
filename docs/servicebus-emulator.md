@@ -86,7 +86,7 @@ dotnet test tests/EcommerceApi.Emulator.Tests/EcommerceApi.Emulator.Tests.csproj
 
 El proyecto arranca la API con `WebApplicationFactory<Program>` y pasa `Publisher:Mode=ServiceBus`, la cadena y la cola por variables de entorno (`Publisher__Mode`, `ServiceBus__ConnectionString` y `ServiceBus__QueueName`), porque `Program.cs` decide el publicador antes de que la fábrica aplique su configuración; las guarda y las restaura al terminar cada prueba. Comprueba cuatro cosas: que el host resuelve `ServiceBusEventPublisher`; que las opciones vienen de la sección correcta, con la cadena y la cola del emulador; que en modo `Log` no registra el publicador de Service Bus; y que un mensaje publicado por el host llega a la cola `orders` con identificador, asunto, tipo de contenido y cuerpo intactos. El binding de la cola se prueba con un nombre distinto del predeterminado, para que ignorar la clave no pase desapercibido. La cadena y la cola se pueden cambiar con `SERVICEBUS_EMULATOR_CONNECTION_STRING` y `SERVICEBUS_EMULATOR_QUEUE`, las mismas variables que usa el humo. Si el emulador no responde, la prueba lo dice antes de esperar al SDK.
 
-Estado: Validado en local el 2026-11-14 (4 pruebas, 722 ms con el emulador ya en marcha); en CI queda pendiente de la primera ejecución del job «Composición del publicador contra el emulador».
+Estado: Validado en local el 2026-11-14 (4 pruebas, 923 ms con el emulador ya en marcha) y en CI el mismo día ([PR #70](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/70), job «Composición del publicador contra el emulador», 1m41s).
 
 ## 5. Conectar la API
 
@@ -107,7 +107,7 @@ Lo que sigue sin probarse ahí es el receptor: `functions/OrderProcessor` necesi
 
 `.github/workflows/servicebus-emulator.yml` repite el mismo recorrido en `ubuntu-latest` con dos jobs. «Publicar y consumir contra el emulador» ejecuta el humo; «Composición del publicador contra el emulador» ejecuta `tests/EcommerceApi.Emulator.Tests`. Cada job arranca su propio emulador en su runner, lo apaga al terminar y deja los logs si falla; solo el de composición necesita `GH_PACKAGES_TOKEN` para restaurar `LL.*` del feed privado. Corre solo cuando el PR toca la mensajería: `EcommerceApi.Infrastructure/Outbox`, `EcommerceApi.Application`, `EcommerceApi/Program.cs`, `Directory.Packages.props`, `Directory.Build.props`, `eng/servicebus-emulator`, `tests/EcommerceApi.Emulator.Tests`, el script o el propio workflow.
 
-No está entre los siete checks obligatorios de `main` ([gobernanza](repo-governance.md)). La razón es la de siempre: SQL Server tarda en arrancar y no quiero una comprobación inestable bloqueando merges. Se promueve cuando lleve una semana en verde. Dos primeras ejecuciones en [PR #68](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/68): 1m23s y 1m52s, descarga de imágenes incluida.
+No está entre los siete checks obligatorios de `main` ([gobernanza](repo-governance.md)). La razón es la de siempre: SQL Server tarda en arrancar y no quiero una comprobación inestable bloqueando merges. Se promueve cuando lleve una semana en verde. Dos primeras ejecuciones en [PR #68](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/68): 1m23s y 1m52s, descarga de imágenes incluida. En [PR #70](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/70), los dos jobs en paralelo: 1m36s el humo y 1m41s la composición.
 
 ## 7. Límites de esta prueba
 

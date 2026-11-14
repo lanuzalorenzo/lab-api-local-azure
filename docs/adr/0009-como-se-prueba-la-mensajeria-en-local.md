@@ -74,7 +74,7 @@ El humo construye `ServiceBusOptions` a mano, así que no cubre el cableado de `
 
 ## 5. Criterio para revisarla
 
-- **Composición.** Cuando haga falta cubrir el cableado, se añade `tests/EcommerceApi.Emulator.Tests` fuera de la solución, con `WebApplicationFactory`, ejecutado por el mismo workflow contra el emulador que él mismo arranca. `Microsoft.AspNetCore.Mvc.Testing` ya está en `Directory.Packages.props`. **Actualización (2026-11-14):** se añadió así, sin `Testcontainers.ServiceBus`; el contenedor ya lo levanta el job y la suite de producto sigue sin Docker. La prueba cubre el modo, el binding de `ServiceBus` y el recorrido publicar → consumir desde el host.
+- **Composición.** Cuando haga falta cubrir el cableado, se añade `tests/EcommerceApi.Emulator.Tests` fuera de la solución, con `WebApplicationFactory`, ejecutado por el mismo workflow contra el emulador que él mismo arranca. `Microsoft.AspNetCore.Mvc.Testing` ya está en `Directory.Packages.props`. **Actualización (2026-11-14):** se añadió así, sin `Testcontainers.ServiceBus`; el contenedor ya lo levanta el job y la suite de producto sigue sin Docker. La prueba cubre el modo, el binding de `ServiceBus` y el recorrido publicar → consumir desde el host. Validada en CI en la [PR #70](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/70).
 - **Segundo consumidor.** Si otro repositorio usa Service Bus, el compose y el humo suben a `core` como acción parametrizada.
 - **Obligatoriedad.** Si el workflow lleva una semana en verde, se propone como check obligatorio y se actualiza la gobernanza.
 - **Mantenimiento del emulador.** Si Microsoft lo abandona o cambia la imagen, se fija el tag; si deja de servir, se reevalúa LocalStack con la misma tabla.
