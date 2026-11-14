@@ -36,7 +36,7 @@ Las decisiones estructurales, sus alternativas y la evidencia de cada patrón es
 4. La Function `OrderProcessor` consume el mensaje, valida el contrato y consulta `ProcessedMessages` por `messageId` antes de registrar el efecto.
 5. Un mensaje repetido se reconoce sin repetir el efecto; uno inválido se lanza para que Service Bus lo reintente y, agotado `maxDeliveryCount`, lo mueva a la DLQ.
 
-`Publisher:Mode=Log` (por defecto) registra el mensaje en el log local; `Publisher:Mode=ServiceBus` usa un namespace real. **Service Bus y la Function no están desplegados**: el outbox y la idempotencia se validan contra SQLite en local.
+`Publisher:Mode=Log` (por defecto) registra el mensaje en el log local; `Publisher:Mode=ServiceBus` usa un namespace real o el emulador local ([ADR-0009](docs/adr/0009-como-se-prueba-la-mensajeria-en-local.md)). **Service Bus y la Function no están desplegados**: el outbox, la idempotencia y la publicación contra el emulador se validan en local.
 
 ### Flujo de autorización
 

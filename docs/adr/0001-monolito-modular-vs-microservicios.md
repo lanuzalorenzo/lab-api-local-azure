@@ -83,7 +83,7 @@ Y no se extrae si:
 - Un despliegue HTTP concentra el fallo: si la API cae, el catálogo y los pedidos caen juntos.
 - El escalado es conjunto para todo el monolito; solo la Function escala aparte.
 - No demuestra operación de microservicios reales: multi-equipo, multi-región, versionado independiente en producción ni malla de servicios.
-- No hay Service Bus ni Function desplegados: la fase asíncrona se validará en local (emulador/Azurite, el emulador local de almacenamiento de Azure) y el estado se declarará como **Diseño** o **Parcial** hasta que exista ejecución evidenciada.
+- No hay Service Bus ni Function desplegados: la publicación se ha validado en local contra el emulador de Service Bus y está **Validada en local**, mientras el despliegue y el consumidor siguen en **Diseño** ([ADR-0009](0009-como-se-prueba-la-mensajeria-en-local.md)).
 
 ## 6. Cuándo revisar esta decisión
 
