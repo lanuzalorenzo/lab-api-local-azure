@@ -18,7 +18,7 @@ Ejecutar ese tramo exige un broker. Las reglas del repositorio cierran dos puert
 1. **Emulador oficial de Microsoft** (`mcr.microsoft.com/azure-messaging/servicebus-emulator`), no un sustituto de terceros. La imagen la publica Microsoft, pero es **EULA, no código abierto**, y no tiene soporte ni SLA: es una herramienta de desarrollo y pruebas.
 2. **Las entidades se declaran** en `eng/servicebus-emulator/config.json`: namespace `sbemulatorns` y cola `orders`, el mismo nombre que esperan `ServiceBusOptions` y el trigger de `functions/OrderProcessor`. El nombre de la cola es contrato, no detalle.
 3. **Dos procesos separados**: el compose levanta el emulador y SQL Server 2022, que es su dependencia; un programa pequeño publica con el `ServiceBusEventPublisher` real y consume con `ServiceBusReceiver`, comparando identificador, asunto, tipo de contenido y cuerpo.
-4. **Fuera de `dotnet test`.** El humo es un comando propio (`scripts/servicebus-emulator.sh smoke`) y un workflow propio. La suite de producto sigue sin Docker.
+4. **Fuera de la suite de producto.** El humo es un comando propio (`scripts/servicebus-emulator.sh smoke`) y un workflow propio. La prueba de composición vive en un proyecto aparte, `tests/EcommerceApi.Emulator.Tests`, fuera de `EcommerceApi.sln`; la suite de producto sigue sin Docker.
 5. **La contraseña de SQL se genera** en local y se guarda en `eng/servicebus-emulator/.sql-password`, ignorado por Git. Los puertos se publican solo en `127.0.0.1`.
 6. **El workflow no es obligatorio**: corre solo cuando el PR toca la mensajería y queda fuera de los siete checks de `main`.
 
@@ -74,7 +74,7 @@ El humo construye `ServiceBusOptions` a mano, así que no cubre el cableado de `
 
 ## 5. Criterio para revisarla
 
-- **Composición.** Cuando haga falta cubrir el cableado, se añade `tests/EcommerceApi.Emulator.Tests` fuera de la solución, con `WebApplicationFactory` y `Testcontainers.ServiceBus`, ejecutado por el mismo workflow. `Microsoft.AspNetCore.Mvc.Testing` ya está en `Directory.Packages.props`.
+- **Composición.** Cuando haga falta cubrir el cableado, se añade `tests/EcommerceApi.Emulator.Tests` fuera de la solución, con `WebApplicationFactory`, ejecutado por el mismo workflow contra el emulador que él mismo arranca. `Microsoft.AspNetCore.Mvc.Testing` ya está en `Directory.Packages.props`. **Actualización (2026-11-14):** se añadió así, sin `Testcontainers.ServiceBus`; el contenedor ya lo levanta el job y la suite de producto sigue sin Docker. La prueba cubre el modo, el binding de `ServiceBus` y el recorrido publicar → consumir desde el host.
 - **Segundo consumidor.** Si otro repositorio usa Service Bus, el compose y el humo suben a `core` como acción parametrizada.
 - **Obligatoriedad.** Si el workflow lleva una semana en verde, se propone como check obligatorio y se actualiza la gobernanza.
 - **Mantenimiento del emulador.** Si Microsoft lo abandona o cambia la imagen, se fija el tag; si deja de servir, se reevalúa LocalStack con la misma tabla.

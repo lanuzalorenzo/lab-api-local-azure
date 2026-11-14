@@ -38,6 +38,8 @@ gitleaks detect --source . --redact --verbose --exit-code 2
 
 Los pasos .NET, el escaneo de secretos, SAST, SCA, el escaneo de imagen y el de IaC se ejecutan con las acciones compartidas de [`core`](https://github.com/lanuzalorenzo/core) desde `.github/workflows/devsecops-ci.yml`; construir la imagen, comprobar el UID y compilar Bicep siguen en ese workflow. El hook local de secretos se instala con `scripts/install-git-hooks.sh` y se comprueba con `--check`; es un aviso temprano, no sustituye al CI. **Definición de cambio listo:** los seis comandos anteriores sin fallos y los siete checks del pipeline en verde, sin bypass. La gobernanza de `main` y los checks obligatorios están en `docs/repo-governance.md`; no presentes un bypass como flujo válido.
 
+La composición del camino de mensajería vive fuera de la suite normal: `scripts/servicebus-emulator.sh up`, `dotnet test tests/EcommerceApi.Emulator.Tests/EcommerceApi.Emulator.Tests.csproj -c Release`, `dotnet format tests/EcommerceApi.Emulator.Tests/EcommerceApi.Emulator.Tests.csproj --verify-no-changes --no-restore` y `scripts/servicebus-emulator.sh down`. El proyecto está fuera de `EcommerceApi.sln`, lo ejecuta el workflow del emulador y no entra en los seis comandos ni en los siete checks obligatorios.
+
 ## Commits
 
 Formato: `type(scope): imperative summary in English`. Scopes: `api`, `auth`, `docker`, `ci`, `tests`, `infra`, `docs`, `repo`. Tipos: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`. Asunto imperativo, conciso y en inglés.

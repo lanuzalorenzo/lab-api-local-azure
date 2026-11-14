@@ -9,9 +9,11 @@ on:
     paths:
       - 'EcommerceApi.Infrastructure/Outbox/**'
       - 'EcommerceApi.Application/**'
+      - 'EcommerceApi/Program.cs'
       - 'Directory.Packages.props'
       - 'Directory.Build.props'
       - 'eng/servicebus-emulator/**'
+      - 'tests/EcommerceApi.Emulator.Tests/**'
       - 'scripts/servicebus-emulator.sh'
       - '.github/workflows/servicebus-emulator.yml'
   workflow_dispatch:
@@ -42,6 +44,39 @@ jobs:
 
       - name: Publicar y consumir un mensaje
         run: scripts/servicebus-emulator.sh smoke
+
+      - name: Registrar los contenedores si algo falla
+        if: failure()
+        run: scripts/servicebus-emulator.sh logs
+
+      - name: Apagar el emulador
+        if: always()
+        run: scripts/servicebus-emulator.sh down
+
+  composicion:
+    name: Composición del publicador contra el emulador
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: read
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v7
+
+      - name: Configurar .NET 10 SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Arrancar el emulador
+        run: scripts/servicebus-emulator.sh up
+
+      - name: Probar la composición del camino de mensajería
+        run: dotnet test tests/EcommerceApi.Emulator.Tests/EcommerceApi.Emulator.Tests.csproj -c Release
 
       - name: Registrar los contenedores si algo falla
         if: failure()
