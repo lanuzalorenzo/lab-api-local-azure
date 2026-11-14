@@ -2,7 +2,7 @@
 
 El camino de mensajería de la API se podía leer en el código, pero no se ejecutaba en ningún sitio: las pruebas unitarias cambian el publicador por uno falso y el adaptador real solo se activa con un namespace de Azure. Esta carpeta levanta un Service Bus local, sin cuenta ni coste, para que ese camino se ejecute de verdad. Es como el buzón de la oficina montado en una mesa de pruebas: las cartas entran y salen igual, pero ninguna sale a la calle.
 
-**Estado:** Validado en local el 2026-11-14 (§4) y en CI el mismo día ([PR #68](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/68), job «Publicar y consumir contra el emulador», 1m23s).
+**Estado:** Validado en local el 2026-11-14 (§4) y en CI el mismo día ([PR #68](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/68), job «Publicar y consumir contra el emulador»; 1m23s y 1m52s en sus dos primeras ejecuciones).
 
 ## 1. Qué hay aquí
 
@@ -93,7 +93,7 @@ Lo que sigue sin probarse ahí es el receptor: `functions/OrderProcessor` necesi
 
 `.github/workflows/servicebus-emulator.yml` repite el mismo recorrido en `ubuntu-latest`: arranca, publica y consume, apaga siempre y deja los logs si falla. Corre solo cuando el PR toca la mensajería: `EcommerceApi.Infrastructure/Outbox`, `EcommerceApi.Application`, `Directory.Packages.props`, `Directory.Build.props`, `eng/servicebus-emulator`, el script o el propio workflow.
 
-No está entre los siete checks obligatorios de `main` ([gobernanza](repo-governance.md)). La razón es la de siempre: SQL Server tarda en arrancar y no quiero una comprobación inestable bloqueando merges. Se promueve cuando lleve una semana en verde. Primera ejecución completa en [PR #68](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/68): 1m23s, descarga de imágenes incluida.
+No está entre los siete checks obligatorios de `main` ([gobernanza](repo-governance.md)). La razón es la de siempre: SQL Server tarda en arrancar y no quiero una comprobación inestable bloqueando merges. Se promueve cuando lleve una semana en verde. Dos primeras ejecuciones en [PR #68](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/68): 1m23s y 1m52s, descarga de imágenes incluida.
 
 ## 7. Límites de esta prueba
 
