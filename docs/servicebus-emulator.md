@@ -11,6 +11,7 @@ eng/servicebus-emulator/
 ├── config.json          # Namespace y entidades: la cola orders
 ├── docker-compose.yml   # Emulador y SQL Server, que guarda las entidades
 └── smoke/               # Programa que publica y consume un mensaje
+tests/EcommerceApi.Emulator.Tests/   # Composición: WebApplicationFactory contra el emulador
 scripts/servicebus-emulator.sh   # up | smoke | logs | status | down
 .github/workflows/servicebus-emulator.yml  # El mismo recorrido en CI
 ```
@@ -74,6 +75,19 @@ Recibido y verificado: id=552b39b1bdf043d4a5635440d4d278aa subject=OrderCreated 
 
 El arranque tarda sobre todo la primera vez, porque descarga las imágenes. La imagen del emulador no trae `healthcheck` propio, así que `up -d --wait` solo garantiza que el contenedor está en marcha; la señal de que atiende es la espera contra `http://127.0.0.1:5300/health`, que el script hace antes de devolver el control.
 
+### 4.1 Probar la composición
+
+El humo prueba el adaptador, pero construye `ServiceBusOptions` a mano: si `Program.cs` deja de leer `Publisher:Mode` o liga otra sección, el humo sigue en verde. `tests/EcommerceApi.Emulator.Tests` cubre ese hueco y vive fuera de `EcommerceApi.sln` para que la suite normal no necesite Docker.
+
+```bash
+scripts/servicebus-emulator.sh up
+dotnet test tests/EcommerceApi.Emulator.Tests/EcommerceApi.Emulator.Tests.csproj -c Release
+```
+
+El proyecto arranca la API con `WebApplicationFactory<Program>` y pasa `Publisher:Mode=ServiceBus`, la cadena y la cola por variables de entorno (`Publisher__Mode`, `ServiceBus__ConnectionString` y `ServiceBus__QueueName`), porque `Program.cs` decide el publicador antes de que la fábrica aplique su configuración; las guarda y las restaura al terminar cada prueba. Comprueba cuatro cosas: que el host resuelve `ServiceBusEventPublisher`; que las opciones vienen de la sección correcta, con la cadena y la cola del emulador; que en modo `Log` no registra el publicador de Service Bus; y que un mensaje publicado por el host llega a la cola `orders` con identificador, asunto, tipo de contenido y cuerpo intactos. El binding de la cola se prueba con un nombre distinto del predeterminado, para que ignorar la clave no pase desapercibido. La cadena y la cola se pueden cambiar con `SERVICEBUS_EMULATOR_CONNECTION_STRING` y `SERVICEBUS_EMULATOR_QUEUE`, las mismas variables que usa el humo. Si el emulador no responde, la prueba lo dice antes de esperar al SDK.
+
+Estado: Validado en local el 2026-11-14 (4 pruebas, 923 ms con el emulador ya en marcha) y en CI el mismo día ([PR #70](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/70), job «Composición del publicador contra el emulador», 1m41s).
+
 ## 5. Conectar la API
 
 Con el emulador en marcha, la API publica de verdad sin tocar Azure:
@@ -91,9 +105,9 @@ Lo que sigue sin probarse ahí es el receptor: `functions/OrderProcessor` necesi
 
 ## 6. En CI
 
-`.github/workflows/servicebus-emulator.yml` repite el mismo recorrido en `ubuntu-latest`: arranca, publica y consume, apaga siempre y deja los logs si falla. Corre solo cuando el PR toca la mensajería: `EcommerceApi.Infrastructure/Outbox`, `EcommerceApi.Application`, `Directory.Packages.props`, `Directory.Build.props`, `eng/servicebus-emulator`, el script o el propio workflow.
+`.github/workflows/servicebus-emulator.yml` repite el mismo recorrido en `ubuntu-latest` con dos jobs. «Publicar y consumir contra el emulador» ejecuta el humo; «Composición del publicador contra el emulador» ejecuta `tests/EcommerceApi.Emulator.Tests`. Cada job arranca su propio emulador en su runner, lo apaga al terminar y deja los logs si falla; solo el de composición necesita `GH_PACKAGES_TOKEN` para restaurar `LL.*` del feed privado. Corre solo cuando el PR toca la mensajería: `EcommerceApi.Infrastructure/Outbox`, `EcommerceApi.Application`, `EcommerceApi/Program.cs`, `Directory.Packages.props`, `Directory.Build.props`, `eng/servicebus-emulator`, `tests/EcommerceApi.Emulator.Tests`, el script o el propio workflow.
 
-No está entre los siete checks obligatorios de `main` ([gobernanza](repo-governance.md)). La razón es la de siempre: SQL Server tarda en arrancar y no quiero una comprobación inestable bloqueando merges. Se promueve cuando lleve una semana en verde. Dos primeras ejecuciones en [PR #68](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/68): 1m23s y 1m52s, descarga de imágenes incluida.
+No está entre los siete checks obligatorios de `main` ([gobernanza](repo-governance.md)). La razón es la de siempre: SQL Server tarda en arrancar y no quiero una comprobación inestable bloqueando merges. Se promueve cuando lleve una semana en verde. Dos primeras ejecuciones en [PR #68](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/68): 1m23s y 1m52s, descarga de imágenes incluida. En [PR #70](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/70), los dos jobs en paralelo: 1m36s el humo y 1m41s la composición.
 
 ## 7. Límites de esta prueba
 
@@ -104,4 +118,4 @@ No está entre los siete checks obligatorios de `main` ([gobernanza](repo-govern
 
 ## 8. Por qué así
 
-Las alternativas descartadas —LocalStack, un broker embebido, Testcontainers dentro de `dotnet test`— y el motivo de cada una están en [ADR-0009](adr/0009-como-se-prueba-la-mensajeria-en-local.md), con los tiempos medidos y la regla que se sigue: Docker entra en `dotnet test` cuando el contenedor es el sujeto de la prueba, y aquí el sujeto es el adaptador, no el contenedor.
+Las alternativas descartadas —LocalStack, un broker embebido, Testcontainers dentro de `dotnet test`— y el motivo de cada una están en [ADR-0009](adr/0009-como-se-prueba-la-mensajeria-en-local.md), con los tiempos medidos y la regla que se sigue: la suite de producto (`EcommerceApi.sln`) no arranca Docker; el contenedor entra cuando un job ya lo levanta y la prueba es de integración. El humo cubre el adaptador y `tests/EcommerceApi.Emulator.Tests`, fuera de la solución, cubre la composición.
