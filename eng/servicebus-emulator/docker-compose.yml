@@ -1,0 +1,41 @@
+# Emulador de Azure Service Bus para pruebas locales y de CI.
+# Dos contenedores: el emulador y SQL Server, que guarda sus entidades.
+# La contraseña de SQL no vive en el repositorio: la genera
+# scripts/servicebus-emulator.sh y la pasa por entorno. Sin ella, compose falla.
+name: ecommerce-servicebus-emulator
+
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:?define MSSQL_SA_PASSWORD}"
+    # Solo en loopback: el emulador no se expone a la red local.
+    ports:
+      - "127.0.0.1:1433:1433"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/1433'"]
+      interval: 3s
+      timeout: 2s
+      retries: 40
+      start_period: 5s
+
+  servicebus:
+    image: mcr.microsoft.com/azure-messaging/servicebus-emulator:latest
+    depends_on:
+      mssql:
+        condition: service_healthy
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:?define MSSQL_SA_PASSWORD}"
+      SQL_SERVER: mssql
+      # Puerto de las APIs de administración y de salud (/health). Los dos nombres
+      # vienen del compose que publica Microsoft en su documentación.
+      EMULATOR_HTTP_PORT: "5300"
+      SQL_WAIT_INTERVAL: "15"
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:5300:5300"
+    volumes:
+      # Las entidades se declaran aquí y se leen al arrancar; no se recargan en caliente.
+      - ./config.json:/ServiceBus_Emulator/ConfigFiles/Config.json:ro

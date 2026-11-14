@@ -1,0 +1,52 @@
+name: Emulador de Service Bus
+
+# Comprueba el camino de mensajería contra el emulador oficial, sin cuenta de Azure.
+# Workflow aparte del pipeline principal y sin estar entre los checks obligatorios:
+# se promueve cuando lleve una semana en verde. Solo corre si el PR toca la mensajería.
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'EcommerceApi.Infrastructure/Outbox/**'
+      - 'EcommerceApi.Application/**'
+      - 'Directory.Packages.props'
+      - 'Directory.Build.props'
+      - 'eng/servicebus-emulator/**'
+      - 'scripts/servicebus-emulator.sh'
+      - '.github/workflows/servicebus-emulator.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: servicebus-emulator-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Publicar y consumir contra el emulador
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v7
+
+      - name: Configurar .NET 10 SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Arrancar el emulador
+        run: scripts/servicebus-emulator.sh up
+
+      - name: Publicar y consumir un mensaje
+        run: scripts/servicebus-emulator.sh smoke
+
+      - name: Registrar los contenedores si algo falla
+        if: failure()
+        run: scripts/servicebus-emulator.sh logs
+
+      - name: Apagar el emulador
+        if: always()
+        run: scripts/servicebus-emulator.sh down

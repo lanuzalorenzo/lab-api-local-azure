@@ -1,6 +1,6 @@
 # Capacidades y evidencia
 
-> **Estado:** Parcial (2026-11-12): la matriz conserva etiquetas fuera del contrato (`Implementado`, `Documentado, no activo` y variantes de alcance como `Validado en local`) y aún no está normalizada. Verificado el 2026-10-29 contra `main`; rate limit revisado el 2026-11-05 con [ADR-0007](adr/0007-rate-limiting.md); cabecera `Server` revisada el 2026-11-09; límite de cuerpo, artefacto de publicación, firma keyless y atestación del SBOM revisados el 2026-11-12; controles compartidos desde los paquetes `LL.Security` y `LL.Hosting` el 2026-11-06, fijados y actualizados por Dependabot el 2026-11-09 (PR #55). Queda por comprobar la validación JWT fuera de CI, el hook de secretos opt-in y el despliegue de Service Bus.
+> **Estado:** Parcial (2026-11-12): la matriz conserva etiquetas fuera del contrato (`Implementado`, `Documentado, no activo` y variantes de alcance como `Validado en local`) y aún no está normalizada. Verificado el 2026-10-29 contra `main`; rate limit revisado el 2026-11-05 con [ADR-0007](adr/0007-rate-limiting.md); cabecera `Server` revisada el 2026-11-09; límite de cuerpo, artefacto de publicación, firma keyless y atestación del SBOM revisados el 2026-11-12; publicación contra el emulador local de Service Bus revisada el 2026-11-14, en local y en CI; controles compartidos desde los paquetes `LL.Security` y `LL.Hosting` el 2026-11-06, fijados y actualizados por Dependabot el 2026-11-09 (PR #55). Queda por comprobar la validación JWT fuera de CI, el hook de secretos opt-in y el despliegue de Service Bus.
 > **Ámbito:** qué puede afirmarse sobre este repositorio, con qué se comprueba y qué queda fuera.
 > **Evidencia:** `dotnet test`, `.github/workflows/devsecops-ci.yml`, `infra/main.bicep` y `docs/`.
 > **Relacionada con:** [Referencia de la API](api.md), [resumen de estado](../README.md#estado-de-seguridad), [ADR](adr/README.md).
@@ -100,7 +100,7 @@ importante y está en el threat model como `Parcial` en *Information Disclosure*
 | Reintentos y *dead-letter* tras 5 fallos | `OutboxPublisher` | `SqliteOutboxTests` | Implementado |
 | Contrato versionado `OrderCreatedV1` | `EcommerceApi.Contracts` | Compilación compartida por API y Function | Implementado |
 | Consumidor idempotente por `messageId` | `ProcessOrderHandler`, `ProcessedMessages` | `ProcessOrderHandlerTests` | Implementado (local) |
-| Publicación en Service Bus | `ServiceBusEventPublisher` | Compila; requiere namespace real | Diseño, no desplegado |
+| Publicación en Service Bus | `ServiceBusEventPublisher` | Humo contra el emulador local, 2026-11-14 ([ADR-0009](adr/0009-como-se-prueba-la-mensajeria-en-local.md)) | Validado en local (emulador); sin namespace real |
 | Function de Service Bus | `functions/OrderProcessor` | `dotnet build`; sin despliegue | Diseño, no desplegado |
 
 ### 2.5. Entrega y operación

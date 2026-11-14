@@ -40,6 +40,9 @@ Thumbs.db
 .env
 .env.local
 
+# Contraseña de SQL Server que genera el emulador de Service Bus
+eng/servicebus-emulator/.sql-password
+
 # Generated IaC output and security reports
 infra/main.json
 trivy-*.sarif

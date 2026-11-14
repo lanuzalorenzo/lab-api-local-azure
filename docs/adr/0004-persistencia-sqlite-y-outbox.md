@@ -23,7 +23,7 @@ El diseño de [`docs/functions.md`](../functions.md) ya exigía una publicación
 6. **Consumidor idempotente**: la Function delega en `ProcessOrderHandler`, que valida el mensaje y consulta `ProcessedMessages` por `messageId` antes de registrar el efecto.
 7. **Publicador conmutable**:
    - `Publisher:Mode=Log` (por defecto): registra el mensaje en el log local.
-   - `Publisher:Mode=ServiceBus`: publica en Azure Service Bus (requiere conexión real; no se ejecuta en este laboratorio).
+   - `Publisher:Mode=ServiceBus`: publica en Azure Service Bus, contra un namespace real o el emulador local ([ADR-0009](0009-como-se-prueba-la-mensajeria-en-local.md)).
 8. **Consultas de lectura acotadas**: el listado de pedidos usa un cursor (`afterId`), un límite máximo y rangos SARGables (comparaciones que aprovechan el índice) sobre `CreatedAt`; la página de pedidos y sus líneas se cargan en dos consultas. Las reglas y su verificación están en [`docs/persistence.md`](../persistence.md).
 
 ```mermaid
@@ -66,7 +66,7 @@ sequenceDiagram
 | Entrega al menos una vez | **Implementado** (contrato de Service Bus) |
 | Idempotencia del consumidor | **Implementado y probado** |
 | Entrega exactamente una vez | **No existe**; se resuelve con idempotencia |
-| Publicación real en Service Bus | **Diseño**: sin namespace desplegado |
+| Publicación real en Service Bus | **Validado en local con el emulador** (2026-11-14); **Diseño** sin namespace real |
 | Function desplegada en Azure | **Diseño**: proyecto compila, no se ha desplegado |
 
 ## 4. Alternativas consideradas
