@@ -109,9 +109,9 @@ customMetrics
 
 - **Persistencia:** SQLite local (`data/ecommerce.db`, ignorado por Git). La API y la Function comparten el fichero en el laboratorio; en Azure no pueden hacerlo.
 - **Publicación:** por defecto `Publisher:Mode=Log`, que registra el mensaje sin broker. El outbox, los reintentos y el dead-letter se prueban contra SQLite.
-- **Service Bus:** el adaptador `ServiceBusEventPublisher` se activa con `Publisher__Mode=ServiceBus` y una conexión real. El emulador no se ha ejecutado.
+- **Service Bus:** el adaptador `ServiceBusEventPublisher` se activa con `Publisher__Mode=ServiceBus` y una conexión real. Se ha ejecutado en local contra el emulador oficial el 2026-11-14 ([`docs/servicebus-emulator.md`](servicebus-emulator.md)); el namespace real y el despliegue siguen fuera.
 - **Settings:** `local.settings.json` ignorado por Git; se versiona `local.settings.example.json` sin valores reales.
-- **Tests:** unitarios del consumidor (idempotencia, validación y mensaje corrupto) y pruebas de infraestructura sobre SQLite real (atomicidad, rollback, dead-letter y ciclo del dispatcher). No hay prueba con el emulador de Service Bus.
+- **Tests:** unitarios del consumidor (idempotencia, validación y mensaje corrupto) y pruebas de infraestructura sobre SQLite real (atomicidad, rollback, dead-letter y ciclo del dispatcher). El tramo de publicación se comprueba además con un humo contra el emulador local, fuera de `dotnet test`; lo que sigue sin prueba es la composición de `Program.cs` (ver [ADR-0009](adr/0009-como-se-prueba-la-mensajeria-en-local.md)).
 
 ## 10. Estructura implementada
 

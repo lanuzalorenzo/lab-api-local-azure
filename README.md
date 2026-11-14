@@ -57,7 +57,8 @@ Resumen; el detalle con pruebas y límites está en [`docs/capacidades.md`](docs
 | Contrato de error único (`400`, `404`, `500`) sin fugas en el `500` | Implementado |
 | Arquitectura por capas verificada con pruebas | Implementado |
 | Outbox transaccional y consumidor idempotente | Implementado (local) |
-| Publicación en Service Bus y Function desplegada | Diseño |
+| Publicación en Service Bus (emulador local) | Validado en local |
+| Function desplegada | Diseño |
 | Scopes/roles granulares | Pendiente |
 | Despliegue real en Azure | Pendiente |
 
@@ -74,6 +75,7 @@ lab-api-local-azure/
 ├── EcommerceApi/               # Host HTTP: controladores, auth, composición
 ├── functions/OrderProcessor/   # Function aislada: trigger de Service Bus
 ├── tests/                      # Unitarias, arquitectura, infraestructura e integración
+├── eng/                        # Emulador de Service Bus y herramienta de humo
 ├── infra/                      # Bicep: VNet, NSG, Key Vault, App Service, PE
 ├── docs/                       # Referencia, capacidades, ADR y diseños
 ├── docker-compose.yml          # Arranque local con compose
@@ -213,6 +215,7 @@ La política de dependencias, los plazos por severidad y el estado del primer lo
 | [Threat model](docs/threat-model-appsec.md) | STRIDE, OWASP API Top 10 y riesgos residuales |
 | [Dependencias](docs/dependencias.md) | Dueño, plazos por severidad y evidencia del lote |
 | [Credenciales del feed](docs/credenciales.md) | Credencial de solo lectura, rotación y límite de Dependabot. Parcial |
+| [Emulador de Service Bus](docs/servicebus-emulator.md) | Arranque, humo y límites del emulador local. Validado en local; CI sin ejecutar |
 | [Gobernanza del repositorio](docs/repo-governance.md) | PR, checks obligatorios y por qué no hay bypass |
 
 **Diseño**

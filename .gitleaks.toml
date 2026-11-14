@@ -18,6 +18,9 @@ regexes = [
   '''(?i)^\$[A-Z_]+$''',
   '''(?i)^Bearer \$[A-Z_]+$''',
   '''(?i)^invalid-token$''',
+  # Valor fijo de desarrollo del emulador de Service Bus, publicado por Microsoft
+  # en su documentación. No es una credencial: el emulador no autentica.
+  '''(?i)^SAS_KEY_VALUE$''',
   '''(?i)^expired-token$''',
   '''(?i)^token-with-order-read-only$''',
   '''(?i)^your-client-secret.*$''',

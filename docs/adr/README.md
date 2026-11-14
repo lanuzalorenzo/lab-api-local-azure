@@ -18,6 +18,7 @@ Cada ADR contiene: contexto, decisión, alternativas descartadas, consecuencias 
 | [0006](0006-imagen-de-contenedor.md) | Imagen de contenedor: dos fases, sin root y sin SDK en ejecución | Aceptada |
 | [0007](0007-rate-limiting.md) | Rate limiting global por IP como umbral de laboratorio | Aceptada |
 | [0008](0008-configuracion-de-compilacion-y-paquetes-centralizada.md) | Configuración de compilación y versiones de paquetes en dos archivos raíz | Aceptada |
+| [0009](0009-como-se-prueba-la-mensajeria-en-local.md) | Cómo se prueba la mensajería en local: emulador oficial y pruebas fuera de `dotnet test` | Aceptada |
 
 ## Patrones en el código
 
@@ -30,7 +31,7 @@ Cada patrón que existe se puede señalar en un archivo y comprobar con una prue
 | Unidad de trabajo | `IUnitOfWork`, `SqliteUnitOfWork`; la transacción la abre el handler | `Rollback_LeavesNeitherOrderNorOutboxMessage` |
 | Outbox transaccional | `SqliteOutboxStore`, `OutboxPublisher`, `OutboxDispatcher` | `Publisher_DeadLettersMessage_AfterMaxAttempts`, `Dispatcher_ProcessesPendingMessages_WithoutDisposalErrors` |
 | CQRS ligero | Solo pedidos: `IOrderReadModel`/`SqliteOrderReadModel` y `IOrderRepository`/`Order` | `GetOrders_WithLimit_ReturnsCursorAndNextPage` |
-| Strategy | `IEventPublisher`, con publicador local y de Service Bus según `Publisher:Mode` | Pruebas `Publisher_*`; el adaptador de Service Bus no se ha desplegado |
+| Strategy | `IEventPublisher`, con publicador local y de Service Bus según `Publisher:Mode` | Pruebas `Publisher_*`; humo contra el emulador local ([ADR-0009](0009-como-se-prueba-la-mensajeria-en-local.md)), sin despliegue |
 | Factory Method | `Product.Create`/`Rehydrate`, `Order.Create`/`Rehydrate`, resultados de caso de uso | `Aggregates_DoNotExposePublicSetters` y pruebas de invariantes |
 | Fallo esperado como valor | `CreateOrderResult`, `ProcessOrderResult` | `CreateOrder_WithUnknownProduct_ReturnsBadRequest`, `ErrorContractTests` |
 | Consumidor idempotente | `IProcessedMessageStore`, `ProcessOrderHandler` | `ProcessedMessageStore_IsIdempotent` |
