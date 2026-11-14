@@ -63,7 +63,7 @@ La regla que queda: **Docker entra en `dotnet test` cuando el contenedor es el s
 
 **Coste asumido**
 
-- 1,8 GB de descarga por ejecución de CI, porque el runner es efímero.
+- 1,8 GB de descarga por ejecución de CI, porque el runner es efímero. Medido: 1m23s de job completo, descarga incluida ([PR #68](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/68)).
 - La imagen no está fijada por versión: un cambio de Microsoft puede aparecer sin aviso. Si empieza a romper, se fija el tag.
 - El emulador no evalúa Entra ID ni políticas, admite un namespace, 256 KB por mensaje y una hora de vida, y pierde el estado al reiniciar. **No sirve para probar seguridad.**
 - Workflow nuevo que hay que mantener y mirar; si nadie lo mira, se pudre como cualquier comprobación no obligatoria.

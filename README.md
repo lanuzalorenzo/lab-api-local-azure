@@ -215,7 +215,7 @@ La política de dependencias, los plazos por severidad y el estado del primer lo
 | [Threat model](docs/threat-model-appsec.md) | STRIDE, OWASP API Top 10 y riesgos residuales |
 | [Dependencias](docs/dependencias.md) | Dueño, plazos por severidad y evidencia del lote |
 | [Credenciales del feed](docs/credenciales.md) | Credencial de solo lectura, rotación y límite de Dependabot. Parcial |
-| [Emulador de Service Bus](docs/servicebus-emulator.md) | Arranque, humo y límites del emulador local. Validado en local; CI sin ejecutar |
+| [Emulador de Service Bus](docs/servicebus-emulator.md) | Arranque, humo y límites del emulador local. Validado en local y en CI |
 | [Gobernanza del repositorio](docs/repo-governance.md) | PR, checks obligatorios y por qué no hay bypass |
 
 **Diseño**
