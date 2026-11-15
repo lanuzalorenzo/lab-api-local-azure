@@ -1,7 +1,7 @@
 # Dependencias: dueño, plazo y evidencia
 
-> **Estado:** Validado (política aplicada y lote cerrado; la fusión automática se estrenó con la PR #55 el 2026-11-09) · Parcial (informe semanal manual; agrupación validada con un lote de 8 actualizaciones).
-> **Última revisión:** 2026-11-07.
+> **Estado:** Validado (política aplicada y lote cerrado; la fusión automática se estrenó con la PR #55 el 2026-11-09) · Parcial (informe semanal manual; agrupación validada con un lote de 8 actualizaciones) · Diseño (protocolo de migración de versión de .NET escrito en [ADR-0010](adr/0010-plataforma-dotnet-y-ciclo-de-vida.md), todavía sin ejecutar).
+> **Última revisión:** 2026-11-15.
 > **Evidencia:** lote de 8 actualizaciones ([PR #27](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/27), checks en verde) resuelto con squash; `dotnet list package --vulnerable --include-transitive`: todos los proyectos sin paquetes vulnerables (salida local, 2026-11-07).
 
 Una dependencia es una pieza de software que mantiene otra persona y de la que este proyecto se fía para funcionar. Un aviso de seguridad se parece a la luz de avería del coche: no arregla el motor, solo dice que hay que mirarlo. Lo que evita el problema no es el aviso, sino que alguien sea dueño del coche, lo lleve al taller y apunte la fecha.
@@ -31,6 +31,7 @@ El plazo se cuenta desde que se publica la alerta, no desde que alguien la ve. U
 - `.github/workflows/dependabot-auto-merge.yml` fusiona solo las PRs de Dependabot de parche y minor cuando pasan los siete checks; las major siguen necesitando una persona.
 - El límite de 5 reduce ruido, pero puede retrasar avisos: el informe semanal mira también `dotnet list package --outdated` para ver lo que Dependabot aún no ha abierto.
 - **Agrupación:** dos grupos por ecosistema. Parche y minor van juntos; major va aparte y sigue necesitando revisión. La agrupación está validada con un lote real de 8 actualizaciones en una sola pull request.
+- **La versión de .NET no la gestiona Dependabot.** El SDK se fija en `global.json` (versión y `rollForward`) y el `TargetFramework` vive en cada `.csproj`. Un cambio de versión es manual, con rama, y sigue el protocolo de [ADR-0010](adr/0010-plataforma-dotnet-y-ciclo-de-vida.md): nueve pasos, un solo PR y la verificación completa del repositorio.
 
 ## 4. Qué se automatiza y qué no
 
@@ -38,7 +39,7 @@ El plazo se cuenta desde que se publica la alerta, no desde que alguien la ve. U
 |---|---|---|
 | Parche `x.y.z`, tests verdes, sin CVE | Sí, squash automático con aviso | Máquina |
 | Minor dentro del mismo major, changelog sin ruptura | Sí, squash automático con aviso | Máquina |
-| Major, SDK o cambio de framework | No | Persona, con rama y canario |
+| Major, SDK o cambio de framework | No | Persona, con rama y canario; protocolo en [ADR-0010](adr/0010-plataforma-dotnet-y-ciclo-de-vida.md) |
 | CVE crítica o explotada | Preparar sí; la automatización no filtra por severidad | Persona en la priorización; máquina si llega como parche o minor con los checks en verde |
 | Ignorar o posponer | No | Persona, con fecha de caducidad |
 
@@ -86,4 +87,5 @@ gh pr checks <número> --watch
 
 - **Validado:** la política se aplicó a un lote real, con checks obligatorios, rama actualizada y squash; el escaneo de dependencias queda limpio. La fusión automática se estrenó con la PR #55, de `LL.Security` 0.1.0 a 0.2.0, con los checks en verde (9 de noviembre de 2026).
 - **Parcial:** el informe semanal es manual; la agrupación ya produjo un lote y el primer major sigue pendiente de revisión.
-- **Fuera de alcance:** el SDK de .NET se fija en el pipeline (`10.0.x`) y no tiene `global.json`; las dependencias npm del laboratorio PKCE viven en otro repositorio y siguen el mismo criterio con `npm audit` y Dependabot.
+- **Diseño:** el protocolo de migración de la versión de .NET está escrito en [ADR-0010](adr/0010-plataforma-dotnet-y-ciclo-de-vida.md) y no se ha ejecutado todavía. Se estrena en la migración a .NET 12, prevista para noviembre de 2027.
+- **Fuera de alcance:** las dependencias npm del laboratorio PKCE viven en otro repositorio y siguen el mismo criterio con `npm audit` y Dependabot.
