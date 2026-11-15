@@ -2,7 +2,7 @@
 
 > **Estado:** Aceptada · 2026-11-15
 > **Ámbito:** los doce `.csproj` del repositorio —diez de la solución y dos del emulador—, `global.json`, `Directory.Packages.props`, `Dockerfile`, los workflows `devsecops-ci.yml` y `servicebus-emulator.yml`, `infra/main.bicep` y `functions/OrderProcessor`.
-> **Evidencia:** `global.json` resuelve el SDK 10.0.115 en esta máquina y rechaza una petición de 11.0.100 con «A compatible .NET SDK was not found» (código 155); la imagen `mcr.microsoft.com/dotnet/sdk:10.0` en caché trae el SDK 10.0.403 y también resuelve, porque `latestFeature` admite una banda posterior; `dotnet restore` correcto, compilación Release con cero avisos y cero errores, 91 pruebas superadas (45 de unidad, 7 de arquitectura, 10 de infraestructura y 29 de integración) y `dotnet format --verify-no-changes` sin cambios; Gitleaks sobre 129 commits sin fugas. `bicep build` no se ejecutó en esta máquina porque la CLI no está instalada: este cambio no toca `infra/main.bicep` y ese paso corre en el pipeline.
+> **Evidencia:** `global.json` resuelve el SDK 10.0.115 en esta máquina; el suelo se comprobó con tres peticiones —`10.0.100` resuelta a 10.0.115, `10.0.120` y `11.0.100` rechazadas con «A compatible .NET SDK was not found»—; la imagen `mcr.microsoft.com/dotnet/sdk:10.0` en caché trae el SDK 10.0.403 y también resuelve, porque `latestFeature` admite una banda posterior; `dotnet restore` correcto, compilación Release con cero avisos y cero errores, 91 pruebas superadas (45 de unidad, 7 de arquitectura, 10 de infraestructura y 29 de integración) y `dotnet format --verify-no-changes` sin cambios; Gitleaks sin hallazgos sobre el historial completo. `bicep build` no se ejecutó en esta máquina porque la CLI no está instalada: este cambio no toca `infra/main.bicep` y ese paso corre en el pipeline.
 > **Relacionada con:** [ADR-0006](0006-imagen-de-contenedor.md), que hereda las etiquetas `10.0` de la imagen base, y [ADR-0008](0008-configuracion-de-compilacion-y-paquetes-centralizada.md), que dejó `TargetFramework` en cada proyecto a propósito.
 
 ## 1. Contexto
@@ -40,7 +40,7 @@ El ecosistema no bloquea, pero encarece: Azure Functions admitió .NET 11 en el 
    | 5 | `.github/workflows/*.yml` | `dotnet-version` en los cuatro puntos |
    | 6 | `infra/main.bicep` | `linuxFxVersion` de la Function |
    | 7 | `functions/OrderProcessor` | SDK del proyecto y adaptación al modelo nuevo si cambia |
-   | 8 | `README.md`, `docs/app-service.md`, `docs/functions.md`, `docs/capacidades.md`, `docs/dependencias.md`, ADR-0006 y ADR-0008 | La versión que declaran y la imagen base. Si cambia el nombre del check obligatorio de `docs/repo-governance.md` y `devsecops-ci.yml`, la protección de `main` se actualiza en el mismo lote o el check deja de exigirse |
+   | 8 | `AGENTS.md`, `README.md`, `docs/app-service.md`, `docs/functions.md`, `docs/capacidades.md`, `docs/dependencias.md`, ADR-0006 y ADR-0008 | La versión que declaran y la imagen base. Si cambia el nombre del check obligatorio de `docs/repo-governance.md` y `devsecops-ci.yml`, la protección de `main` se actualiza en el mismo lote o el check deja de exigirse |
    | 9 | Verificación | Los seis comandos de `AGENTS.md`, la suite del emulador y la imagen construida con UID no privilegiado |
 
    El repositorio no se despliega, así que el canario de `docs/dependencias.md` es local: emulador de Service Bus y contenedor. Si algún día hay despliegue, el canario es un entorno con tráfico mínimo y este protocolo se amplía con ese paso.

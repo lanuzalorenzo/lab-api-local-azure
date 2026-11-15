@@ -7,6 +7,7 @@ API empresarial en .NET 10 y workload de referencia del portfolio público. Este
 - Desacoplada: `Domain` sin dependencias, `Application` solo `Domain`, `Infrastructure` de ambas y el host compone todo. Verificado en `tests/EcommerceApi.Architecture.Tests`; no debilites esa separación.
 - Toda decisión estructural se documenta como ADR en `docs/adr/`.
 - `Directory.Build.props` fija la configuración común de compilación y `Directory.Packages.props` la única versión de cada paquete; los `.csproj` no repiten `Nullable`, `ImplicitUsings` ni `Version`. Ver [ADR-0008](docs/adr/0008-configuracion-de-compilacion-y-paquetes-centralizada.md).
+- `global.json` fija el SDK en un mínimo —hoy 10.0.115, `rollForward: latestFeature`—: un `10.0.x` igual o posterior compila, otra rama mayor se detiene. El protocolo de cambio de versión está en [ADR-0010](docs/adr/0010-plataforma-dotnet-y-ciclo-de-vida.md).
 - `functions/` contiene el procesador de pedidos; los diseños de plataforma están en `docs/app-service.md`, `docs/functions.md` y `docs/ai-integration.md`. Si un cambio los contradice, actualiza el documento en el mismo lote.
 - `infra/main.bicep` es la infraestructura; sin recursos públicos por defecto.
 
@@ -37,6 +38,8 @@ gitleaks detect --source . --redact --verbose --exit-code 2
 ```
 
 Los pasos .NET, el escaneo de secretos, SAST, SCA, el escaneo de imagen y el de IaC se ejecutan con las acciones compartidas de [`core`](https://github.com/lanuzalorenzo/core) desde `.github/workflows/devsecops-ci.yml`; construir la imagen, comprobar el UID y compilar Bicep siguen en ese workflow. El hook local de secretos se instala con `scripts/install-git-hooks.sh` y se comprueba con `--check`; es un aviso temprano, no sustituye al CI. **Definición de cambio listo:** los seis comandos anteriores sin fallos y los siete checks del pipeline en verde, sin bypass. La gobernanza de `main` y los checks obligatorios están en `docs/repo-governance.md`; no presentes un bypass como flujo válido.
+
+Un cambio que introduzca una regla nueva que el repositorio deba cumplir —un archivo raíz que pueda romper la compilación, un check obligatorio nuevo o un cambio del estado declarado de un control— actualiza este archivo y los documentos que repiten esa regla, en el mismo lote.
 
 La composición del camino de mensajería vive fuera de la suite normal: `scripts/servicebus-emulator.sh up`, `dotnet test tests/EcommerceApi.Emulator.Tests/EcommerceApi.Emulator.Tests.csproj -c Release`, `dotnet format tests/EcommerceApi.Emulator.Tests/EcommerceApi.Emulator.Tests.csproj --verify-no-changes --no-restore` y `scripts/servicebus-emulator.sh down`. El proyecto está fuera de `EcommerceApi.sln`, lo ejecuta el workflow del emulador y no entra en los seis comandos ni en los siete checks obligatorios.
 
