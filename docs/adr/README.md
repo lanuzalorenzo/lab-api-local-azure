@@ -19,6 +19,7 @@ Cada ADR contiene: contexto, decisión, alternativas descartadas, consecuencias 
 | [0007](0007-rate-limiting.md) | Rate limiting global por IP como umbral de laboratorio | Aceptada |
 | [0008](0008-configuracion-de-compilacion-y-paquetes-centralizada.md) | Configuración de compilación y versiones de paquetes en dos archivos raíz | Aceptada |
 | [0009](0009-como-se-prueba-la-mensajeria-en-local.md) | Cómo se prueba la mensajería en local: emulador oficial y pruebas fuera de `dotnet test` | Aceptada |
+| [0010](0010-plataforma-dotnet-y-ciclo-de-vida.md) | Plataforma .NET: versión vigente, fin de soporte y protocolo de migración | Aceptada |
 
 ## Patrones en el código
 
