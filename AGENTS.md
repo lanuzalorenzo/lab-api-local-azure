@@ -1,6 +1,15 @@
 # Guía para agentes: EcommerceApi
 
-API empresarial en .NET 10 y workload de referencia del portfolio público. Este archivo cubre el código, la seguridad y la verificación del repositorio.
+API empresarial en .NET 10 y banco de pruebas del portfolio público. Este archivo cubre el código, la seguridad y la verificación del repositorio.
+
+## Papel en el conjunto
+
+Este repositorio estrena lo que después se aplica en otro sitio: una versión nueva de `LL.Security` o `LL.Hosting`, un patrón de infraestructura o un diseño asíncrono se prueban aquí antes de salir de aquí. Su CI en verde es lo que autoriza el traslado.
+
+- Es la carga sobre la que se tomaron las evidencias de los módulos de infraestructura, red y mensajería.
+- No guarda datos personales: el conjunto es sintético y un experimento se puede romper sin coste.
+- Un control que solo viva aquí no se presenta como capacidad de la aplicación principal.
+- No se archiva mientras la aplicación principal no tenga infraestructura y despliegue propios: hoy cubre lo que a ella le falta.
 
 ## Arquitectura
 
