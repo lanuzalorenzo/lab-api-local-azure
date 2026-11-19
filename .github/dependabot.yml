@@ -54,6 +54,11 @@ updates:
       - dependency-name: "System.Security.Cryptography.Pkcs"
         update-types:
           - "version-update:semver-major"
+      # Swashbuckle 11 exige Microsoft.OpenApi 3.x y la plataforma lo limita a
+      # 2.x; el restore falla con NU1107 hasta la migración a .NET 12.
+      - dependency-name: "Swashbuckle.AspNetCore"
+        update-types:
+          - "version-update:semver-major"
     groups:
       nuget-patch-minor:
         patterns:
