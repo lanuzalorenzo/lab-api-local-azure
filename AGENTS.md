@@ -16,6 +16,7 @@ Este repositorio estrena lo que después se aplica en otro sitio: una versión n
 - Desacoplada: `Domain` sin dependencias, `Application` solo `Domain`, `Infrastructure` de ambas y el host compone todo. Verificado en `tests/EcommerceApi.Architecture.Tests`; no debilites esa separación.
 - Toda decisión estructural se documenta como ADR en `docs/adr/`.
 - `Directory.Build.props` fija la configuración común de compilación y `Directory.Packages.props` la única versión de cada paquete; los `.csproj` no repiten `Nullable`, `ImplicitUsings` ni `Version`. Ver [ADR-0008](docs/adr/0008-configuracion-de-compilacion-y-paquetes-centralizada.md).
+- La versión de .NET, las actualizaciones mayores y las dependencias directas y transitivas siguen la [política de plataforma](https://github.com/lanuzalorenzo/core/blob/main/docs/versiones-y-dependencias.md): LTS, mayores de la familia bloqueados y pin de transitivas en el centro.
 - `global.json` fija el SDK en un mínimo —hoy 10.0.115, `rollForward: latestFeature`—: un `10.0.x` igual o posterior compila, otra rama mayor se detiene. El protocolo de cambio de versión está en [ADR-0010](docs/adr/0010-plataforma-dotnet-y-ciclo-de-vida.md).
 - `functions/` contiene el procesador de pedidos; los diseños de plataforma están en `docs/app-service.md`, `docs/functions.md` y `docs/ai-integration.md`. Si un cambio los contradice, actualiza el documento en el mismo lote.
 - `infra/main.bicep` es la infraestructura; sin recursos públicos por defecto.
