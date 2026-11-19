@@ -2,7 +2,7 @@
 
 El camino de mensajería de la API se podía leer en el código, pero no se ejecutaba en ningún sitio: las pruebas unitarias cambian el publicador por uno falso y el adaptador real solo se activa con un namespace de Azure. Esta carpeta levanta un Service Bus local, sin cuenta ni coste, para que ese camino se ejecute de verdad. Es como el buzón de la oficina montado en una mesa de pruebas: las cartas entran y salen igual, pero ninguna sale a la calle.
 
-**Estado:** Validado en local el 2026-11-14 (§4) y en CI el mismo día ([PR #68](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/68), job «Publicar y consumir contra el emulador»; 1m23s y 1m52s en sus dos primeras ejecuciones).
+> **Estado:** Validado (2026-11-14) en local y en CI (§4, [PR #68](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/68), job «Publicar y consumir contra el emulador»; 1m23s y 1m52s en sus dos primeras ejecuciones).
 
 ## 1. Qué hay aquí
 
