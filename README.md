@@ -14,6 +14,8 @@ Una tienda de juguete con las puertas de una tienda real: así es este repositor
 
 ## Qué es y qué no es
 
+Este repositorio es el banco de pruebas del portfolio; la aplicación principal es [Comicteca](https://github.com/lanuzalorenzo/comicteca), que recibe los controles cuando aquí ya están en verde.
+
 **Es** un laboratorio reproducible de una API empresarial: validación de tokens, autorización por objeto, DTOs contra *mass assignment*, CORS restrictivo, *rate limiting*, arquitectura por capas verificada con pruebas, DDD táctico, CQRS ligero, SQLite con outbox transaccional, un consumidor idempotente y un pipeline DevSecOps con SAST, SCA, secretos, contenedor e IaC.
 
 **No es** un sistema listo para producción ni una implementación de microservicios: es un monolito modular con un segundo despliegue asíncrono ([ADR-0001](docs/adr/0001-monolito-modular-vs-microservicios.md)). Service Bus y la Function están diseñados y probados en local, no desplegados. Las limitaciones concretas están al final.
