@@ -28,6 +28,9 @@ jobs:
       - name: Checkout del repositorio
         uses: actions/checkout@v7
 
+      - name: Comprobar la versión de plataforma
+        uses: lanuzalorenzo/core/actions/check-platform@v1.8
+
       - name: Compilar, verificar formato y probar
         uses: lanuzalorenzo/core/actions/dotnet@v1.6
         with:
