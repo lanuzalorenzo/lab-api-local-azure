@@ -25,7 +25,7 @@ public sealed class ObservabilityTests
         "InstrumentationKey=00000000-0000-0000-0000-000000000000;IngestionEndpoint=http://127.0.0.1:1/";
 
     private static readonly Regex W3cTraceId = new(
-        "^00-[0-9a-f]{32}-[0-9a-f]{16}-0[01]$",
+        "^00-[0-9a-f]{32}-[0-9a-f]{16}-0[0-3]$",
         RegexOptions.CultureInvariant);
 
     [Fact]

@@ -35,7 +35,7 @@ jobs:
         uses: lanuzalorenzo/core/actions/dotnet@v1.6
         with:
           solution: EcommerceApi.sln
-          dotnet-version: '10.0.x'
+          dotnet-version: '11.0.x'
 
   secret-scanning:
     name: Detección de secretos (historial completo)
@@ -86,10 +86,10 @@ jobs:
       - name: Checkout del repositorio
         uses: actions/checkout@v7
 
-      - name: Configurar .NET 10 SDK
+      - name: Configurar .NET 11 SDK
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: '11.0.x'
 
       - name: Restaurar y compilar para generar los manifiestos de dependencias
         run: |

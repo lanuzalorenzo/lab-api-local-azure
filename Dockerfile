@@ -1,13 +1,13 @@
 # syntax=docker/dockerfile:1
 # ==============================================================================
-# Dockerfile: EcommerceApi (.NET 10 Web API)
+# Dockerfile: EcommerceApi (.NET 11 Web API)
 # Enfoque: Multi-stage build, imagen reducida y segregación de privilegios (non-root)
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
 # Fase 1: Compilación y publicación del artefacto
 # ------------------------------------------------------------------------------
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS build
 WORKDIR /src
 
 # Copiar la configuración raíz, los csproj y restaurar dependencias primero para aprovechar la caché de capas.
@@ -34,10 +34,10 @@ RUN dotnet publish "EcommerceApi.csproj" -c Release --no-restore -o /app/publish
 # ------------------------------------------------------------------------------
 # Fase 2: Runtime endurecido para producción
 # ------------------------------------------------------------------------------
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:11.0 AS final
 WORKDIR /app
 
-# Parches del sistema operativo base en la construcción. La etiqueta :10.0 trae
+# Parches del sistema operativo base en la construcción. La etiqueta :11.0 trae
 # el runtime al día; los paquetes de Ubuntu se actualizan aquí para no heredar
 # CVE corregibles en la imagen publicada. Sin listas de APT en la capa final.
 RUN apt-get update \

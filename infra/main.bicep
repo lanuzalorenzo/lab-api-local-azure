@@ -206,7 +206,7 @@ resource apiApp 'Microsoft.Web/sites@2023-12-01' = {
     publicNetworkAccess: 'Disabled'
     virtualNetworkSubnetId: appSubnet.id
     siteConfig: {
-      linuxFxVersion: 'DOTNETCORE|10.0'
+      linuxFxVersion: 'DOTNETCORE|11.0'
       minTlsVersion: '1.2'
       ftpsState: 'Disabled'
       http20Enabled: true
