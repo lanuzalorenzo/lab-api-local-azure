@@ -43,7 +43,7 @@ verificación y ajusta la tabla en el mismo lote.
 
 | Capacidad | Dónde | Cómo se comprueba | Estado |
 |---|---|---|---|
-| .NET 10 en API, dominio, aplicación, infraestructura y Function | `*.csproj` (`net10.0`) | `dotnet build EcommerceApi.sln -c Release` | Implementado |
+| .NET 11 en API, dominio, aplicación, infraestructura y Function | `*.csproj` (`net11.0`) | `dotnet build EcommerceApi.sln -c Release` | Implementado |
 | ASP.NET Core Web API con controladores y *host* mínimo | `EcommerceApi/Program.cs` | Swagger en `Development` o `curl` a `/api/products` | Implementado |
 | Contrato REST con `201` + `Location`, `404` y validación por DTO | `Controllers/`, `Models/` | `tests/EcommerceApi.Tests` | Implementado |
 | Paginación por cursor (*keyset*) con límites y filtro temporal | `OrderQuery`, `SqliteOrderReadModel` | `GetOrders_WithLimit_ReturnsCursorAndNextPage` | Implementado |

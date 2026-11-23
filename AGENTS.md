@@ -1,6 +1,6 @@
 # Guía para agentes: EcommerceApi
 
-API empresarial en .NET 10 y banco de pruebas del portfolio público. Este archivo cubre el código, la seguridad y la verificación del repositorio.
+API empresarial en .NET 11 y banco de pruebas del portfolio público. Este archivo cubre el código, la seguridad y la verificación del repositorio.
 
 ## Papel en el conjunto
 

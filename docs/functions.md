@@ -49,7 +49,7 @@ La Function no sustituye a la API: separa el trabajo que no debe bloquear la res
 
 Decisión provisional: **Flex Consumption**, porque permite red privada y escala a cero. Se confirma al revisar límites y regiones disponibles.
 
-Runtime: **.NET 10 con modelo isolated**. El modelo in-process está retirado; no se usa.
+Runtime: **.NET 11 con modelo isolated**. El modelo in-process está retirado; no se usa.
 
 ## 5. Contrato del mensaje
 

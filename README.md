@@ -2,11 +2,11 @@
 
 # EcommerceApi — API de referencia para AppSec y DevSecOps
 
-Una tienda de juguete con las puertas de una tienda real: así es este repositorio. La API, un servicio web al que se llama por HTTP, está hecha en .NET 10 y protegida con Microsoft Entra ID; sirve de banco de pruebas para AppSec (seguridad de las aplicaciones) y DevSecOps (seguridad integrada en el ciclo de entrega). El catálogo y los pedidos son inventados; los controles de acceso, no: cada puerta rechaza a quien no debe entrar.
+Una tienda de juguete con las puertas de una tienda real: así es este repositorio. La API, un servicio web al que se llama por HTTP, está hecha en .NET 11 y protegida con Microsoft Entra ID; sirve de banco de pruebas para AppSec (seguridad de las aplicaciones) y DevSecOps (seguridad integrada en el ciclo de entrega). El catálogo y los pedidos son inventados; los controles de acceso, no: cada puerta rechaza a quien no debe entrar.
 
-**In English.** A toy store with the doors of a real one: that is this repository. The API —a web service called over HTTP— is built in .NET 10 and protected with Microsoft Entra ID; it serves as a test bench for AppSec and DevSecOps. The catalogue and the orders are made up; the access controls are not: every door turns away whoever should not walk in.
+**In English.** A toy store with the doors of a real one: that is this repository. The API —a web service called over HTTP— is built in .NET 11 and protected with Microsoft Entra ID; it serves as a test bench for AppSec and DevSecOps. The catalogue and the orders are made up; the access controls are not: every door turns away whoever should not walk in.
 
-[![.NET](https://img.shields.io/badge/.NET-10.0-512bd4?style=flat-square)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-11.0-512bd4?style=flat-square)](https://dotnet.microsoft.com/)
 [![Microsoft Entra ID](https://img.shields.io/badge/Auth-Microsoft%20Entra%20ID-0078d4?style=flat-square)](https://learn.microsoft.com/entra/)
 [![DevSecOps CI](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/workflows/devsecops-ci.yml/badge.svg)](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/workflows/devsecops-ci.yml)
 
@@ -86,7 +86,7 @@ lab-api-local-azure/
 
 ## Puesta en marcha
 
-Requisitos: .NET SDK 10.0 y, opcionalmente, Docker. Para validar tokens reales hace falta un tenant de Entra ID. La restauración necesita una credencial de solo lectura para GitHub Packages, porque los controles compartidos vienen de un feed privado (ver [Credenciales del feed](docs/credenciales.md)).
+Requisitos: .NET SDK 11.0 y, opcionalmente, Docker. Para validar tokens reales hace falta un tenant de Entra ID. La restauración necesita una credencial de solo lectura para GitHub Packages, porque los controles compartidos vienen de un feed privado (ver [Credenciales del feed](docs/credenciales.md)).
 
 ```bash
 cp EcommerceApi/appsettings.Development.example.json EcommerceApi/appsettings.Development.json
@@ -187,7 +187,7 @@ La API valida `issuer`, `audience`, `lifetime` y firma. La autorización granula
 
 | Job | Herramienta | Bloqueante |
 |---|---|---|
-| Compilación, formato y pruebas | .NET 10, xUnit | Sí |
+| Compilación, formato y pruebas | .NET 11, xUnit | Sí |
 | Detección de secretos | Gitleaks (historial completo) | Sí |
 | SAST | CodeQL C# | Sí |
 | SCA | Trivy filesystem | CRITICAL/HIGH |
@@ -201,7 +201,7 @@ La política de dependencias, los plazos por severidad y el estado del primer lo
 
 ## Infraestructura como código
 
-`infra/main.bicep` define una arquitectura de referencia con VNet segmentada, NSG con denegación por defecto, Key Vault con RBAC y *purge protection*, Private Endpoints y Private DNS, App Service Linux .NET 10 con HTTPS only y FTPS deshabilitado, identidad gestionada y diagnóstico a Log Analytics. **La plantilla no se ha desplegado**: se valida con `bicep build` y Trivy config en CI. El detalle está en [`infra/README.md`](infra/README.md).
+`infra/main.bicep` define una arquitectura de referencia con VNet segmentada, NSG con denegación por defecto, Key Vault con RBAC y *purge protection*, Private Endpoints y Private DNS, App Service Linux .NET 11 con HTTPS only y FTPS deshabilitado, identidad gestionada y diagnóstico a Log Analytics. **La plantilla no se ha desplegado**: se valida con `bicep build` y Trivy config en CI. El detalle está en [`infra/README.md`](infra/README.md).
 
 ## Documentación
 

@@ -21,7 +21,7 @@ La solución tiene diez proyectos: cinco de la API, cuatro de pruebas y el proce
 2. **`Directory.Packages.props` en la raíz** activa `ManagePackageVersionsCentrally`. Cada paquete tiene una sola `<PackageVersion>` y los `.csproj` declaran `<PackageReference>` sin `Version`.
    - `LL.Hosting` y `LL.Security` se fijan a su versión exacta: una actualización llega como pull request de Dependabot y pasa por el CI. (Actualizado el 9 de noviembre de 2026: antes el rango era `0.1.*`, y ese rango aplicaba los parches `0.1.x` en el `restore`, sin PR ni revisión.)
    - `xunit.runner.visualstudio` se unifica en 3.1.5, la versión que ya usaban tres de los cuatro proyectos de prueba.
-3. **`TargetFramework` sigue en cada proyecto.** Todos usan `net10.0` hoy, pero dejarlo ahí permite multi-target sin tocar la configuración común.
+3. **`TargetFramework` sigue en cada proyecto.** Todos usan `net11.0` hoy, pero dejarlo ahí permite multi-target sin tocar la configuración común.
 4. **`AnalysisLevel` no se centraliza todavía.** Al probar `latest-recommended` apareció `CA1036` en `Money` (implementa `IComparable` y no define los operadores de comparación). Es un hallazgo legítimo, pero mezclar un cambio de analizadores con la centralización habría hecho este lote más grande y difícil de revisar. Se abordará en su propio cambio.
 
 ## 3. Alternativas descartadas

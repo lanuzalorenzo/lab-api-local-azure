@@ -1,4 +1,4 @@
-# EcommerceApi — proyecto .NET 10
+# EcommerceApi — proyecto .NET 11
 
 Es la tienda del laboratorio: catálogo y pedidos de mentira, con los mismos controles de acceso que se pondrían en una tienda real. Este archivo es la guía rápida de quien va a ejecutar y tocar el proyecto; el contrato de la API y las decisiones están en la documentación principal.
 
