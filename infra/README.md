@@ -1,6 +1,6 @@
 # Infraestructura de referencia — EcommerceApi
 
-Levantar la infraestructura a mano en un portal es como amueblar una casa sin plano: sale, pero nadie sabe reproducirla igual mañana. Este directorio contiene el plano en Bicep (el lenguaje con el que Azure describe su infraestructura como texto) para desplegar la API: red, identidad, secretos y registros. **No se ha desplegado en una suscripción real**: se valida con `bicep build` y con Trivy config en el pipeline, y no contiene secretos ni identificadores reales.
+Levantar la infraestructura a mano en un portal es como amueblar una casa sin plano: sale, pero nadie sabe reproducirla igual mañana. Este directorio contiene el plano en Bicep (el lenguaje con el que Azure describe su infraestructura como texto) para desplegar la API: red, identidad, secretos y registros. **No se ha desplegado en una suscripción real**: se valida con `bicep build`, con Trivy config y con la comprobación de nombres en el pipeline, y no contiene secretos ni identificadores reales.
 
 ## Arquitectura
 
