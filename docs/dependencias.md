@@ -30,7 +30,7 @@ El plazo se cuenta desde que se publica la alerta, no desde que alguien la ve. U
 - El pipeline exige siete checks obligatorios, rama actualizada antes de fusionar e historial lineal. La fusión es siempre con squash: una pull request, un commit.
 - `.github/workflows/dependabot-auto-merge.yml` fusiona solo las PRs de Dependabot de parche y minor cuando pasan los siete checks; las major siguen necesitando una persona.
 - El límite de 5 reduce ruido, pero puede retrasar avisos: el informe semanal mira también `dotnet list package --outdated` para ver lo que Dependabot aún no ha abierto.
-- **Agrupación:** dos grupos por ecosistema. Parche y minor van juntos; major va aparte y sigue necesitando revisión. La agrupación está validada con un lote real de 8 actualizaciones en una sola pull request.
+- **Agrupación:** dos grupos por ecosistema. Parche y minor van juntos; major va aparte y sigue necesitando revisión. La agrupación está validada con un lote real de 8 actualizaciones en una sola pull request. `lanuzalorenzo/core` queda fuera de los grupos de GitHub Actions (`exclude-patterns`): al agrupar, todas sus referencias se fijan a una misma versión y el cooldown puede dejarla por detrás de una referencia fijada a mano, que se rebajaría a una etiqueta donde esa acción no existe.
 - **La versión de .NET no la gestiona Dependabot.** El SDK se fija en `global.json` (versión y `rollForward`) y el `TargetFramework` vive en cada `.csproj`. Un cambio de versión es manual, con rama, y sigue el protocolo de [ADR-0010](adr/0010-plataforma-dotnet-y-ciclo-de-vida.md): nueve pasos, un solo PR y la verificación completa del repositorio.
 
 ## 4. Qué se automatiza y qué no
