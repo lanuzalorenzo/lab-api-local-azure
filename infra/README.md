@@ -52,7 +52,8 @@ Adoption Framework: `vnet`, `snet`, `nsg`, `log`, `kv`, `plan`, `app`, `appi`, `
 El tope de siete caracteres en `workload` y las regiones de tres letras mantienen el
 nombre del Key Vault en su máximo de 24 con cualquier entorno. Las zonas DNS privadas y
 el nombre `logs` de la configuración del App Service los fija Azure y no pasan por la
-función. La decisión completa está en
+función. El job de IaC ejecuta `scripts/check-infra-names.py`, que rechaza cualquier
+nombre de recurso escrito a mano. La decisión completa está en
 [ADR-0011](../docs/adr/0011-nombres-de-recurso-caf.md).
 
 ## Validación local
@@ -60,6 +61,7 @@ función. La decisión completa está en
 ```bash
 bicep build infra/main.bicep --outfile /tmp/main.json
 bicep lint infra/main.bicep
+python3 scripts/check-infra-names.py infra
 ```
 
 ## Despliegue (cuando exista una suscripción)

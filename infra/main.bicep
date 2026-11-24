@@ -41,7 +41,7 @@ param logRetentionDays int = 30
 
 // Naming: one function receives the CAF type abbreviation, the workload, the
 // environment and the region, so no resource name is written by hand. The CI
-// check that rejects hand-written names is still pending.
+// check in scripts/check-infra-names.py rejects any hand-written name.
 func resourceName(resourceType string, workloadName string, environmentName string, regionShort string, instanceSuffix string) string =>
   '${resourceType}-${workloadName}-${environmentName}-${regionShort}-${instanceSuffix}'
 
