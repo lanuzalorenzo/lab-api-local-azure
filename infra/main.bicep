@@ -1,12 +1,26 @@
 targetScope = 'resourceGroup'
 
-@description('Prefix used to name the lab resources.')
+@description('Workload name used by every resource name: lower-case letters and digits, without separators; the Key Vault limit sets the seven-character cap.')
 @minLength(3)
-@maxLength(18)
-param namePrefix string = 'ecomlab'
+@maxLength(7)
+param workload string = 'ecomlab'
+
+@description('Environment segment of every resource name.')
+@allowed([
+  'dev'
+  'test'
+  'prod'
+])
+param environmentName string = 'dev'
 
 @description('Azure region for the deployment.')
-param location string = resourceGroup().location
+@allowed([
+  'westeurope'
+  'northeurope'
+  'spaincentral'
+  'eastus'
+])
+param location string = 'westeurope'
 
 @description('Microsoft Entra ID tenant ID.')
 param tenantId string
@@ -25,22 +39,60 @@ param allowedOrigin string = 'https://localhost:5173'
 @maxValue(730)
 param logRetentionDays int = 30
 
-var suffix = uniqueString(resourceGroup().id)
-var vnetName = '${namePrefix}-vnet'
-var appSubnetName = 'snet-app'
-var privateEndpointSubnetName = 'snet-pe'
-var nsgName = '${namePrefix}-nsg-app'
-var logAnalyticsName = '${namePrefix}-law'
-var keyVaultName = '${namePrefix}-kv-${suffix}'
-var appServicePlanName = '${namePrefix}-plan'
-var appName = '${namePrefix}-api-${suffix}'
-var appInsightsName = '${namePrefix}-appi'
+// Naming: one function receives the CAF type abbreviation, the workload, the
+// environment and the region, so no resource name is written by hand. The CI
+// check that rejects hand-written names is still pending.
+func resourceName(resourceType string, workloadName string, environmentName string, regionShort string, instanceSuffix string) string =>
+  '${resourceType}-${workloadName}-${environmentName}-${regionShort}-${instanceSuffix}'
+
+// CAF short code per region; this table is the only place the region becomes a name.
+var regionCodes = {
+  westeurope: 'weu'
+  northeurope: 'neu'
+  spaincentral: 'esc'
+  eastus: 'eus'
+}
+
+// Bicep has no regex decorator, so the deploy stops before creating anything when
+// the workload carries uppercase, a separator or a space. Any other invalid
+// character is rejected by Azure with the resource name in the message.
+var workloadIsValid = workload == toLower(workload) && !contains(workload, '-') && !contains(workload, '_') && !contains(workload, ' ')
+var workloadName = workloadIsValid ? workload : fail('workload must use lower-case letters and digits, without separators.')
+var instanceSuffix = substring(uniqueString(resourceGroup().id), 0, 4)
+
+// Four characters keep the Key Vault name inside its 24-character limit for every
+// allowed region and environment.
+var regionCode = regionCodes[?location] ?? fail('location is not in regionCodes.')
+
+var names = {
+  vnet: resourceName('vnet', workloadName, environmentName, regionCode, instanceSuffix)
+  appSubnet: resourceName('snet', workloadName, environmentName, regionCode, 'app')
+  privateEndpointSubnet: resourceName('snet', workloadName, environmentName, regionCode, 'pe')
+  nsg: resourceName('nsg', workloadName, environmentName, regionCode, instanceSuffix)
+  logAnalytics: resourceName('log', workloadName, environmentName, regionCode, instanceSuffix)
+  keyVault: resourceName('kv', workloadName, environmentName, regionCode, instanceSuffix)
+  appServicePlan: resourceName('plan', workloadName, environmentName, regionCode, instanceSuffix)
+  apiApp: resourceName('app', workloadName, environmentName, regionCode, instanceSuffix)
+  appInsights: resourceName('appi', workloadName, environmentName, regionCode, instanceSuffix)
+  apiDiagnostics: resourceName('diag', workloadName, environmentName, regionCode, 'app')
+  keyVaultDiagnostics: resourceName('diag', workloadName, environmentName, regionCode, 'kv')
+  keyVaultPrivateEndpoint: resourceName('pe', workloadName, environmentName, regionCode, 'kv')
+  appServicePrivateEndpoint: resourceName('pe', workloadName, environmentName, regionCode, 'app')
+  keyVaultConnection: resourceName('pec', workloadName, environmentName, regionCode, 'kv')
+  appServiceConnection: resourceName('pec', workloadName, environmentName, regionCode, 'app')
+  keyVaultDnsGroup: resourceName('pdnszg', workloadName, environmentName, regionCode, 'kv')
+  appServiceDnsGroup: resourceName('pdnszg', workloadName, environmentName, regionCode, 'app')
+  keyVaultVnetLink: resourceName('vnetlink', workloadName, environmentName, regionCode, 'kv')
+  appServiceVnetLink: resourceName('vnetlink', workloadName, environmentName, regionCode, 'app')
+}
+
+// Private DNS zone names are fixed by Azure, not chosen.
 var keyVaultDnsZoneName = 'privatelink.vaultcore.azure.net'
 var appServiceDnsZoneName = 'privatelink.azurewebsites.net'
 var authority = '${environment().authentication.loginEndpoint}${tenantId}/v2.0'
 
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
-  name: logAnalyticsName
+  name: names.logAnalytics
   location: location
   properties: {
     sku: {
@@ -51,7 +103,7 @@ resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
 }
 
 resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
-  name: appInsightsName
+  name: names.appInsights
   location: location
   kind: 'web'
   properties: {
@@ -61,7 +113,7 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
 }
 
 resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2023-11-01' = {
-  name: nsgName
+  name: names.nsg
   location: location
   properties: {
     securityRules: [
@@ -109,7 +161,7 @@ resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2023-11-0
 }
 
 resource virtualNetwork 'Microsoft.Network/virtualNetworks@2023-11-01' = {
-  name: vnetName
+  name: names.vnet
   location: location
   properties: {
     addressSpace: {
@@ -119,7 +171,7 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2023-11-01' = {
     }
     subnets: [
       {
-        name: appSubnetName
+        name: names.appSubnet
         properties: {
           addressPrefix: '10.20.1.0/24'
           networkSecurityGroup: {
@@ -136,7 +188,7 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2023-11-01' = {
         }
       }
       {
-        name: privateEndpointSubnetName
+        name: names.privateEndpointSubnet
         properties: {
           addressPrefix: '10.20.2.0/24'
           privateEndpointNetworkPolicies: 'Disabled'
@@ -148,16 +200,16 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2023-11-01' = {
 
 resource appSubnet 'Microsoft.Network/virtualNetworks/subnets@2023-11-01' existing = {
   parent: virtualNetwork
-  name: appSubnetName
+  name: names.appSubnet
 }
 
 resource privateEndpointSubnet 'Microsoft.Network/virtualNetworks/subnets@2023-11-01' existing = {
   parent: virtualNetwork
-  name: privateEndpointSubnetName
+  name: names.privateEndpointSubnet
 }
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
-  name: keyVaultName
+  name: names.keyVault
   location: location
   properties: {
     sku: {
@@ -179,7 +231,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
 }
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
-  name: appServicePlanName
+  name: names.appServicePlan
   location: location
   kind: 'linux'
   sku: {
@@ -193,7 +245,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
 }
 
 resource apiApp 'Microsoft.Web/sites@2023-12-01' = {
-  name: appName
+  name: names.apiApp
   location: location
   kind: 'linux'
   identity: {
@@ -249,6 +301,7 @@ resource apiApp 'Microsoft.Web/sites@2023-12-01' = {
 // Linux App Service keeps a file-system copy of application logs for Kudu and
 // streaming. Console and HTTP logs reach Log Analytics through the platform
 // diagnostic categories below; the Windows-only httpLogs block is not declared.
+// The child name is fixed by the platform.
 resource apiAppLogs 'Microsoft.Web/sites/config@2023-12-01' = {
   parent: apiApp
   name: 'logs'
@@ -263,7 +316,7 @@ resource apiAppLogs 'Microsoft.Web/sites/config@2023-12-01' = {
 
 resource apiAppDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   scope: apiApp
-  name: '${appName}-diag'
+  name: names.apiDiagnostics
   properties: {
     workspaceId: logAnalytics.id
     logs: [
@@ -299,7 +352,7 @@ resource apiAppDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-pre
 
 resource keyVaultDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   scope: keyVault
-  name: '${keyVaultName}-diag'
+  name: names.keyVaultDiagnostics
   properties: {
     workspaceId: logAnalytics.id
     logs: [
@@ -333,7 +386,7 @@ resource appServiceDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
 
 resource keyVaultDnsLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
   parent: keyVaultDnsZone
-  name: '${vnetName}-link'
+  name: names.keyVaultVnetLink
   location: 'global'
   properties: {
     registrationEnabled: false
@@ -345,7 +398,7 @@ resource keyVaultDnsLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@
 
 resource appServiceDnsLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
   parent: appServiceDnsZone
-  name: '${vnetName}-link'
+  name: names.appServiceVnetLink
   location: 'global'
   properties: {
     registrationEnabled: false
@@ -356,7 +409,7 @@ resource appServiceDnsLink 'Microsoft.Network/privateDnsZones/virtualNetworkLink
 }
 
 resource keyVaultPrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-11-01' = {
-  name: '${keyVaultName}-pe'
+  name: names.keyVaultPrivateEndpoint
   location: location
   properties: {
     subnet: {
@@ -364,7 +417,7 @@ resource keyVaultPrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-11-01'
     }
     privateLinkServiceConnections: [
       {
-        name: '${keyVaultName}-pec'
+        name: names.keyVaultConnection
         properties: {
           privateLinkServiceId: keyVault.id
           groupIds: [
@@ -378,7 +431,7 @@ resource keyVaultPrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-11-01'
 
 resource keyVaultPrivateDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-11-01' = {
   parent: keyVaultPrivateEndpoint
-  name: 'default'
+  name: names.keyVaultDnsGroup
   properties: {
     privateDnsZoneConfigs: [
       {
@@ -392,7 +445,7 @@ resource keyVaultPrivateDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZ
 }
 
 resource appServicePrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-11-01' = {
-  name: '${appName}-pe'
+  name: names.appServicePrivateEndpoint
   location: location
   properties: {
     subnet: {
@@ -400,7 +453,7 @@ resource appServicePrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-11-0
     }
     privateLinkServiceConnections: [
       {
-        name: '${appName}-pec'
+        name: names.appServiceConnection
         properties: {
           privateLinkServiceId: apiApp.id
           groupIds: [
@@ -414,7 +467,7 @@ resource appServicePrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-11-0
 
 resource appServicePrivateDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-11-01' = {
   parent: appServicePrivateEndpoint
-  name: 'default'
+  name: names.appServiceDnsGroup
   properties: {
     privateDnsZoneConfigs: [
       {
