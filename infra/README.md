@@ -33,6 +33,28 @@ flowchart TB
 | Application Insights | Telemetría de la API |
 | RBAC | La identidad de la API recibe *Key Vault Secrets User* |
 
+## Nombres de recurso
+
+Ningún nombre se escribe a mano en la plantilla. La función `resourceName` recibe el
+tipo, la carga, el entorno, la región y una instancia, y devuelve
+`<tipo>-<carga>-<entorno>-<región>-<instancia>`, con las abreviaturas del Cloud
+Adoption Framework: `vnet`, `snet`, `nsg`, `log`, `kv`, `plan`, `app`, `appi`, `diag`,
+`pe`, `pec`, `pdnszg` y `vnetlink`.
+
+| Segmento | Origen | Valores |
+|---|---|---|
+| Tipo | Función `resourceName` | Abreviatura CAF del tipo de recurso |
+| Carga | Parámetro `workload` | 3–7 caracteres, minúsculas y dígitos, sin separadores; por defecto `ecomlab` |
+| Entorno | Parámetro `environmentName` | `dev`, `test` o `prod` |
+| Región | Parámetro `location` traducido por `regionCodes` | `weu`, `neu`, `esc`, `eus` |
+| Instancia | `uniqueString(resourceGroup().id)` o el papel del recurso | Cuatro caracteres, o `app`/`pe`/`kv` |
+
+El tope de siete caracteres en `workload` y las regiones de tres letras mantienen el
+nombre del Key Vault en su máximo de 24 con cualquier entorno. Las zonas DNS privadas y
+el nombre `logs` de la configuración del App Service los fija Azure y no pasan por la
+función. La decisión completa está en
+[ADR-0011](../docs/adr/0011-nombres-de-recurso-caf.md).
+
 ## Validación local
 
 ```bash
