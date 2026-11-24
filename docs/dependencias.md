@@ -1,7 +1,7 @@
 # Dependencias: dueño, plazo y evidencia
 
-> **Estado:** Validado (política aplicada y lote cerrado; la fusión automática se estrenó con la PR #55 el 2026-11-09) · Parcial (informe semanal manual; agrupación validada con un lote de 8 actualizaciones) · Diseño (protocolo de migración de versión de .NET escrito en [ADR-0010](adr/0010-plataforma-dotnet-y-ciclo-de-vida.md), todavía sin ejecutar).
-> **Última revisión:** 2026-11-15.
+> **Estado:** Validado (política aplicada y lote cerrado; la fusión automática se estrenó con la PR #55 el 2026-11-09; protocolo de migración de versión de .NET ejecutado completo sobre .NET 11 en la PR #84, siete checks en verde) · Parcial (informe semanal manual; agrupación validada con un lote de 8 actualizaciones).
+> **Última revisión:** 2026-11-23.
 > **Evidencia:** lote de 8 actualizaciones ([PR #27](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/27), checks en verde) resuelto con squash; `dotnet list package --vulnerable --include-transitive`: todos los proyectos sin paquetes vulnerables (salida local, 2026-11-07).
 
 Una dependencia es una pieza de software que mantiene otra persona y de la que este proyecto se fía para funcionar. Un aviso de seguridad se parece a la luz de avería del coche: no arregla el motor, solo dice que hay que mirarlo. Lo que evita el problema no es el aviso, sino que alguien sea dueño del coche, lo lleve al taller y apunte la fecha.
@@ -87,5 +87,5 @@ gh pr checks <número> --watch
 
 - **Validado:** la política se aplicó a un lote real, con checks obligatorios, rama actualizada y squash; el escaneo de dependencias queda limpio. La fusión automática se estrenó con la PR #55, de `LL.Security` 0.1.0 a 0.2.0, con los checks en verde (9 de noviembre de 2026).
 - **Parcial:** el informe semanal es manual; la agrupación ya produjo un lote y el primer major sigue pendiente de revisión.
-- **Diseño:** el protocolo de migración de la versión de .NET está escrito en [ADR-0010](adr/0010-plataforma-dotnet-y-ciclo-de-vida.md) y no se ha ejecutado todavía. Se estrena en la migración a .NET 12, prevista para noviembre de 2027.
+- **Validado:** el protocolo de migración de la versión de .NET se ejecutó completo —los nueve pasos— sobre .NET 11 en la [PR #84](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/84), cerrada sin merge: 26 archivos, 95 de 95 pruebas y los siete checks del pipeline en verde, con la imagen publicada y el emulador de Service Bus por medio. El ensayo corrigió ocho de los nueve pasos; solo el `TargetFramework` de los proyectos estaba bien escrito. La migración a .NET 12, prevista para noviembre de 2027, cambia el destino y repite el recorrido con el procedimiento ya corregido.
 - **Fuera de alcance:** las dependencias npm del laboratorio PKCE viven en otro repositorio y siguen el mismo criterio con `npm audit` y Dependabot.

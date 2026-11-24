@@ -89,21 +89,25 @@ No define «un App Service» aislado: define todo el grupo de recursos y las rel
 
 | Bloque | Recurso de Azure | Para qué |
 |---|---|---|
-| Red | VNet `10.20.0.0/16`, `snet-app`, `snet-pe`, NSG | Aislar entrada y salida |
+| Red | VNet `10.20.0.0/16`, `snet-…-app`, `snet-…-pe`, NSG | Aislar entrada y salida |
 | Observabilidad | Log Analytics + Application Insights | Logs, métricas y trazas |
 | Secretos | Key Vault + Private Endpoint + DNS privado | Guardar secretos sin exponerlos |
 | Cómputo | **App Service Plan** Linux `P1v3` | Capacidad y coste |
 | Aplicación | **App Service (site)** Linux .NET 10 | Runtime, settings, identidad y red |
 | Entrada | Private Endpoint del site + DNS privado | Que la API no tenga IP pública |
-| Salida | VNet Integration en `snet-app` + `vnetRouteAllEnabled` | Que la API resuelva y salga por la VNet |
+| Salida | VNet Integration en `snet-…-app` + `vnetRouteAllEnabled` | Que la API resuelva y salga por la VNet |
 | Permisos | Rol *Key Vault Secrets User* para la identidad | Leer secretos sin credenciales |
 
 ### 4.2. Plan y site: no son lo mismo
 
+Los nombres salen del objeto `names`, calculado con `resourceName`
+([ADR-0011](adr/0011-nombres-de-recurso-caf.md)); el fragmento muestra la propiedad
+`name` sin repetir la fórmula.
+
 ```bicep
 // 1) El cómputo: familia, SKU e instancias
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
-  name: appServicePlanName
+  name: names.appServicePlan
   kind: 'linux'
   sku: {
     name: 'P1v3'
@@ -117,7 +121,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
 
 // 2) La aplicación que corre encima
 resource apiApp 'Microsoft.Web/sites@2023-12-01' = {
-  name: appName
+  name: names.apiApp
   identity: { type: 'SystemAssigned' }
   properties: {
     serverFarmId: appServicePlan.id
@@ -213,8 +217,8 @@ Pero **no llega a Azure**. El Bicep define código, no contenedor.
 ### 4.5. Cómo leer el fichero sin perderte
 
 1. `targetScope`: el despliegue es a nivel de **grupo de recursos**.
-2. `param`: lo que cambia por entorno (tenant, client, audience, prefijo, retención).
-3. `var`: nombres derivados y `uniqueString` para evitar colisiones.
+2. `param`: lo que cambia por entorno (tenant, client, audience, carga, entorno, región y retención).
+3. `var`: nombres derivados por función y `uniqueString` para evitar colisiones.
 4. Recursos de red y observabilidad.
 5. Plan y site: el núcleo de este documento.
 6. Private Endpoints, DNS y asignación de rol: las relaciones que hacen que la red privada funcione.
@@ -226,7 +230,7 @@ Pero **no llega a Azure**. El Bicep define código, no contenedor.
 flowchart LR
     U[Cliente] -.->|bloqueado| PE[Private Endpoint sites]
     PE --> APP[App Service Linux .NET 10]
-    APP -->|VNet integration snet-app| VNET[VNet 10.20.0.0/16]
+    APP -->|VNet integration snet-…-app| VNET[VNet 10.20.0.0/16]
     VNET --> KV[Key Vault<br/>Private Endpoint]
     APP --> LAW[Log Analytics]
     APP --> AI[Application Insights]
@@ -238,8 +242,8 @@ Recursos ya definidos en `infra/main.bicep`:
 - Plan Linux `P1v3`, `reserved: true`.
 - Site Linux con `linuxFxVersion: DOTNETCORE|10.0`, HTTPS only, TLS 1.2, FTPS off, HTTP/2, `alwaysOn`.
 - Identidad gestionada asignada por el sistema.
-- Integración VNet en `snet-app` (delegada a `Microsoft.Web/serverFarms`) y `vnetRouteAllEnabled`.
-- Acceso público deshabilitado y Private Endpoint en `snet-pe` con DNS privado.
+- Integración VNet en `snet-…-app` (delegada a `Microsoft.Web/serverFarms`) y `vnetRouteAllEnabled`.
+- Acceso público deshabilitado y Private Endpoint en `snet-…-pe` con DNS privado.
 - Key Vault con RBAC, sin acceso público, y rol *Key Vault Secrets User* para la identidad.
 - Diagnóstico a Log Analytics y Application Insights.
 
@@ -335,7 +339,7 @@ Pruebas positivas:
 
 1. `GET /health` responde 200 desde dentro de la VNet.
 2. `GET /api/products` con token válido responde 200.
-3. El DNS privado resuelve el site a una IP de `snet-pe`.
+3. El DNS privado resuelve el site a una IP de `snet-…-pe`.
 4. Los logs aparecen en Log Analytics en menos de 5 minutos.
 
 Pruebas negativas:
