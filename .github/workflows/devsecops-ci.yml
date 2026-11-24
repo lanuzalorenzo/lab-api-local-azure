@@ -204,6 +204,11 @@ jobs:
           category: trivy-config
           trivyignores: .trivyignore
 
+      - name: Rechazar nombres de recurso escritos a mano
+        # Va después del escaneo para que un nombre manual se vea como un fallo
+        # propio y no como un escaneo que no llegó a ejecutarse.
+        run: python3 scripts/check-infra-names.py infra
+
   dependency-review:
     name: Revisión de dependencias (solo PR)
     if: github.event_name == 'pull_request'
