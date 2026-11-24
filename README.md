@@ -20,7 +20,7 @@ Este repositorio es el banco de pruebas del portfolio; la aplicación principal 
 
 **No es** un sistema listo para producción ni una implementación de microservicios: es un monolito modular con un segundo despliegue asíncrono ([ADR-0001](docs/adr/0001-monolito-modular-vs-microservicios.md)). Service Bus y la Function están diseñados y probados en local, no desplegados. Las limitaciones concretas están al final.
 
-El estado de cada control, con su prueba o su límite, está en [`docs/capacidades.md`](docs/capacidades.md). Es la fuente única: este README resume.
+El estado de cada control se declara en [`AGENTS.md` §Línea base](AGENTS.md#línea-base); el detalle con su prueba o su límite está en [`docs/capacidades.md`](docs/capacidades.md).
 
 ## Arquitectura
 
@@ -53,7 +53,7 @@ Resumen; el detalle con pruebas y límites está en [`docs/capacidades.md`](docs
 
 | Control | Estado |
 |---|---|
-| Validación JWT y autorización por usuario | Implementado; la criptografía requiere tenant real |
+| Validación JWT y autorización por usuario | Parcial: la criptografía requiere tenant real |
 | BOLA/IDOR, *mass assignment*, CORS, *rate limit* y límites | Implementado |
 | Aviso de secretos antes del commit (hook local) | Parcial: opt-in por clon |
 | Contrato de error único (`400`, `404`, `500`) sin fugas en el `500` | Implementado |

@@ -175,6 +175,6 @@ suena a folleto y no se sostiene en una pregunta de seguimiento.
 
 ## 6. Mantenimiento
 
-- Esta matriz es la fuente de verdad del estado; el [resumen del README](../README.md#estado-de-seguridad) no la sustituye.
+- Esta matriz guarda el detalle y la evidencia de cada control; el estado se declara en [`AGENTS.md` §Línea base](../AGENTS.md#línea-base) y el [resumen del README](../README.md#estado-de-seguridad) no lo sustituye.
 - Si una capacidad cambia de estado, actualiza la matriz y el resumen del README en el mismo lote.
 - No añadas una fila sin una comprobación asociada. Si no existe, escribe `Diseño` o `Pendiente` y explica qué falta.

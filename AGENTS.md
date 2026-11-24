@@ -32,6 +32,29 @@ Este repositorio estrena lo que después se aplica en otro sitio: una versión n
 - Sin secretos ni cadenas reales en el código: `appsettings.Development.json` (ignorado), user-secrets o variables de entorno.
 - Pruebas de integración en `tests/EcommerceApi.Tests` para cualquier cambio de comportamiento.
 
+## Línea base
+
+Los identificadores y el criterio son los de [`shared-dotnet/docs/linea-base.md`](https://github.com/lanuzalorenzo/shared-dotnet/blob/main/docs/linea-base.md). Esta sección es la declaración canónica del estado: traduce a los cinco estados lo que documentan `docs/capacidades.md` y el pipeline, y no añade controles fuera de su alcance. Las etiquetas de presentación de `README.md` y `docs/capacidades.md`, en las filas de esta tabla, se leen con esta equivalencia: `Implementado` es `Validado` salvo que la fila limite el alcance (`Implementado; fuera de CI` es `Parcial`); `Validado en local` es `Validado` con alcance local. Fuera de esta tabla no se traducen, y no crean estados nuevos.
+
+| Id | Estado | Evidencia |
+|---|---|---|
+| `auth` | Parcial | `AddHardenedJwtBearer` en `Program.cs`; 401 del esquema de prueba en `ProductsEndpointsTests`. La validación real de firma, `iss` y `aud` queda fuera del CI y pide tenant ([`azure-ad-tests.md`](docs/azure-ad-tests.md)). |
+| `permisos` | Pendiente | sin `AddPermissionPolicies` ni `RequirePermission`; scopes y roles granulares sin implementar. El paquete lo trae con `LL.Security` 0.4.0, sin publicar. |
+| `cors` | Validado | `AddDenyByDefaultCors` y `UseCors("ApiCors")`; `CorsTests` con origen permitido y ajeno en el CI del 2026-11-24 ([run 45411139036](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/45411139036)). |
+| `cabeceras` | Validado | `UseSecurityHeaders`; `SecurityHeadersTests` para la CSP, `ServerHeaderTests` para la opción de Kestrel y la batería del paquete para el resto de cabeceras (`LL.Security.Tests/SecurityHeadersTests`), más la comprobación contra el contenedor ([run 42685834576](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/42685834576), 2026-11-09). |
+| `csp` | Validado | `ContentSecurityPolicy.DenyAll()`; `SecurityHeadersTests` compara la cabecera. |
+| `limite` | Validado | `AddRemoteIpRateLimiting` y `UseRateLimiter()`; 429 en `RateLimitTests`; validado en local y en CI, sin SLO; [ADR-0007](docs/adr/0007-rate-limiting.md). |
+| `problemdetails` | Validado | `AddApiProblemDetails` y `UseApiProblemDetails`; cuatro casos en `ErrorContractTests` con `application/problem+json`. |
+| `salud` | Validado | `AddApiHealthChecks` y `MapApiHealthChecks`; `/health` anónimo en `HealthEndpointTests` y cuerpo `Healthy` sin detalle en la prueba del paquete (`LL.Hosting.Tests/HealthChecksTests`). |
+| `permisos-workflow` | Validado | `contents: read` global y en los jobs que lo declaran; `security-events: write` en SAST, SCA, contenedor e IaC; [run 45411139036](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/45411139036) (2026-11-24). |
+| `secretos` | Validado | Gitleaks en cada push a `main` y en cada PR (`.github/workflows/devsecops-ci.yml`, job `secret-scanning`); el hook local sigue `Parcial` porque es opt-in en cada clon. |
+| `sast` | Validado | job `sast` con CodeQL `security-extended`; 0 alertas abiertas de Code Scanning y [run 45411139036](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/45411139036) en verde (2026-11-24). |
+| `sca` | Validado | job `sca` con Trivy, bloqueante en `HIGH` y `CRITICAL` con corrección disponible; [run 45411139036](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/45411139036) (2026-11-24). |
+| `contenedor` | Validado | `Dockerfile` con `USER $APP_UID`; el CI comprueba que el UID no es 0 y escanea la imagen; [run 45411139036](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/45411139036) (2026-11-24). |
+| `dependabot` | Validado | `.github/dependabot.yml` y `dependabot-auto-merge.yml` para parche y menor; [PR #55](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/55) fusionada por el flujo. |
+| `main` | Validado | ruleset `main` con pull request y siete checks; sin revisor humano porque un solo mantenedor no puede aprobar su PR; [`repo-governance.md`](docs/repo-governance.md). |
+| `iac` | Validado | `bicep build infra/main.bicep` y Trivy config en el job de IaC; [run 45411139036](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/45411139036) (2026-11-24). Sin desplegar. |
+
 ## Contrato editorial
 
 El contrato completo —apertura llana, jerga, estados, evidencias y claridad que no cambia lo que se afirma— está en [portfolio-ciberseguridad-lorenzo](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/blob/main/AGENTS.md). En este repo: español claro, estados explícitos (Validado · Parcial · Runbook preparado · Diseño · Pendiente) y lo ejecutado separado de lo diseñado; un hallazgo no es un PASS.
