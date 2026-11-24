@@ -103,7 +103,7 @@ resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
 }
 
 resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
-  name: names.appInsights
+  name: 'appi-manual'
   location: location
   kind: 'web'
   properties: {
