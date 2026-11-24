@@ -20,8 +20,9 @@ sobre `namePrefix` y `uniqueString`. Cada recurso nuevo añadía otra variable o
 cadena, y nada impedía que dos de ellas usaran convenciones distintas ni que un
 nombre se escribiera directamente en el recurso.
 
-La plantilla nunca se ha desplegado en una suscripción real; solo se valida con
-`bicep build` y Trivy config en el pipeline (`infra/README.md`, párrafo de apertura). Por
+La plantilla nunca se ha desplegado en una suscripción real; se valida con
+`bicep build`, Trivy config y la comprobación de nombres en el pipeline
+(`infra/README.md`, párrafo de apertura). Por
 eso el cambio de nombres no exige migración de recursos existentes y se puede hacer
 antes de la primera ejecución real.
 
@@ -54,8 +55,9 @@ IaC; este ADR fija la convención que esa prueba exige.
    `names` llama a `resourceName`. Admite las excepciones de la plataforma y el
    `guid(...)` de una asignación de rol, que no es un nombre de recurso. Cualquier otro
    valor hace fallar el job de IaC. La comprobación recorre todos los `.bicep` de
-   `infra/`: un módulo debe calcular sus nombres con `resourceName` igual que la
-   plantilla principal.
+   `infra/`; hoy no hay módulos. En un módulo se revisa el `name` de sus recursos, pero
+   no el objeto `names` que construye quien lo llama: un nombre escrito a mano en la
+   llamada pasaría. Habría que ampliar la comprobación antes de añadir uno.
 
 El límite de siete caracteres en `workload` y las regiones de tres letras no son
 arbitrarios: con un entorno de cuatro letras (`test`/`prod`) y el sufijo de cuatro, el
@@ -88,7 +90,9 @@ Bicep no admite una expresión regular en los parámetros.
   (`scripts/check-infra-names.py`) se apoya en esta convención: recorre las propiedades
   `name` de primer nivel de cada recurso y rechaza todo lo que no sea `names.<clave>`,
   salvo los nombres que fija la plataforma (`logs` y las zonas DNS privadas) y el
-  `guid(...)` de la asignación de rol.
+  `guid(...)` de la asignación de rol. El job de IaC la ejercitó el 2026-11-24 con
+  `'appi-manual'` ([job 138705083970](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/45467177693/job/138705083970)):
+  el paso falló y el escaneo de Trivy quedó en verde.
 - El sufijo de cuatro caracteres sale de `uniqueString(resourceGroup().id)`: dos grupos
   de recursos distintos con la misma carga, entorno y región pueden generar el mismo
   nombre para el Key Vault y el App Service, que son únicos a nivel global. Se acepta en

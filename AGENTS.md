@@ -53,7 +53,7 @@ Los identificadores y el criterio son los de [`shared-dotnet/docs/linea-base.md`
 | `contenedor` | Validado | `Dockerfile` con `USER $APP_UID`; el CI comprueba que el UID no es 0 y escanea la imagen; [run 45411139036](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/45411139036) (2026-11-24). |
 | `dependabot` | Validado | `.github/dependabot.yml` y `dependabot-auto-merge.yml` para parche y menor; [PR #55](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/55) fusionada por el flujo. |
 | `main` | Validado | ruleset `main` con pull request y siete checks; sin revisor humano porque un solo mantenedor no puede aprobar su PR; [`repo-governance.md`](docs/repo-governance.md). |
-| `iac` | Validado | `bicep build infra/main.bicep` y Trivy config en el job de IaC; [run 45411139036](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/45411139036) (2026-11-24). Sin desplegar. |
+| `iac` | Validado | `bicep build infra/main.bicep`, Trivy config y `scripts/check-infra-names.py` en el job de IaC; [run 45468481809](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/45468481809) en `main` y un nombre a mano rechazado en el [job 138705083970](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/45467177693/job/138705083970) (2026-11-24). Sin desplegar. |
 
 ## Contrato editorial
 
