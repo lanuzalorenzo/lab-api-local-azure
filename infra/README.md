@@ -64,6 +64,21 @@ bicep lint infra/main.bicep
 python3 scripts/check-infra-names.py infra
 ```
 
+## Alcance del despliegue
+
+El parámetro `desplegarServiciosDePago` (por defecto `false`) decide qué se crea:
+
+| Valor | Recursos | Coste |
+|---|---|---|
+| `false` | VNet con sus dos subredes y NSG | 0: Azure no les asigna medidor |
+| `true` | Key Vault, dos Private Endpoints, DNS privado, App Service P1v3, Log Analytics, Application Insights y lo que depende de ellos | el plan, los Private Endpoints y las zonas DNS facturan desde que se crean; el resto, por uso |
+
+Salvo la VNet y el NSG, todas las filas de la tabla de Recursos pertenecen a la capa de
+servicios y solo se crean con `true`. Con `false` la plantilla se puede desplegar para
+validar la red sin crear recursos que facturen; las salidas de host de la API, nombre de Key Vault, área de Log Analytics e
+identidad de la API devuelven cadena vacía. La decisión está en
+[ADR-0012](../docs/adr/0012-despliegue-por-capas-de-coste.md).
+
 ## Despliegue (cuando exista una suscripción)
 
 ```bash
@@ -75,7 +90,7 @@ az deployment group create \
   --parameters infra/main.parameters.example.json
 ```
 
-Antes de desplegar, sustituye los placeholders de `main.parameters.example.json` por valores reales. No subas ese archivo con identificadores reales.
+Antes de desplegar, sustituye los placeholders de `main.parameters.example.json` por valores reales. No subas ese archivo con identificadores reales. El ejemplo trae `desplegarServiciosDePago: false`: cámbialo a `true` solo con presupuesto y autorización.
 
 ## OIDC de GitHub Actions a Azure (diseño, no activo)
 

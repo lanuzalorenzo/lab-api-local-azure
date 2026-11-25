@@ -21,6 +21,7 @@ Cada ADR contiene: contexto, decisión, alternativas descartadas, consecuencias 
 | [0009](0009-como-se-prueba-la-mensajeria-en-local.md) | Cómo se prueba la mensajería en local: emulador oficial y pruebas fuera de `dotnet test` | Aceptada |
 | [0010](0010-plataforma-dotnet-y-ciclo-de-vida.md) | Plataforma .NET: versión vigente, fin de soporte y protocolo de migración | Aceptada |
 | [0011](0011-nombres-de-recurso-caf.md) | Nombres de recurso por función CAF: tipo, carga, entorno y región en un solo sitio | Aceptada |
+| [0012](0012-despliegue-por-capas-de-coste.md) | Despliegue por capas de coste: la red siempre, lo demás tras un parámetro | Aceptada |
 
 ## Patrones en el código
 

@@ -335,6 +335,8 @@ AppServiceHTTPLogs
 
 ## 12. Plan de validación del despliegue
 
+> Ejecuta este plan con `desplegarServiciosDePago: true`; con el valor por defecto la plantilla crea solo la red ([ADR-0012](adr/0012-despliegue-por-capas-de-coste.md)).
+
 Pruebas positivas:
 
 1. `GET /health` responde 200 desde dentro de la VNet.

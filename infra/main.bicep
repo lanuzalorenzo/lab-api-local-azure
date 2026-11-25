@@ -39,6 +39,9 @@ param allowedOrigin string = 'https://localhost:5173'
 @maxValue(730)
 param logRetentionDays int = 30
 
+@description('Deploy the service layer: Key Vault, private endpoints, private DNS zones, App Service, Log Analytics, Application Insights and the resources that depend on them. False leaves the zero-cost network layer only.')
+param desplegarServiciosDePago bool = false
+
 // Naming: one function receives the CAF type abbreviation, the workload, the
 // environment and the region, so no resource name is written by hand. The CI
 // check in scripts/check-infra-names.py rejects any hand-written name.
@@ -91,7 +94,7 @@ var keyVaultDnsZoneName = 'privatelink.vaultcore.azure.net'
 var appServiceDnsZoneName = 'privatelink.azurewebsites.net'
 var authority = '${environment().authentication.loginEndpoint}${tenantId}/v2.0'
 
-resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
+resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = if (desplegarServiciosDePago) {
   name: names.logAnalytics
   location: location
   properties: {
@@ -102,7 +105,7 @@ resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   }
 }
 
-resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
+resource appInsights 'Microsoft.Insights/components@2020-02-02' = if (desplegarServiciosDePago) {
   name: names.appInsights
   location: location
   kind: 'web'
@@ -208,7 +211,7 @@ resource privateEndpointSubnet 'Microsoft.Network/virtualNetworks/subnets@2023-1
   name: names.privateEndpointSubnet
 }
 
-resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
+resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = if (desplegarServiciosDePago) {
   name: names.keyVault
   location: location
   properties: {
@@ -230,7 +233,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   }
 }
 
-resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
+resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = if (desplegarServiciosDePago) {
   name: names.appServicePlan
   location: location
   kind: 'linux'
@@ -244,7 +247,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   }
 }
 
-resource apiApp 'Microsoft.Web/sites@2023-12-01' = {
+resource apiApp 'Microsoft.Web/sites@2023-12-01' = if (desplegarServiciosDePago) {
   name: names.apiApp
   location: location
   kind: 'linux'
@@ -291,7 +294,7 @@ resource apiApp 'Microsoft.Web/sites@2023-12-01' = {
         }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-          value: appInsights.properties.ConnectionString
+          value: appInsights!.properties.ConnectionString
         }
       ]
     }
@@ -302,7 +305,7 @@ resource apiApp 'Microsoft.Web/sites@2023-12-01' = {
 // streaming. Console and HTTP logs reach Log Analytics through the platform
 // diagnostic categories below; the Windows-only httpLogs block is not declared.
 // The child name is fixed by the platform.
-resource apiAppLogs 'Microsoft.Web/sites/config@2023-12-01' = {
+resource apiAppLogs 'Microsoft.Web/sites/config@2023-12-01' = if (desplegarServiciosDePago) {
   parent: apiApp
   name: 'logs'
   properties: {
@@ -314,7 +317,7 @@ resource apiAppLogs 'Microsoft.Web/sites/config@2023-12-01' = {
   }
 }
 
-resource apiAppDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+resource apiAppDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (desplegarServiciosDePago) {
   scope: apiApp
   name: names.apiDiagnostics
   properties: {
@@ -350,7 +353,7 @@ resource apiAppDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-pre
   }
 }
 
-resource keyVaultDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+resource keyVaultDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (desplegarServiciosDePago) {
   scope: keyVault
   name: names.keyVaultDiagnostics
   properties: {
@@ -374,17 +377,17 @@ resource keyVaultDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-p
   }
 }
 
-resource keyVaultDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+resource keyVaultDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = if (desplegarServiciosDePago) {
   name: keyVaultDnsZoneName
   location: 'global'
 }
 
-resource appServiceDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+resource appServiceDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = if (desplegarServiciosDePago) {
   name: appServiceDnsZoneName
   location: 'global'
 }
 
-resource keyVaultDnsLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+resource keyVaultDnsLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = if (desplegarServiciosDePago) {
   parent: keyVaultDnsZone
   name: names.keyVaultVnetLink
   location: 'global'
@@ -396,7 +399,7 @@ resource keyVaultDnsLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@
   }
 }
 
-resource appServiceDnsLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+resource appServiceDnsLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = if (desplegarServiciosDePago) {
   parent: appServiceDnsZone
   name: names.appServiceVnetLink
   location: 'global'
@@ -408,7 +411,7 @@ resource appServiceDnsLink 'Microsoft.Network/privateDnsZones/virtualNetworkLink
   }
 }
 
-resource keyVaultPrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-11-01' = {
+resource keyVaultPrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-11-01' = if (desplegarServiciosDePago) {
   name: names.keyVaultPrivateEndpoint
   location: location
   properties: {
@@ -429,7 +432,7 @@ resource keyVaultPrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-11-01'
   }
 }
 
-resource keyVaultPrivateDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-11-01' = {
+resource keyVaultPrivateDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-11-01' = if (desplegarServiciosDePago) {
   parent: keyVaultPrivateEndpoint
   name: names.keyVaultDnsGroup
   properties: {
@@ -444,7 +447,7 @@ resource keyVaultPrivateDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZ
   }
 }
 
-resource appServicePrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-11-01' = {
+resource appServicePrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-11-01' = if (desplegarServiciosDePago) {
   name: names.appServicePrivateEndpoint
   location: location
   properties: {
@@ -465,7 +468,7 @@ resource appServicePrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-11-0
   }
 }
 
-resource appServicePrivateDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-11-01' = {
+resource appServicePrivateDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-11-01' = if (desplegarServiciosDePago) {
   parent: appServicePrivateEndpoint
   name: names.appServiceDnsGroup
   properties: {
@@ -480,7 +483,7 @@ resource appServicePrivateDnsGroup 'Microsoft.Network/privateEndpoints/privateDn
   }
 }
 
-resource keyVaultSecretsUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource keyVaultSecretsUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (desplegarServiciosDePago) {
   name: guid(keyVault.id, apiApp.id, 'key-vault-secrets-user')
   scope: keyVault
   properties: {
@@ -488,12 +491,12 @@ resource keyVaultSecretsUser 'Microsoft.Authorization/roleAssignments@2022-04-01
       'Microsoft.Authorization/roleDefinitions',
       '4633458b-17de-408a-b874-0445c86b69e6'
     )
-    principalId: apiApp.identity.principalId
+    principalId: apiApp!.identity.principalId
     principalType: 'ServicePrincipal'
   }
 }
 
-output apiHostName string = apiApp.properties.defaultHostName
-output keyVaultName string = keyVault.name
-output logAnalyticsWorkspaceId string = logAnalytics.id
-output apiPrincipalId string = apiApp.identity.principalId
+output apiHostName string = desplegarServiciosDePago ? apiApp!.properties.defaultHostName : ''
+output keyVaultName string = desplegarServiciosDePago ? keyVault.name : ''
+output logAnalyticsWorkspaceId string = desplegarServiciosDePago ? logAnalytics.id : ''
+output apiPrincipalId string = desplegarServiciosDePago ? apiApp!.identity.principalId : ''

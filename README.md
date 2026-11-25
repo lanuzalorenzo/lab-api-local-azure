@@ -201,7 +201,7 @@ La política de dependencias, los plazos por severidad y el estado del primer lo
 
 ## Infraestructura como código
 
-`infra/main.bicep` define una arquitectura de referencia con VNet segmentada, NSG con denegación por defecto, Key Vault con RBAC y *purge protection*, Private Endpoints y Private DNS, App Service Linux .NET 10 con HTTPS only y FTPS deshabilitado, identidad gestionada y diagnóstico a Log Analytics. **La plantilla no se ha desplegado**: se valida con `bicep build` y Trivy config en CI. El detalle está en [`infra/README.md`](infra/README.md).
+`infra/main.bicep` define una arquitectura de referencia con VNet segmentada, NSG con denegación por defecto, Key Vault con RBAC y *purge protection*, Private Endpoints y Private DNS, App Service Linux .NET 10 con HTTPS only y FTPS deshabilitado, identidad gestionada y diagnóstico a Log Analytics. El parámetro `desplegarServiciosDePago` (por defecto `false`) despliega solo la red y deja fuera la capa de servicios. **La plantilla no se ha desplegado**: se valida con `bicep build` y Trivy config en CI. El detalle está en [`infra/README.md`](infra/README.md).
 
 ## Documentación
 

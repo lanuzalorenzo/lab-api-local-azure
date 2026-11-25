@@ -25,6 +25,9 @@
     },
     "logRetentionDays": {
       "value": 30
+    },
+    "desplegarServiciosDePago": {
+      "value": false
     }
   }
 }
