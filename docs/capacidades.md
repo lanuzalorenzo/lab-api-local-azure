@@ -1,9 +1,9 @@
 # Capacidades y evidencia
 
-> **Estado:** Parcial (2026-11-12): la matriz conserva etiquetas fuera del contrato (`Implementado`, `Documentado, no activo` y variantes de alcance como `Validado en local`) y aún no está normalizada. Verificado el 2026-10-29 contra `main`; rate limit revisado el 2026-11-05 con [ADR-0007](adr/0007-rate-limiting.md); cabecera `Server` revisada el 2026-11-09; límite de cuerpo, artefacto de publicación, firma keyless y atestación del SBOM revisados el 2026-11-12; publicación contra el emulador local de Service Bus revisada el 2026-11-14, en local y en CI; controles compartidos desde los paquetes `LL.Security` y `LL.Hosting` el 2026-11-06, fijados y actualizados por Dependabot el 2026-11-09 (PR #55); comprobación de nombres de recurso en IaC ejecutada en el [run 45468481809](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/45468481809) el 2026-11-24. Queda por comprobar la validación JWT fuera de CI, el hook de secretos opt-in y el despliegue de Service Bus.
+> **Estado:** Parcial (2026-11-26). Matriz normalizada a los cinco estados del workspace, con el alcance entre paréntesis cuando importa (`CI`, `local`, `documento`). Queda por comprobar la validación JWT fuera de CI, el hook de secretos opt-in, el despliegue de Service Bus y la capa de pago —red privada, Key Vault y observabilidad—, que sigue en Diseño. El despliegue de la red y de la API en la capa gratuita se registra en la evidencia de la Fase 1.
 > **Ámbito:** qué puede afirmarse sobre este repositorio, con qué se comprueba y qué queda fuera.
 > **Evidencia:** `dotnet test`, `.github/workflows/devsecops-ci.yml`, `infra/main.bicep`, `scripts/check-infra-names.py` y `docs/`.
-> **Relacionada con:** [Referencia de la API](api.md), [resumen de estado](../README.md#estado-de-seguridad), [ADR](adr/README.md).
+> **Relacionada con:** [Referencia de la API](api.md), [resumen de estado](../README.md#estado-de-seguridad), [capas gratuitas y de pago](plataforma-gratis-y-pago.md), [ADR](adr/README.md).
 
 Cualquier repositorio puede decir que «hace seguridad». Este documento hace la
 pregunta incómoda: de todo lo que este repositorio afirma, qué se puede comprobar
@@ -44,18 +44,18 @@ verificación y ajusta la tabla en el mismo lote.
 
 | Capacidad | Dónde | Cómo se comprueba | Estado |
 |---|---|---|---|
-| .NET 10 en API, dominio, aplicación, infraestructura y Function | `*.csproj` (`net10.0`) | `dotnet build EcommerceApi.sln -c Release` | Implementado |
-| ASP.NET Core Web API con controladores y *host* mínimo | `EcommerceApi/Program.cs` | Swagger en `Development` o `curl` a `/api/products` | Implementado |
-| Contrato REST con `201` + `Location`, `404` y validación por DTO | `Controllers/`, `Models/` | `tests/EcommerceApi.Tests` | Implementado |
-| Paginación por cursor (*keyset*) con límites y filtro temporal | `OrderQuery`, `SqliteOrderReadModel` | `GetOrders_WithLimit_ReturnsCursorAndNextPage` | Implementado |
-| Contrato de error único (`400`, `404`, `500`) | `LL.Hosting` (`AddApiProblemDetails`), controladores y `DomainExceptionHandler` | `ErrorContractTests` (4 casos) | Implementado |
-| CORS con denegación por defecto | `LL.Security` (`AddDenyByDefaultCors`) | `AllowedOrigin_ReceivesCorsHeader`, `UnknownOrigin_DoesNotReceiveCorsHeader` | Implementado |
-| Cabeceras de seguridad y política de contenido restrictiva | `LL.Security` (`UseSecurityHeaders` con `ContentSecurityPolicy.DenyAll`) | `SecurityHeadersTests` | Implementado |
-| Rate limit global de 120 req/min por IP | `LL.Security` (`AddRemoteIpRateLimiting`; [ADR-0007](adr/0007-rate-limiting.md)) | `ExceedingGlobalLimit_ReturnsTooManyRequests`; carga con k6 en el portfolio | Validado en local (secuencial y concurrente); sin SLO |
-| Salud anónima en `/health` | `LL.Hosting` (`MapApiHealthChecks`) | `Health_IsAnonymous_ReturnsHealthy` | Implementado |
-| Controles compartidos con versión fijada: `LL.Hosting` `0.1.0` y `LL.Security` `0.3.0` | [`Directory.Packages.props`](../Directory.Packages.props), [`NuGet.config`](../NuGet.config) | `dotnet restore` desde GitHub Packages en CI | Implementado |
-| Credencial de solo lectura para el feed privado `LL.*` | Gestor de secretos local y secreto `LL_PACKAGES_TOKEN` de Dependabot | [`credenciales.md`](credenciales.md); PR #55 generada por Dependabot y fusionada por el flujo automático con los checks en verde | Validado el 9 de noviembre de 2026 |
-| Límite de cuerpo de 16 KB en `POST /api/products` | `[RequestSizeLimit]`; `BadHttpRequestExceptionHandler` conserva el estado | Prueba local con 16 384 y 17 408 bytes contra Kestrel; [evidencia](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/blob/main/laboratorio-final/evidencias/2026-11-12-11-api-body-limit/README.md) | Validado en local en `POST /api/products`: 16 KB pasan y 17 KB devuelven `413`; `POST /api/orders` no se midió |
+| .NET 10 en API, dominio, aplicación, infraestructura y Function | `*.csproj` (`net10.0`) | `dotnet build EcommerceApi.sln -c Release` | Validado (CI) |
+| ASP.NET Core Web API con controladores y *host* mínimo | `EcommerceApi/Program.cs` | Swagger en `Development` o `curl` a `/api/products` | Validado (CI) |
+| Contrato REST con `201` + `Location`, `404` y validación por DTO | `Controllers/`, `Models/` | `tests/EcommerceApi.Tests` | Validado (CI) |
+| Paginación por cursor (*keyset*) con límites y filtro temporal | `OrderQuery`, `SqliteOrderReadModel` | `GetOrders_WithLimit_ReturnsCursorAndNextPage` | Validado (CI) |
+| Contrato de error único (`400`, `404`, `500`) | `LL.Hosting` (`AddApiProblemDetails`), controladores y `DomainExceptionHandler` | `ErrorContractTests` (4 casos) | Validado (CI) |
+| CORS con denegación por defecto | `LL.Security` (`AddDenyByDefaultCors`) | `AllowedOrigin_ReceivesCorsHeader`, `UnknownOrigin_DoesNotReceiveCorsHeader` | Validado (CI) |
+| Cabeceras de seguridad y política de contenido restrictiva | `LL.Security` (`UseSecurityHeaders` con `ContentSecurityPolicy.DenyAll`) | `SecurityHeadersTests` | Validado (CI) |
+| Rate limit global de 120 req/min por IP | `LL.Security` (`AddRemoteIpRateLimiting`; [ADR-0007](adr/0007-rate-limiting.md)) | `ExceedingGlobalLimit_ReturnsTooManyRequests`; carga con k6 en el portfolio | Parcial (local, sin SLO) |
+| Salud anónima en `/health` | `LL.Hosting` (`MapApiHealthChecks`) | `Health_IsAnonymous_ReturnsHealthy` | Validado (CI) |
+| Controles compartidos con versión fijada: `LL.Hosting` `0.1.0` y `LL.Security` `0.3.0` | [`Directory.Packages.props`](../Directory.Packages.props), [`NuGet.config`](../NuGet.config) | `dotnet restore` desde GitHub Packages en CI | Validado (CI) |
+| Credencial de solo lectura para el feed privado `LL.*` | Gestor de secretos local y secreto `LL_PACKAGES_TOKEN` de Dependabot | [`credenciales.md`](credenciales.md); PR #55 generada por Dependabot y fusionada por el flujo automático con los checks en verde | Validado (2026-11-09) |
+| Límite de cuerpo de 16 KB en `POST /api/products` | `[RequestSizeLimit]`; `BadHttpRequestExceptionHandler` conserva el estado | Prueba local con 16 384 y 17 408 bytes contra Kestrel; [evidencia](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/blob/main/laboratorio-final/evidencias/2026-11-12-11-api-body-limit/README.md) | Parcial (local: `POST /api/products` medido; `POST /api/orders` sin medir) |
 
 El contrato completo, incluido el formato de error, está en
 [docs/api.md](api.md).
@@ -64,17 +64,17 @@ El contrato completo, incluido el formato de error, está en
 
 | Capacidad | Dónde | Cómo se comprueba | Estado |
 |---|---|---|---|
-| Validación JWT: firma, `iss`, `aud`, `exp`, `nbf` y *clock skew* | `LL.Security` (`AddHardenedJwtBearer`) | Requiere tenant real; ver [azure-ad-tests.md](azure-ad-tests.md) | Implementado; fuera de CI |
-| Autorización por propietario (BOLA/IDOR) | `OrdersController`, `GetOrderByIdHandler` | `UserCannotReadAnotherUsersOrder` y `CreateOrder_ReturnsOnlyOwnOrders` | Implementado |
-| `404` en lugar de `403` para pedidos ajenos | `OrdersController.GetOrderById` | La misma prueba | Implementado |
-| DTOs de entrada contra *mass assignment* | `Models/Create*Request.cs` | Revisión de código; `Id` no es asignable | Implementado |
-| Sin cabecera `Server` (huella del servidor web) | `LL.Security` `0.3.0`, dentro de `UseSecurityHeaders` | `ServerHeaderTests` fija la opción; job `container-security`: `scripts/check-server-header.sh` contra el contenedor | Validado: run [42685834576](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/42685834576) (2026-11-09) |
-| Escaneo de secretos sobre historial completo | Acción `gitleaks` de [`core`](https://github.com/lanuzalorenzo/core), en el job `secret-scanning` de `.github/workflows/devsecops-ci.yml` | Ejecución en GitHub Actions | Implementado |
+| Validación JWT: firma, `iss`, `aud`, `exp`, `nbf` y *clock skew* | `LL.Security` (`AddHardenedJwtBearer`) | Requiere tenant real; ver [azure-ad-tests.md](azure-ad-tests.md) | Parcial (pruebas con doble, sin criptografía real) |
+| Autorización por propietario (BOLA/IDOR) | `OrdersController`, `GetOrderByIdHandler` | `UserCannotReadAnotherUsersOrder` y `CreateOrder_ReturnsOnlyOwnOrders` | Validado (CI) |
+| `404` en lugar de `403` para pedidos ajenos | `OrdersController.GetOrderById` | La misma prueba | Validado (CI) |
+| DTOs de entrada contra *mass assignment* | `Models/Create*Request.cs` | Revisión de código; `Id` no es asignable | Validado (CI) |
+| Sin cabecera `Server` (huella del servidor web) | `LL.Security` `0.3.0`, dentro de `UseSecurityHeaders` | `ServerHeaderTests` fija la opción; job `container-security`: `scripts/check-server-header.sh` contra el contenedor | Validado (CI, 2026-11-09) |
+| Escaneo de secretos sobre historial completo | Acción `gitleaks` de [`core`](https://github.com/lanuzalorenzo/core), en el job `secret-scanning` de `.github/workflows/devsecops-ci.yml` | Ejecución en GitHub Actions | Validado (CI) |
 | Aviso de secretos antes del commit (hook local) | `scripts/hooks/pre-commit` | `scripts/install-git-hooks.sh --check` (instalación y versión) y `gitleaks git --staged` sobre un cambio preparado | Parcial: opt-in por clon, no lo impone la plataforma |
-| SAST con CodeQL (`security-extended`) | Workflow, job `sast` | Ejecución en GitHub Actions | Implementado |
-| SCA con Trivy, bloqueante en `CRITICAL`/`HIGH` | Workflow, job `sca` | Ejecución en GitHub Actions | Implementado |
-| Escaneo de imagen y verificación de usuario no-root | Workflow, job `container-security` | `docker run --entrypoint id ... -u` distinto de `0` | Implementado |
-| Threat model STRIDE y OWASP API Top 10 | [threat-model-appsec.md](threat-model-appsec.md) | Revisión del documento | Implementado (documento) |
+| SAST con CodeQL (`security-extended`) | Workflow, job `sast` | Ejecución en GitHub Actions | Validado (CI) |
+| SCA con Trivy, bloqueante en `CRITICAL`/`HIGH` | Workflow, job `sca` | Ejecución en GitHub Actions | Validado (CI) |
+| Escaneo de imagen y verificación de usuario no-root | Workflow, job `container-security` | `docker run --entrypoint id ... -u` distinto de `0` | Validado (CI) |
+| Threat model STRIDE y OWASP API Top 10 | [threat-model-appsec.md](threat-model-appsec.md) | Revisión del documento | Validado (documento) |
 
 La validación JWT no se ejecuta en CI: `tests/EcommerceApi.Tests/ApiFactory.cs`
 sustituye el esquema por `TestAuthHandler`. Lo que las pruebas demuestran es la
@@ -85,42 +85,42 @@ importante y está en el threat model como `Parcial` en *Information Disclosure*
 
 | Capacidad | Dónde | Cómo se comprueba | Estado |
 |---|---|---|---|
-| Arquitectura por capas con dependencias en una sola dirección | `Domain` ← `Application` ← `Infrastructure` ← host | `LayerDependencyTests` (7 casos) | Implementado |
-| Inversión de dependencias con puertos y adaptadores | Interfaces en `Application/Abstractions`, adaptadores en `Infrastructure` | Pruebas de arquitectura y de infraestructura | Implementado |
-| DDD táctico: agregados, *value objects*, invariantes y evento de dominio | `Domain/Orders`, `Domain/Products`, `Money` | `OrderTests`, `ProductTests`, `MoneyTests` | Implementado |
-| CQRS ligero solo en pedidos | `Application/Orders`, [ADR-0003](adr/0003-cqrs-ligero-en-pedidos.md) | `CreateOrderHandlerTests`, `OrderQueryHandlerTests` | Implementado |
-| Monolito modular con criterios de extracción escritos | [ADR-0001](adr/0001-monolito-modular-vs-microservicios.md) | Revisión del documento | Implementado (decisión) |
+| Arquitectura por capas con dependencias en una sola dirección | `Domain` ← `Application` ← `Infrastructure` ← host | `LayerDependencyTests` (7 casos) | Validado (CI) |
+| Inversión de dependencias con puertos y adaptadores | Interfaces en `Application/Abstractions`, adaptadores en `Infrastructure` | Pruebas de arquitectura y de infraestructura | Validado (CI) |
+| DDD táctico: agregados, *value objects*, invariantes y evento de dominio | `Domain/Orders`, `Domain/Products`, `Money` | `OrderTests`, `ProductTests`, `MoneyTests` | Validado (CI) |
+| CQRS ligero solo en pedidos | `Application/Orders`, [ADR-0003](adr/0003-cqrs-ligero-en-pedidos.md) | `CreateOrderHandlerTests`, `OrderQueryHandlerTests` | Validado (CI) |
+| Monolito modular con criterios de extracción escritos | [ADR-0001](adr/0001-monolito-modular-vs-microservicios.md) | Revisión del documento | Validado (decisión) |
 
 ### 2.4. Datos y mensajería
 
 | Capacidad | Dónde | Cómo se comprueba | Estado |
 |---|---|---|---|
-| Persistencia transaccional sobre SQLite | `SqliteUnitOfWork`, `SqliteSession` | `EcommerceApi.Infrastructure.Tests` | Implementado (laboratorio) |
-| Importes en céntimos enteros | `Money`, `MoneyCents` | `MoneyTests`, pruebas de infraestructura | Implementado |
-| Outbox transaccional: pedido y mensaje en la misma transacción | `SqliteOrderRepository`, `SqliteOutboxStore` | `SqliteOutboxTests` (rollback incluido) | Implementado |
-| Reintentos y *dead-letter* tras 5 fallos | `OutboxPublisher` | `SqliteOutboxTests` | Implementado |
-| Contrato versionado `OrderCreatedV1` | `EcommerceApi.Contracts` | Compilación compartida por API y Function | Implementado |
-| Consumidor idempotente por `messageId` | `ProcessOrderHandler`, `ProcessedMessages` | `ProcessOrderHandlerTests` | Implementado (local) |
-| Publicación en Service Bus | `ServiceBusEventPublisher` | Humo contra el emulador local, 2026-11-14 ([ADR-0009](adr/0009-como-se-prueba-la-mensajeria-en-local.md)) | Validado en local (emulador); sin namespace real |
-| Function de Service Bus | `functions/OrderProcessor` | `dotnet build`; sin despliegue | Diseño, no desplegado |
+| Persistencia transaccional sobre SQLite | `SqliteUnitOfWork`, `SqliteSession` | `EcommerceApi.Infrastructure.Tests` | Validado (local, laboratorio) |
+| Importes en céntimos enteros | `Money`, `MoneyCents` | `MoneyTests`, pruebas de infraestructura | Validado (CI) |
+| Outbox transaccional: pedido y mensaje en la misma transacción | `SqliteOrderRepository`, `SqliteOutboxStore` | `SqliteOutboxTests` (rollback incluido) | Validado (CI) |
+| Reintentos y *dead-letter* tras 5 fallos | `OutboxPublisher` | `SqliteOutboxTests` | Validado (CI) |
+| Contrato versionado `OrderCreatedV1` | `EcommerceApi.Contracts` | Compilación compartida por API y Function | Validado (CI) |
+| Consumidor idempotente por `messageId` | `ProcessOrderHandler`, `ProcessedMessages` | `ProcessOrderHandlerTests` | Validado (local) |
+| Publicación en Service Bus | `ServiceBusEventPublisher` | Humo contra el emulador local, 2026-11-14 ([ADR-0009](adr/0009-como-se-prueba-la-mensajeria-en-local.md)) | Parcial (emulador, sin namespace real) |
+| Function de Service Bus | `functions/OrderProcessor` | `dotnet build`; sin despliegue | Diseño |
 
 ### 2.5. Entrega y operación
 
 | Capacidad | Dónde | Cómo se comprueba | Estado |
 |---|---|---|---|
-| Artefacto de publicación sin PDB | `Directory.Build.props` (`DebugType=none` y `DebugSymbols=false` en `Release`) | `dotnet publish` + `find -name '*.pdb'`; [evidencia](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/blob/main/laboratorio-final/evidencias/2026-11-12-05-api-binary/README.md) | Validado en local: 5 PDB antes, 0 después; sin secretos en el host |
-| Suite xUnit en cuatro proyectos | `tests/` | `dotnet test EcommerceApi.sln` | Implementado |
-| Fakes propios en lugar de framework de *mocking* | `tests/EcommerceApi.UnitTests/Fakes/InMemoryFakes.cs` | Revisión de código | Implementado |
-| Verificación de formato en CI | Workflow, job `build-and-test` | `dotnet format --verify-no-changes` | Implementado |
-| Pipeline con 7 jobs: build, secretos, SAST, SCA, contenedor, IaC y revisión de dependencias | `.github/workflows/devsecops-ci.yml` | Ejecución en Actions | Implementado |
-| Imagen firmada con cosign keyless | `.github/workflows/container-publish.yml`, job `sign` | `cosign sign` y `cosign verify` en el mismo job | Validado en CI: run [43314295991](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/43314295991) (2026-11-12) |
-| SBOM atestado y ligado al digest | `.github/workflows/container-publish.yml`, job `sign` | `cosign attest --type cyclonedx` y `cosign verify-attestation` | Validado en CI: run [43314295991](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/43314295991) (2026-11-12) |
-| Imagen multi-stage con usuario no privilegiado | `Dockerfile` (`USER $APP_UID`) | Job `container-security` | Implementado |
-| IaC Bicep con VNet, NSG, Key Vault, Private Endpoints y diagnóstico | `infra/main.bicep` | `bicep build` + Trivy config + `scripts/check-infra-names.py` en el [run 45468481809](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/45468481809) | Implementado (plantilla) |
+| Artefacto de publicación sin PDB | `Directory.Build.props` (`DebugType=none` y `DebugSymbols=false` en `Release`) | `dotnet publish` + `find -name '*.pdb'`; [evidencia](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/blob/main/laboratorio-final/evidencias/2026-11-12-05-api-binary/README.md) | Validado (local, 2026-11-12) |
+| Suite xUnit en cuatro proyectos | `tests/` | `dotnet test EcommerceApi.sln` | Validado (CI) |
+| Fakes propios en lugar de framework de *mocking* | `tests/EcommerceApi.UnitTests/Fakes/InMemoryFakes.cs` | Revisión de código | Validado (CI) |
+| Verificación de formato en CI | Workflow, job `build-and-test` | `dotnet format --verify-no-changes` | Validado (CI) |
+| Pipeline con 7 jobs: build, secretos, SAST, SCA, contenedor, IaC y revisión de dependencias | `.github/workflows/devsecops-ci.yml` | Ejecución en Actions | Validado (CI) |
+| Imagen firmada con cosign keyless | `.github/workflows/container-publish.yml`, job `sign` | `cosign sign` y `cosign verify` en el mismo job | Validado (CI, 2026-11-12) |
+| SBOM atestado y ligado al digest | `.github/workflows/container-publish.yml`, job `sign` | `cosign attest --type cyclonedx` y `cosign verify-attestation` | Validado (CI, 2026-11-12) |
+| Imagen multi-stage con usuario no privilegiado | `Dockerfile` (`USER $APP_UID`) | Job `container-security` | Validado (CI) |
+| IaC Bicep con VNet, NSG, Key Vault, Private Endpoints y diagnóstico | `infra/main.bicep` | `bicep build` + Trivy config + `scripts/check-infra-names.py` en el [run 45468481809](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/45468481809) | Diseño (validación estática) |
 | Despliegue en Azure | — | — | Pendiente |
-| OIDC de GitHub Actions a Azure | [infra/README.md](../infra/README.md) | — | Documentado, no activo |
-| Captura persistente de logs | `Microsoft.Web/sites/config` (`logs`) + diagnóstico a Log Analytics | `bicep build` (incluye linter); ver [ADR-0005](adr/0005-observabilidad.md) | Implementado (plantilla) |
-| Telemetría de aplicación | `AddApplicationInsightsTelemetry()` condicionado a la cadena | `ObservabilityTests` | Implementado (código) |
+| OIDC de GitHub Actions a Azure | [infra/README.md](../infra/README.md) | — | Diseño |
+| Captura persistente de logs | `Microsoft.Web/sites/config` (`logs`) + diagnóstico a Log Analytics | `bicep build` (incluye linter); ver [ADR-0005](adr/0005-observabilidad.md) | Diseño (validación estática) |
+| Telemetría de aplicación | `AddApplicationInsightsTelemetry()` condicionado a la cadena | `ObservabilityTests` | Parcial (código, sin despliegue) |
 
 ## 3. Lo que este repositorio no demuestra
 
@@ -135,7 +135,7 @@ Lista deliberada. Sirve para no arrastrar afirmaciones que el código no sostien
 | Feature Flags | No existe infraestructura de *feature flags* en el código |
 | Event Hubs | El único servicio de mensajería previsto es Service Bus |
 | PKCE implementado | El flujo lo ejecuta el cliente; aquí solo se documenta y se valida el token resultante |
-| Azure desplegado | `infra/main.bicep` se compila y se escanea, pero no se ha aplicado a una suscripción |
+| Azure desplegado | La capa sin coste (VNet, NSG y subredes) se desplegó el 2026-11-26; la capa de servicios se compila y se escanea, pero no se ha aplicado |
 | OIDC de CI a Azure activo | Hay un workflow de CI, no de despliegue |
 | Alta disponibilidad, SLA o tráfico elevado | SQLite, una instancia y solo una prueba puntual de carga, no tráfico elevado |
 | Cobertura de pruebas medida | `coverlet` está disponible, pero no hay umbral ni informe en CI |
@@ -146,7 +146,7 @@ Lista deliberada. Sirve para no arrastrar afirmaciones que el código no sostien
 | En lugar de | Escribe |
 |---|---|
 | «Implementé microservicios con Service Bus» | «Implementé un monolito modular con outbox transaccional sobre SQLite, reintentos y *dead-letter*, y un consumidor idempotente; el adaptador de Service Bus está escrito y no desplegado» |
-| «Arquitectura en Azure» | «Diseñé y validé estáticamente una plantilla Bicep con red privada, Private Endpoints, Key Vault y diagnóstico; no la he desplegado» |
+| «Arquitectura en Azure» | «Desplegué la red de la plantilla Bicep y ejecuté la API en Container Apps; la capa privada —Key Vault, Private Endpoints, App Service— sigue en Diseño» |
 | «Clean Architecture» | «Arquitectura por capas con inversión de dependencias, verificada con pruebas que fallan si se rompe la dirección» |
 | «Alta cobertura de tests» | «91 pruebas en cuatro proyectos: dominio, aplicación, arquitectura, infraestructura e integración HTTP; sin umbral de cobertura» |
 | «API segura» | «Validación JWT con `JwtBearer`, autorización por propietario con `404` anti-enumeración, CORS denegado por defecto y *rate limiting* de laboratorio» |

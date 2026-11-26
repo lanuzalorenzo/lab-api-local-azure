@@ -34,7 +34,7 @@ Este repositorio estrena lo que después se aplica en otro sitio: una versión n
 
 ## Línea base
 
-Los identificadores y el criterio son los de [`shared-dotnet/docs/linea-base.md`](https://github.com/lanuzalorenzo/shared-dotnet/blob/main/docs/linea-base.md). Esta sección es la declaración canónica del estado: traduce a los cinco estados lo que documentan `docs/capacidades.md` y el pipeline, y no añade controles fuera de su alcance. Las etiquetas de presentación de `README.md` y `docs/capacidades.md`, en las filas de esta tabla, se leen con esta equivalencia: `Implementado` es `Validado` salvo que la fila limite el alcance (`Implementado; fuera de CI` es `Parcial`); `Validado en local` es `Validado` con alcance local. Fuera de esta tabla no se traducen, y no crean estados nuevos.
+Los identificadores y el criterio son los de [`shared-dotnet/docs/linea-base.md`](https://github.com/lanuzalorenzo/shared-dotnet/blob/main/docs/linea-base.md). Esta sección es la declaración canónica del estado: traduce a los cinco estados lo que documentan `docs/capacidades.md` y el pipeline, y no añade controles fuera de su alcance. `README.md` y `docs/capacidades.md` usan ya los cinco estados con el alcance entre paréntesis —`Validado (CI)`, `Validado (local)`, `Parcial (…)`, `Diseño (validación estática)`—, que no crean estados nuevos. Esta tabla manda si una fila discrepa.
 
 | Id | Estado | Evidencia |
 |---|---|---|
@@ -53,7 +53,7 @@ Los identificadores y el criterio son los de [`shared-dotnet/docs/linea-base.md`
 | `contenedor` | Validado | `Dockerfile` con `USER $APP_UID`; el CI comprueba que el UID no es 0 y escanea la imagen; [run 45411139036](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/45411139036) (2026-11-24). |
 | `dependabot` | Validado | `.github/dependabot.yml` y `dependabot-auto-merge.yml` para parche y menor; [PR #55](https://github.com/lanuzalorenzo/lab-api-local-azure/pull/55) fusionada por el flujo. |
 | `main` | Validado | ruleset `main` con pull request y siete checks; sin revisor humano porque un solo mantenedor no puede aprobar su PR; [`repo-governance.md`](docs/repo-governance.md). |
-| `iac` | Validado | `bicep build infra/main.bicep`, Trivy config y `scripts/check-infra-names.py` en el job de IaC; [run 45468481809](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/45468481809) en `main` y un nombre a mano rechazado en el [job 138705083970](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/45467177693/job/138705083970) (2026-11-24). Sin desplegar. |
+| `iac` | Validado | `bicep build infra/main.bicep`, Trivy config y `scripts/check-infra-names.py` en el job de IaC; [run 45468481809](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/45468481809) en `main` y un nombre a mano rechazado en el [job 138705083970](https://github.com/lanuzalorenzo/lab-api-local-azure/actions/runs/45467177693/job/138705083970) (2026-11-24). La capa sin coste se desplegó el 2026-11-26; la capa de servicios sigue sin desplegar. |
 
 ## Contrato editorial
 

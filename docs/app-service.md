@@ -1,6 +1,6 @@
 # App Service — diseño de la plataforma de ejecución
 
-> **Estado:** Diseño. La plantilla existe y se valida estáticamente, pero **no se ha desplegado**.
+> **Estado:** Diseño. La capa de App Service de la plantilla existe y se valida estáticamente, pero **no se ha desplegado**; la red sí se desplegó el 2026-11-26.
 > **Ámbito:** plataforma de ejecución de `EcommerceApi`. No sustituye a `infra/README.md` ni al Bicep.
 > **Última revisión:** 2026-10-22.
 > **Fases:** estudio → IaC → despliegue → slots.
@@ -353,14 +353,52 @@ Pruebas negativas:
 
 Cada prueba se registra en la evidencia con comando, salida redactada y resultado.
 
-## 13. Preguntas abiertas
+## 13. Decisiones de plataforma (resueltas el 2026-11-26)
 
-1. ¿Qué características pierdes exactamente al bajar de P1v3 a B1?
-2. ¿Por qué la subred de integración necesita delegación y la de Private Endpoint no?
-3. ¿Qué hace `vnetRouteAllEnabled` y qué pasaría si estuviera en `false`?
-4. ¿Dónde vive el DNS privado y quién lo consulta?
-5. ¿Por qué el SCM también hay que protegerlo?
-6. ¿Qué cambia en el Bicep si se elige contenedor en lugar de zip, y qué rol necesita la identidad para hacer pull del ACR?
+Las seis preguntas que bloqueaban el diseño de ejecución quedan contestadas. La respuesta corta: **la capa gratuita usa Container Apps con la imagen de GHCR; el camino de producción usa App Service P1v3 con integración VNet y zip deploy**, y el contenedor se queda para la capa gratuita o para un ACR cuando se quiera paridad total.
+
+### 13.1. ¿Qué se pierde al bajar de P1v3 a B1?
+
+B1 baja a 1 vCPU y 1,75 GB, y pierde slots de despliegue, autoscale y copias. La integración VNet regional y el Private Endpoint de entrada **no se prometen en B1 sin comprobarlos** en la tabla de límites del servicio: no están disponibles en Free ni en Shared, y el diseño de este repositorio los necesita. Por eso B1 no sustituye a P1v3 en este laboratorio; solo serviría para una API sin red privada ni vuelta atrás.
+
+| Necesidad | Free / F1 | B1 | P1v3 |
+|---|---|---|---|
+| Ejecutar la API | Sí, con cuota diaria de CPU | Sí | Sí |
+| Slots y *swap* | No | No | Sí |
+| Autoscale | No | No | Sí |
+| Integración VNet | No | Comprobar en la tabla de límites | Sí |
+| Private Endpoint de entrada | No | Comprobar en la tabla de límites | Sí |
+| Copias | No | No | Sí |
+
+### 13.2. ¿Por qué la subred de integración se delega y la de Private Endpoint no?
+
+La subred de integración se delega a `Microsoft.Web/serverFarms` porque App Service inyecta interfaces de la aplicación en ella y el proveedor necesita reservarla. La subred de Private Endpoint no se delega: el endpoint es una interfaz de red que el servicio de destino crea en la subred, no un despliegue de App Service, y delegarla impediría que otros servicios usaran esa subred para sus propios endpoints.
+
+### 13.3. ¿Qué hace `vnetRouteAllEnabled`?
+
+Con `true`, **todo** el tráfico saliente de la aplicación pasa por la VNet, incluidas las llamadas a Internet, y por tanto lo filtran el NSG y las rutas definidas por el usuario. Con `false`, solo el tráfico a rangos privados (RFC 1918) sale por la VNet y el resto va directo a Internet. En este diseño se pone `true` porque el objetivo es que la salida también esté controlada; el precio es que cualquier destino externo necesita una regla explícita.
+
+### 13.4. ¿Dónde vive el DNS privado y quién lo consulta?
+
+Las zonas `privatelink.azurewebsites.net` y `privatelink.vaultcore.azure.net` viven en el grupo de recursos del laboratorio (o en una zona central si se comparte con otras cargas) y se enlazan a la VNet. Quien consulta es la propia VNet: la aplicación resuelve a través del DNS de Azure en `168.63.129.16`, que devuelve la IP privada del endpoint. Si la zona no está enlazada, el nombre resuelve a la IP pública y la prueba negativa falla.
+
+### 13.5. ¿Por qué hay que proteger el SCM?
+
+El SCM (Kudu) es un sitio aparte con su propio nombre y su propia superficie: permite desplegar, abrir una consola y leer variables. Si el sitio principal está detrás de un Private Endpoint pero el SCM no, queda un camino público que salta el aislamiento. Se protege con restricciones de acceso o un Private Endpoint propio para el SCM, y se desactiva la autenticación básica de publicación cuando el despliegue va por identidad.
+
+### 13.6. ¿Qué cambia si se elige contenedor en lugar de zip?
+
+| Punto | Zip deploy | Contenedor |
+|---|---|---|
+| `linuxFxVersion` | `DOTNETCORE\|10.0` | `DOCKER\|<registro>/<imagen>:<etiqueta>` |
+| Registro | No hace falta | ACR o GHCR, con credenciales o identidad |
+| Permiso | Ninguno extra | `AcrPull` para la identidad gestionada, o credenciales del registro |
+| Paridad con local | Baja | Alta |
+| Escaneo | Sobre el `Dockerfile` | Sobre la imagen que se despliega |
+
+El camino gratuito del laboratorio usa la imagen ya publicada en `ghcr.io` desde Container Apps, que no necesita ACR. El camino de producción con App Service mantiene zip deploy y `DOTNETCORE|10.0`; si se quiere la misma imagen en producción, se añade un ACR, se asigna `AcrPull` a la identidad y se cambia `linuxFxVersion`. No se afirma que el contenedor esté desplegado en App Service.
+
+> El mapa completo de qué hace cada capa gratis y qué servicio de pago la sustituye está en [plataforma-gratis-y-pago.md](plataforma-gratis-y-pago.md).
 
 ## 14. Limitaciones
 

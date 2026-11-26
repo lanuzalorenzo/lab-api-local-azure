@@ -53,18 +53,18 @@ Resumen; el detalle con pruebas y límites está en [`docs/capacidades.md`](docs
 
 | Control | Estado |
 |---|---|
-| Validación JWT y autorización por usuario | Parcial: la criptografía requiere tenant real |
-| BOLA/IDOR, *mass assignment*, CORS, *rate limit* y límites | Implementado |
+| Validación JWT y autorización por usuario | Parcial: la criptografía requiere un token real; el doble de pruebas no la cubre |
+| BOLA/IDOR, *mass assignment*, CORS, *rate limit* y límites | Validado (CI) |
 | Aviso de secretos antes del commit (hook local) | Parcial: opt-in por clon |
-| Contrato de error único (`400`, `404`, `500`) sin fugas en el `500` | Implementado |
-| Arquitectura por capas verificada con pruebas | Implementado |
-| Outbox transaccional y consumidor idempotente | Implementado (local) |
-| Publicación en Service Bus (emulador local) | Validado en local |
+| Contrato de error único (`400`, `404`, `500`) sin fugas en el `500` | Validado (CI) |
+| Arquitectura por capas verificada con pruebas | Validado (CI) |
+| Outbox transaccional y consumidor idempotente | Validado (CI, local) |
+| Publicación en Service Bus (emulador local) | Parcial: emulador local, sin namespace real |
 | Function desplegada | Diseño |
 | Scopes/roles granulares | Pendiente |
-| Despliegue real en Azure | Pendiente |
+| Despliegue real en Azure | Parcial: red y API en la capa gratuita; la capa de pago sigue en Diseño |
 
-> **Criterio de rigor:** «Implementado» significa que el código o la configuración existe y se ha ejecutado localmente o en CI. «Pendiente» significa que no se ha validado y no se presenta como terminado.
+> **Criterio de rigor:** los estados son los cinco del workspace —Validado, Parcial, Runbook preparado, Diseño y Pendiente—. El paréntesis dice dónde se comprobó (`CI`, `local`, `documento`) y no crea un estado nuevo. «Diseño» no es una validación y «Pendiente» no se presenta como terminado.
 
 ## Estructura
 
@@ -201,7 +201,7 @@ La política de dependencias, los plazos por severidad y el estado del primer lo
 
 ## Infraestructura como código
 
-`infra/main.bicep` define una arquitectura de referencia con VNet segmentada, NSG con denegación por defecto, Key Vault con RBAC y *purge protection*, Private Endpoints y Private DNS, App Service Linux .NET 10 con HTTPS only y FTPS deshabilitado, identidad gestionada y diagnóstico a Log Analytics. El parámetro `desplegarServiciosDePago` (por defecto `false`) despliega solo la red y deja fuera la capa de servicios. **La plantilla no se ha desplegado**: se valida con `bicep build` y Trivy config en CI. El detalle está en [`infra/README.md`](infra/README.md).
+`infra/main.bicep` define una arquitectura de referencia con VNet segmentada, NSG con denegación por defecto, Key Vault con RBAC y *purge protection*, Private Endpoints y Private DNS, App Service Linux .NET 10 con HTTPS only y FTPS deshabilitado, identidad gestionada y diagnóstico a Log Analytics. El parámetro `desplegarServiciosDePago` (por defecto `false`) despliega solo la red y deja fuera la capa de servicios. **La capa sin coste está desplegada** (VNet, NSG y subredes, 2026-11-26); la capa de servicios sigue sin desplegarse y se valida con `bicep build` y Trivy config en CI. El detalle está en [`infra/README.md`](infra/README.md).
 
 ## Documentación
 
@@ -209,23 +209,25 @@ La política de dependencias, los plazos por severidad y el estado del primer lo
 
 | Documento | Qué aporta |
 |---|---|
-| [Referencia de la API](docs/api.md) | Endpoints, contratos, errores, límites y pruebas manuales. Implementado |
-| [Capacidades y evidencia](docs/capacidades.md) | Qué puede afirmarse, con qué prueba y qué queda fuera. Implementado |
-| [Persistencia y consultas](docs/persistence.md) | Esquema, paginación por cursor y planes de consulta. Implementado |
-| [Entra ID](docs/entra-id.md) | Registro, configuración, scopes y errores comunes. Implementado |
+| [Referencia de la API](docs/api.md) | Endpoints, contratos, errores, límites y pruebas manuales. Validado |
+| [Capacidades y evidencia](docs/capacidades.md) | Qué puede afirmarse, con qué prueba y qué queda fuera. Parcial |
+| [Persistencia y consultas](docs/persistence.md) | Esquema, paginación por cursor y planes de consulta. Validado |
+| [Entra ID](docs/entra-id.md) | Registro, configuración, scopes y errores comunes. Validado |
 | [Pruebas con tokens](docs/azure-ad-tests.md) | Token real, BOLA con dos identidades y checklist |
 | [Threat model](docs/threat-model-appsec.md) | STRIDE, OWASP API Top 10 y riesgos residuales |
 | [Dependencias](docs/dependencias.md) | Dueño, plazos por severidad y evidencia del lote |
 | [Credenciales del feed](docs/credenciales.md) | Credencial de solo lectura, rotación y límite de Dependabot. Parcial |
-| [Emulador de Service Bus](docs/servicebus-emulator.md) | Arranque, humo y límites del emulador local. Validado en local y en CI |
+| [Emulador de Service Bus](docs/servicebus-emulator.md) | Arranque, humo y límites del emulador local. Validado (local y CI) |
 | [Gobernanza del repositorio](docs/repo-governance.md) | PR, checks obligatorios y por qué no hay bypass |
+| [Capas gratuitas y de pago](docs/plataforma-gratis-y-pago.md) | Qué valida la capa gratuita, qué servicio de pago hace cada función y cómo se enciende. Diseño |
+| [Despliegue y vuelta atrás](docs/despliegue-y-rollback.md) | Revisiones de Container Apps, slots de App Service y criterios de rollback. Validado (Container Apps); Runbook preparado (slots) |
 
 **Diseño**
 
 | Documento | Qué aporta |
 |---|---|
 | [App Service](docs/app-service.md) | Plataforma de ejecución, Bicep frente al pipeline, red, identidad y coste. Diseño |
-| [Azure Functions](docs/functions.md) | Cómputo asíncrono, idempotencia y hosting. Parcial: probado en local, sin despliegue |
+| [Azure Functions](docs/functions.md) | Cómputo asíncrono, idempotencia y hosting. Parcial (local, sin despliegue) |
 | [Integración de IA](docs/ai-integration.md) | Gateway, controles de seguridad y evaluación. Diseño |
 | [Registro de ADR](docs/adr/README.md) | Decisiones, alternativas, patrones y evidencia |
 
@@ -245,7 +247,7 @@ La política de dependencias, los plazos por severidad y el estado del primer lo
 - Service Bus y la Function no están desplegados: el publicador por defecto registra el mensaje en lugar de entregarlo a un broker.
 - El outbox es *at-least-once*: la garantía efectiva depende de la idempotencia del consumidor, que sí está probada.
 - Sin microservicios, sin scopes/roles aplicados endpoint a endpoint y sin WAF/API Management desplegado.
-- Con una prueba puntual de carga, sin caos ni prueba de resistencia; la plantilla Bicep no se ha desplegado y su validación es estática.
+- Con una prueba puntual de carga, sin caos ni prueba de resistencia; la capa de pago de la plantilla Bicep no se ha desplegado y su validación es estática.
 - La gobernanza de `main` se apoya en PR y siete checks, sin revisor humano; el detalle está en [`docs/repo-governance.md`](docs/repo-governance.md).
 
 Estas limitaciones son deliberadas y se declaran para no confundir un laboratorio con un sistema productivo.
