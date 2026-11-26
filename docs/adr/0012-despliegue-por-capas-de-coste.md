@@ -19,7 +19,7 @@ una función ([ADR-0011](0011-nombres-de-recurso-caf.md)), pero no había forma 
 una parte: cualquier `az deployment group create` creaba todos los recursos.
 
 Eso choca con el propósito del repositorio. La plantilla se valida con `bicep build`, Trivy
-config y la comprobación de nombres, y no se ha aplicado a una suscripción; el día que se
+config y la comprobación de nombres. La capa sin coste se aplicó el 2026-11-26 y la de servicios no se ha aplicado; el día que se
 aplique para comprobar la red, el mismo comando crea un plan de App Service que factura por
 hora y un área de Log Analytics que factura por gigabyte ingerido. El gasto empieza en el
 primer recurso con medidor, sin esperar a que exista un cupo.
