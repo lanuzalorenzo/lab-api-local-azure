@@ -1,6 +1,6 @@
 # Despliegue por revisiones y vuelta atrás
 
-> **Estado:** Validado (2026-11-26) para revisiones de Container Apps; Runbook preparado para slots de App Service. El camino de App Service no se ha ejecutado: exige Standard o superior y la regla de gasto cero lo deja en Diseño. El camino de Container Apps se ejecutó con dos revisiones y vuelta atrás (ver §6).
+> **Estado:** Validado (2026-11-26) para revisiones de Container Apps; Runbook preparado para slots de App Service. El camino de App Service no se ha ejecutado: exige Standard o superior y la regla de gasto cero lo deja en Diseño. El camino de Container Apps se ejecutó con dos revisiones y vuelta atrás (ver §6). Evidencia: [2026-11-26-08-red-y-api](https://github.com/lanuzalorenzo/portfolio-ciberseguridad-lorenzo/blob/main/laboratorio-final/evidencias/2026-11-26-08-red-y-api/README.md).
 
 Publicar sin vuelta atrás es como cambiar la cerradura y tirar la llave vieja: si la nueva no gira, ya no hay forma de entrar. Este documento fija cómo se publica una versión nueva de la API y cómo se vuelve a la anterior sin improvisar. No sustituye a la evidencia: cada ejecución se registra con fecha, comando y salida.
 
