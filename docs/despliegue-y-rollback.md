@@ -154,4 +154,4 @@ La aplicación de Container Apps estaba en modo de revisión única. Se cambió 
 | Dar el 100 % a la nueva | `az containerapp ingress traffic set --revision-weight t5=100` | 200 y 401 por el FQDN de la aplicación | PASS |
 | Volver a la anterior | `az containerapp ingress traffic set --revision-weight v1thzxk=100` | 200 y 401; tráfico `v1thzxk=100`, `t5=0` | PASS |
 
-La evidencia con los comandos y la salida está en la carpeta de la Fase 1 del índice del laboratorio. La revisión nueva se conserva al 0 % como destino de consulta; el grupo se destruye el 2026-12-03.
+La evidencia con los comandos y la salida está en la carpeta de la Fase 1 del índice del laboratorio. El grupo se eliminó el 2026-11-28, así que las revisiones ya no existen.

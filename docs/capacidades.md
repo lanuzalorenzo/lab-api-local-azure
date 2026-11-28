@@ -1,6 +1,6 @@
 # Capacidades y evidencia
 
-> **Estado:** Parcial (2026-11-26). Matriz normalizada a los cinco estados del workspace, con el alcance entre paréntesis cuando importa (`CI`, `local`, `documento`). Queda por comprobar la validación JWT fuera de CI, el hook de secretos opt-in, el despliegue de Service Bus y la capa de pago —red privada, Key Vault y observabilidad—, que sigue en Diseño. El despliegue de la red y de la API en la capa gratuita se registra en la evidencia de la Fase 1.
+> **Estado:** Parcial (2026-11-28). Matriz normalizada a los cinco estados del workspace, con el alcance entre paréntesis cuando importa (`CI`, `local`, `documento`). Queda por comprobar la validación JWT fuera de CI, el hook de secretos opt-in, el despliegue de Service Bus y la capa de pago —red privada, Key Vault y observabilidad—, que sigue en Diseño. El despliegue de la red y de la API en la capa gratuita se registra en la evidencia de la Fase 1; se retiró el 2026-11-28.
 > **Ámbito:** qué puede afirmarse sobre este repositorio, con qué se comprueba y qué queda fuera.
 > **Evidencia:** `dotnet test`, `.github/workflows/devsecops-ci.yml`, `infra/main.bicep`, `scripts/check-infra-names.py` y `docs/`.
 > **Relacionada con:** [Referencia de la API](api.md), [resumen de estado](../README.md#estado-de-seguridad), [capas gratuitas y de pago](plataforma-gratis-y-pago.md), [ADR](adr/README.md).
@@ -135,7 +135,7 @@ Lista deliberada. Sirve para no arrastrar afirmaciones que el código no sostien
 | Feature Flags | No existe infraestructura de *feature flags* en el código |
 | Event Hubs | El único servicio de mensajería previsto es Service Bus |
 | PKCE implementado | El flujo lo ejecuta el cliente; aquí solo se documenta y se valida el token resultante |
-| Azure desplegado | La capa sin coste (VNet, NSG y subredes) se desplegó el 2026-11-26; la capa de servicios se compila y se escanea, pero no se ha aplicado |
+| Azure desplegado | La capa sin coste (VNet, NSG y subredes) se desplegó el 2026-11-26 y se retiró el 2026-11-28; la capa de servicios se compila y se escanea, pero no se ha aplicado |
 | OIDC de CI a Azure activo | Hay un workflow de CI, no de despliegue |
 | Alta disponibilidad, SLA o tráfico elevado | SQLite, una instancia y solo una prueba puntual de carga, no tráfico elevado |
 | Cobertura de pruebas medida | `coverlet` está disponible, pero no hay umbral ni informe en CI |

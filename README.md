@@ -62,7 +62,7 @@ Resumen; el detalle con pruebas y límites está en [`docs/capacidades.md`](docs
 | Publicación en Service Bus (emulador local) | Parcial: emulador local, sin namespace real |
 | Function desplegada | Diseño |
 | Scopes/roles granulares | Pendiente |
-| Despliegue real en Azure | Parcial: red y API en la capa gratuita; la capa de pago sigue en Diseño |
+| Despliegue real en Azure | Parcial: red y API desplegadas el 2026-11-26 y retiradas el 2026-11-28; la capa de pago sigue en Diseño |
 
 > **Criterio de rigor:** los estados son los cinco del workspace —Validado, Parcial, Runbook preparado, Diseño y Pendiente—. El paréntesis dice dónde se comprobó (`CI`, `local`, `documento`) y no crea un estado nuevo. «Diseño» no es una validación y «Pendiente» no se presenta como terminado.
 
@@ -201,7 +201,7 @@ La política de dependencias, los plazos por severidad y el estado del primer lo
 
 ## Infraestructura como código
 
-`infra/main.bicep` define una arquitectura de referencia con VNet segmentada, NSG con denegación por defecto, Key Vault con RBAC y *purge protection*, Private Endpoints y Private DNS, App Service Linux .NET 10 con HTTPS only y FTPS deshabilitado, identidad gestionada y diagnóstico a Log Analytics. El parámetro `desplegarServiciosDePago` (por defecto `false`) despliega solo la red y deja fuera la capa de servicios. **La capa sin coste está desplegada** (VNet, NSG y subredes, 2026-11-26); la capa de servicios sigue sin desplegarse y se valida con `bicep build` y Trivy config en CI. El detalle está en [`infra/README.md`](infra/README.md).
+`infra/main.bicep` define una arquitectura de referencia con VNet segmentada, NSG con denegación por defecto, Key Vault con RBAC y *purge protection*, Private Endpoints y Private DNS, App Service Linux .NET 10 con HTTPS only y FTPS deshabilitado, identidad gestionada y diagnóstico a Log Analytics. El parámetro `desplegarServiciosDePago` (por defecto `false`) despliega solo la red y deja fuera la capa de servicios. **La capa sin coste se desplegó el 2026-11-26 y se retiró el 2026-11-28** (VNet, NSG y subredes); la capa de servicios sigue sin desplegarse y se valida con `bicep build` y Trivy config en CI. El detalle está en [`infra/README.md`](infra/README.md).
 
 ## Documentación
 

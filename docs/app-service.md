@@ -1,8 +1,8 @@
 # App Service — diseño de la plataforma de ejecución
 
-> **Estado:** Diseño. La capa de App Service de la plantilla existe y se valida estáticamente, pero **no se ha desplegado**; la red sí se desplegó el 2026-11-26.
+> **Estado:** Diseño (2026-11-28). La capa de App Service de la plantilla existe y se valida estáticamente, pero **no se ha desplegado**; la red se desplegó el 2026-11-26 y se retiró el 2026-11-28.
 > **Ámbito:** plataforma de ejecución de `EcommerceApi`. No sustituye a `infra/README.md` ni al Bicep.
-> **Última revisión:** 2026-10-22.
+> **Última revisión:** 2026-11-28.
 > **Fases:** estudio → IaC → despliegue → slots.
 
 ## 1. Para qué sirve este documento

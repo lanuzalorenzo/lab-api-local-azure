@@ -1,6 +1,6 @@
 # Infraestructura de referencia — EcommerceApi
 
-Levantar la infraestructura a mano en un portal es como amueblar una casa sin plano: sale, pero nadie sabe reproducirla igual mañana. Este directorio contiene el plano en Bicep (el lenguaje con el que Azure describe su infraestructura como texto) para desplegar la API: red, identidad, secretos y registros. **La capa sin coste se desplegó el 2026-11-26** (VNet, NSG y subredes); la capa de servicios no se ha desplegado y se valida con `bicep build`, con Trivy config y con la comprobación de nombres en el pipeline. No contiene secretos ni identificadores reales.
+Levantar la infraestructura a mano en un portal es como amueblar una casa sin plano: sale, pero nadie sabe reproducirla igual mañana. Este directorio contiene el plano en Bicep (el lenguaje con el que Azure describe su infraestructura como texto) para desplegar la API: red, identidad, secretos y registros. **La capa sin coste se desplegó el 2026-11-26 y se retiró el 2026-11-28** (VNet, NSG y subredes); la capa de servicios no se ha desplegado y se valida con `bicep build`, con Trivy config y con la comprobación de nombres en el pipeline. No contiene secretos ni identificadores reales.
 
 ## Arquitectura
 
