@@ -1,6 +1,6 @@
 # Capas gratuitas y de pago
 
-> **Estado:** Diseño (2026-11-26). La tabla fija qué capa se usa hoy a coste cero, qué servicio de pago haría la misma función en producción, cuánto cuesta y cómo se conmuta. No se ha desplegado el camino de pago.
+> **Estado:** Diseño (2026-11-28). La tabla fija qué capa corresponde a coste cero, qué servicio de pago haría la misma función en producción, cuánto cuesta y cómo se conmuta. No se ha desplegado el camino de pago.
 
 Elegir capa es como elegir entre la cocina de casa y la de un restaurante: la primera te deja practicar sin coste; la segunda añade extracción, capacidad y seguro, y se paga por ello. Este documento separa lo que valida la capa gratuita de lo que haría falta para producción: si mañana el laboratorio tiene que parecerse a un sistema real, ¿qué se enciende, cuánto cuesta y qué se gana? La capa gratuita sirve para validar el comportamiento; la de pago aporta garantías que la gratis no tiene: SLA, red privada, retención, detección y soporte.
 
